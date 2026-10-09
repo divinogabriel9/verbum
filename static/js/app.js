@@ -1229,11 +1229,14 @@
     var HOME_NEWS_CNA_KEY = "verbumHomeNewsCna";
     var NAV_TABS_ENABLED_KEY = "verbumNavTabsEnabled";
     var NAV_TABS_HIDDEN_KEY = "verbumNavTabsHidden"; // legacy — migrated on read
+    var NAV_TABS_MEDIA_OPTIONAL_KEY = "verbumNavTabsMediaOptionalV1";
     var NAV_TAB_DEFS = [
       { id: "home", label: "Home", required: true },
       { id: "mass", label: "Mass", required: true },
       { id: "library", label: "Lyrics Library", required: true },
-      { id: "radio", label: "Media", required: true },
+      { id: "themes", label: "Themes", required: true },
+      // Media (Live Radio) + Posters can be hidden from the nav.
+      { id: "radio", label: "Media", defaultOn: true },
       { id: "media", label: "Posters" },
       { id: "calendar", label: "Calendar" },
       { id: "design", label: "Design" },
@@ -1243,26 +1246,51 @@
       return NAV_TAB_DEFS.filter((def) => !def.required).map((def) => def.id);
     }
 
+    function getDefaultOnOptionalNavTabIds() {
+      return NAV_TAB_DEFS.filter((def) => !def.required && def.defaultOn).map((def) => def.id);
+    }
+
     function migrateNavTabPrefs() {
       try {
-        if (localStorage.getItem(NAV_TABS_ENABLED_KEY) !== null) return;
-        const optional = getOptionalNavTabIds();
-        const raw = localStorage.getItem(NAV_TABS_HIDDEN_KEY);
-        if (raw === null) {
-          localStorage.setItem(NAV_TABS_ENABLED_KEY, "[]");
-          return;
+        if (localStorage.getItem(NAV_TABS_ENABLED_KEY) === null) {
+          const optional = getOptionalNavTabIds();
+          const raw = localStorage.getItem(NAV_TABS_HIDDEN_KEY);
+          if (raw === null) {
+            // Fresh prefs: keep defaultOn optional tabs visible (e.g. Media).
+            localStorage.setItem(
+              NAV_TABS_ENABLED_KEY,
+              JSON.stringify(getDefaultOnOptionalNavTabIds())
+            );
+          } else {
+            const hidden = JSON.parse(raw);
+            if (!Array.isArray(hidden)) {
+              localStorage.setItem(
+                NAV_TABS_ENABLED_KEY,
+                JSON.stringify(getDefaultOnOptionalNavTabIds())
+              );
+            } else {
+              const hiddenSet = new Set(hidden.filter((id) => optional.includes(id)));
+              localStorage.setItem(
+                NAV_TABS_ENABLED_KEY,
+                JSON.stringify(optional.filter((id) => !hiddenSet.has(id)))
+              );
+            }
+          }
         }
-        const hidden = JSON.parse(raw);
-        if (!Array.isArray(hidden)) {
-          localStorage.setItem(NAV_TABS_ENABLED_KEY, "[]");
-          return;
-        }
-        const hiddenSet = new Set(hidden.filter((id) => optional.includes(id)));
-        localStorage.setItem(
-          NAV_TABS_ENABLED_KEY,
-          JSON.stringify(optional.filter((id) => !hiddenSet.has(id)))
-        );
       } catch (_e) { /* ignore */ }
+      // One-time: Media was previously required — keep it on for existing accounts
+      // until the user turns it off in Settings → Preferences.
+      try {
+        if (localStorage.getItem(NAV_TABS_MEDIA_OPTIONAL_KEY) === "1") return;
+        localStorage.setItem(NAV_TABS_MEDIA_OPTIONAL_KEY, "1");
+        const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) return;
+        if (!parsed.includes("radio")) {
+          parsed.push("radio");
+          localStorage.setItem(NAV_TABS_ENABLED_KEY, JSON.stringify(parsed));
+        }
+      } catch (_e2) { /* ignore */ }
     }
 
     function getHomeNewsPrefs() {
@@ -1309,14 +1337,15 @@
     function getEnabledOptionalNavTabIds() {
       migrateNavTabPrefs();
       const optional = new Set(getOptionalNavTabIds());
+      const defaults = () => new Set(getDefaultOnOptionalNavTabIds().filter((id) => optional.has(id)));
       try {
         const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
-        if (!raw) return new Set();
+        if (!raw) return defaults();
         const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return new Set();
+        if (!Array.isArray(parsed)) return defaults();
         return new Set(parsed.filter((id) => optional.has(id)));
       } catch (_e) {
-        return new Set();
+        return defaults();
       }
     }
 
@@ -1349,6 +1378,7 @@
       if (r === "/library/practice") return null;
       if (r.startsWith("/library/")) return "library";
       if (r.startsWith("/media/")) return "media";
+      if (r === "/themes" || r.startsWith("/themes/")) return "themes";
       if (r.startsWith("/design/")) return "design";
       if (r.startsWith("/settings/")) return null;
       return null;
@@ -7727,6 +7757,7 @@
       "/library/songs": "Song library and lyrics structuring.",
       "/library/practice": "Share choir practice lyrics with a link.",
       "/library/collections": "Song collections for seasons and events.",
+      "/themes": "Browse and license Mass deck themes from designers.",
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
       "/settings/account": "Your profile picture and account details.",
@@ -7750,6 +7781,7 @@
       "/library/songs": ["Lyrics Library", "Songs"],
       "/library/practice": ["Practice", "Share lyrics"],
       "/library/collections": ["Lyrics Library", "Collections"],
+      "/themes": ["Themes"],
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
       "/settings/account": ["Settings", "Account"],
@@ -9007,6 +9039,9 @@
         if (typeof consumeEmailDeepLinkIntent === "function") {
           consumeEmailDeepLinkIntent();
         }
+      }
+      if (r === "/themes" && typeof loadThemeMarketplace === "function") {
+        loadThemeMarketplace();
       }
       window.__homeCtaLastRoute = r;
       if (r === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
@@ -17745,12 +17780,44 @@
       syncFlowDockVisibility("setup");
     })();
 
-    var NOTIF_STORAGE_KEY = "verbumNotifications";
+    var NOTIF_STORAGE_BASE = "verbumNotifications";
     var appNotifications = [];
+    var appNotificationsUserScope = null;
+
+    function notifCurrentUserId() {
+      try {
+        const auth = window.VerbumAuth;
+        const user = auth && auth.getUser ? auth.getUser() : null;
+        if (user && user.id) return String(user.id);
+      } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function notifStorageKey(userId) {
+      const uid = userId != null && String(userId).trim()
+        ? String(userId).trim()
+        : notifCurrentUserId();
+      // Per-user only — never a shared account / anonymous bucket.
+      return uid ? NOTIF_STORAGE_BASE + ":u:" + uid : "";
+    }
+
+    function dropLegacySharedNotifStorage() {
+      try {
+        localStorage.removeItem(NOTIF_STORAGE_BASE);
+      } catch (_e) { /* ignore */ }
+    }
 
     function loadAppNotifications() {
       try {
-        appNotifications = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY) || "[]");
+        dropLegacySharedNotifStorage();
+        const uid = notifCurrentUserId();
+        appNotificationsUserScope = uid || null;
+        const key = notifStorageKey(uid);
+        if (!key) {
+          appNotifications = [];
+          return;
+        }
+        appNotifications = JSON.parse(localStorage.getItem(key) || "[]");
         if (!Array.isArray(appNotifications)) appNotifications = [];
         appNotifications = appNotifications.map((item) => ({
           ...item,
@@ -17776,8 +17843,37 @@
 
     function saveAppNotifications() {
       try {
-        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(appNotifications.slice(0, 120)));
+        const uid = notifCurrentUserId();
+        const key = notifStorageKey(uid);
+        if (!key) return;
+        if (appNotificationsUserScope !== (uid || null)) {
+          appNotificationsUserScope = uid || null;
+        }
+        localStorage.setItem(key, JSON.stringify(appNotifications.slice(0, 120)));
       } catch (_e) { /* ignore */ }
+    }
+
+    function resetAppNotificationsForAuthChange() {
+      loadAppNotifications();
+      renderNotificationFeed();
+      try {
+        const auth = window.VerbumAuth;
+        if (auth && typeof auth.getPendingNotifications === "function") {
+          const pending = auth.getPendingNotifications();
+          if (pending && pending.length) syncServerUserNotifications(pending);
+        }
+      } catch (_e) { /* ignore */ }
+    }
+
+    function initAppNotificationScope() {
+      window.addEventListener("verbum:auth-ready", () => {
+        resetAppNotificationsForAuthChange();
+      });
+      window.addEventListener("verbum:signed-out", () => {
+        appNotifications = [];
+        appNotificationsUserScope = null;
+        renderNotificationFeed();
+      });
     }
 
     function getUnreadAppNotificationCount() {
@@ -17907,6 +18003,13 @@
     }
 
     function pushAppNotification(message, kind, meta) {
+      const uid = notifCurrentUserId();
+      // Never write personal alerts into another user's (or a shared) bucket.
+      if (appNotificationsUserScope && uid && appNotificationsUserScope !== uid) {
+        loadAppNotifications();
+      } else if (!appNotificationsUserScope && uid) {
+        loadAppNotifications();
+      }
       const key = meta && meta.key ? String(meta.key) : "";
       const item = {
         id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
@@ -18023,7 +18126,7 @@
 
     function mapServerNotificationKind(kind) {
       const k = String(kind || "").toLowerCase();
-      if (k === "song_approved" || k === "ok") return "ok";
+      if (k === "song_approved" || k === "ok" || k === "promo" || k === "info") return "ok";
       if (k === "song_rejected" || k === "error" || k === "warn") return "error";
       return "ok";
     }
@@ -18162,10 +18265,26 @@
 
     var CELEBRANT_PLACEHOLDER = "Select celebrant";
 
+    function canAddPriestName() {
+      if (typeof churchMembershipState === "undefined" || !churchMembershipState) return false;
+      return !!(
+        churchMembershipState.can_submit_priest ||
+        churchMembershipState.can_edit_church_profile ||
+        churchMembershipState.can_generate_mass
+      );
+    }
+
+    function syncCelebrantPickerDisabledState() {
+      const picker = $("celebrant-picker");
+      if (!picker) return;
+      // Keep the picker openable whenever Add a priest is available (even if list is empty).
+      const disable = !celebrantNamesCache.length && !canAddPriestName();
+      picker.classList.toggle("celebrant-picker--disabled", disable);
+    }
+
     function setCelebrantPickerValue(name) {
       const hidden = $("celebrant");
       const display = $("celebrant-display");
-      const picker = $("celebrant-picker");
       const list = $("celebrant-list");
       if (!hidden || !display) return;
       const value = (name || "").trim();
@@ -18184,7 +18303,7 @@
           btn.classList.toggle("is-active", on);
         });
       }
-      if (picker) picker.classList.toggle("celebrant-picker--disabled", !celebrantNamesCache.length);
+      syncCelebrantPickerDisabledState();
       syncCelebrantFromSelect();
     }
 
@@ -18216,37 +18335,231 @@
       return !!(picker && picker.classList.contains("celebrant-picker--disabled"));
     }
 
+    function celebrantPickerActionButtons() {
+      const list = $("celebrant-list");
+      if (!list) return [];
+      return Array.from(list.querySelectorAll(".celebrant-picker__option, .celebrant-picker__add"));
+    }
+
     function renderCelebrantSelect(selectedName) {
       const list = $("celebrant-list");
       const empty = $("celebrant-picker-empty");
-      const picker = $("celebrant-picker");
       const hidden = $("celebrant");
       if (!list || !hidden) return;
       const keep = (selectedName || getMainCelebrantName() || "").trim();
       const names = celebrantNamesCache.slice();
-      if (!names.length) {
-        list.innerHTML = "";
-        if (empty) empty.hidden = false;
-        if (picker) picker.classList.add("celebrant-picker--disabled");
-        setCelebrantPickerValue("");
-        return;
-      }
-      if (empty) empty.hidden = true;
-      if (picker) picker.classList.remove("celebrant-picker--disabled");
-      list.innerHTML = names.map((name) => (
+      const canAdd = canAddPriestName();
+      const nameItems = names.map((name) => (
         "<li role=\"presentation\">" +
           "<button type=\"button\" class=\"vb-dropdown-item celebrant-picker__option\" role=\"option\" data-value=\"" +
           escapeHtml(name) + "\" aria-selected=\"false\">" +
           "<span class=\"vb-dropdown-item__label\">" + escapeHtml(name) + "</span></button>" +
         "</li>"
       )).join("");
+      const addItem = canAdd
+        ? (
+          "<li role=\"presentation\" class=\"celebrant-picker__add-item\">" +
+            "<button type=\"button\" class=\"vb-dropdown-item celebrant-picker__add\" role=\"option\" data-celebrant-add=\"1\">" +
+              "<span class=\"celebrant-picker__add-icon\" aria-hidden=\"true\">+</span>" +
+              "<span class=\"vb-dropdown-item__label\">Add a priest</span>" +
+            "</button>" +
+          "</li>"
+        )
+        : "";
+      list.innerHTML = nameItems + addItem;
+      if (empty) {
+        empty.hidden = !(names.length === 0 && !canAdd);
+      }
+      syncCelebrantPickerDisabledState();
       let chosen = "";
       if (keep && names.indexOf(keep) >= 0) {
         chosen = keep;
+      } else if (keep) {
+        const match = names.find((n) => n.toLowerCase() === keep.toLowerCase());
+        chosen = match || (names.length ? names[0] : "");
       } else if (names.length) {
         chosen = names[0];
       }
       setCelebrantPickerValue(chosen);
+    }
+
+    function setAddPriestModalStep(step) {
+      const modal = $("add-priest-modal");
+      if (!modal) return;
+      const enter = step !== "confirm";
+      modal.setAttribute("data-step", enter ? "enter" : "confirm");
+      const enterStep = $("add-priest-enter-step");
+      const confirmStep = $("add-priest-confirm-step");
+      const footEnter = $("add-priest-footer-enter");
+      const footConfirm = $("add-priest-footer-confirm");
+      const title = $("add-priest-modal-title");
+      const desc = $("add-priest-modal-desc");
+      if (enterStep) enterStep.hidden = !enter;
+      if (confirmStep) confirmStep.hidden = enter;
+      if (footEnter) footEnter.hidden = !enter;
+      if (footConfirm) footConfirm.hidden = enter;
+      if (title) title.textContent = enter ? "Add a priest" : "Confirm spelling";
+      if (desc) {
+        desc.textContent = enter
+          ? "Enter the celebrant name exactly as it should appear on Mass slides."
+          : "Double-check the name below before adding it to your parish list.";
+      }
+    }
+
+    function closeAddPriestModal() {
+      const modal = $("add-priest-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      const err = $("add-priest-error");
+      if (err) {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      const confirmBtn = $("add-priest-confirm");
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Confirm spelling";
+      }
+    }
+
+    function openAddPriestModal() {
+      if (!canAddPriestName()) {
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus("Approved parish membership is required to add a priest name.", "error");
+        }
+        return;
+      }
+      closeCelebrantPicker();
+      const modal = $("add-priest-modal");
+      const input = $("add-priest-name");
+      const err = $("add-priest-error");
+      if (!modal) return;
+      if (err) {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      if (input) input.value = "";
+      setAddPriestModalStep("enter");
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(() => {
+        if (input) input.focus();
+      });
+    }
+
+    function showAddPriestConfirmStep() {
+      const input = $("add-priest-name");
+      const err = $("add-priest-error");
+      const preview = $("add-priest-confirm-name");
+      const name = ((input && input.value) || "").trim();
+      if (!name) {
+        if (err) {
+          err.hidden = false;
+          err.textContent = "Enter a priest name first.";
+        }
+        if (input) input.focus();
+        return;
+      }
+      if (err) {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      if (preview) preview.textContent = name;
+      setAddPriestModalStep("confirm");
+      const confirmBtn = $("add-priest-confirm");
+      if (confirmBtn) confirmBtn.focus();
+    }
+
+    async function confirmAddPriestName() {
+      const input = $("add-priest-name");
+      const preview = $("add-priest-confirm-name");
+      const confirmBtn = $("add-priest-confirm");
+      const name = (
+        ((preview && preview.textContent) || (input && input.value) || "")
+      ).trim();
+      if (!name) {
+        setAddPriestModalStep("enter");
+        return;
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Saving…";
+      }
+      try {
+        const result = await addSettingsCelebrantName(name);
+        if (!result) {
+          if (typeof setFlowStatus === "function") {
+            setFlowStatus("Could not add that priest name. Try again.", "error");
+          }
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Confirm spelling";
+          }
+          return;
+        }
+        closeAddPriestModal();
+        if (typeof setFlowStatus === "function") {
+          if (result.pending) {
+            setFlowStatus(result.message || "Priest submitted for approval and selected for this Mass.", "ok");
+          } else if (result.exists) {
+            setFlowStatus("That priest is already on your list.", "ok");
+          } else if (result.local) {
+            setFlowStatus("Priest selected for this Mass.", "ok");
+          } else {
+            setFlowStatus("Priest added and selected.", "ok");
+          }
+        }
+      } catch (err) {
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus((err && err.message) || "Could not add that priest name.", "error");
+        }
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm spelling";
+        }
+      }
+    }
+
+    function bindAddPriestModal() {
+      const modal = $("add-priest-modal");
+      if (!modal || modal.dataset.bound === "1") return;
+      modal.dataset.bound = "1";
+      const closeBtn = $("add-priest-modal-close");
+      const cancelBtn = $("add-priest-cancel");
+      const continueBtn = $("add-priest-continue");
+      const backBtn = $("add-priest-back");
+      const confirmBtn = $("add-priest-confirm");
+      const backdrop = $("add-priest-modal-backdrop");
+      const input = $("add-priest-name");
+      [closeBtn, cancelBtn, backdrop].forEach((el) => {
+        if (el) el.addEventListener("click", () => closeAddPriestModal());
+      });
+      if (continueBtn) continueBtn.addEventListener("click", () => showAddPriestConfirmStep());
+      if (backBtn) {
+        backBtn.addEventListener("click", () => {
+          setAddPriestModalStep("enter");
+          if (input) input.focus();
+        });
+      }
+      if (confirmBtn) confirmBtn.addEventListener("click", () => { void confirmAddPriestName(); });
+      if (input) {
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            showAddPriestConfirmStep();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeAddPriestModal();
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (!modal.classList.contains("is-open")) return;
+        e.preventDefault();
+        closeAddPriestModal();
+      });
     }
 
     function bindCelebrantSelect() {
@@ -18255,6 +18568,7 @@
       const trigger = $("celebrant-picker-trigger");
       if (!list || !picker || picker.dataset.bound === "1") return;
       picker.dataset.bound = "1";
+      bindAddPriestModal();
       if (trigger) {
         trigger.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -18265,13 +18579,19 @@
         });
       }
       list.addEventListener("click", (e) => {
+        const addBtn = e.target.closest(".celebrant-picker__add");
+        if (addBtn) {
+          e.preventDefault();
+          openAddPriestModal();
+          return;
+        }
         const btn = e.target.closest(".celebrant-picker__option");
         if (!btn || !btn.dataset.value) return;
         setCelebrantPickerValue(btn.dataset.value);
         closeCelebrantPicker();
       });
       list.addEventListener("keydown", (e) => {
-        const opts = Array.from(list.querySelectorAll(".celebrant-picker__option"));
+        const opts = celebrantPickerActionButtons();
         if (!opts.length) return;
         const idx = opts.indexOf(document.activeElement);
         if (e.key === "ArrowDown") {
@@ -18283,8 +18603,13 @@
         } else if (e.key === "Enter" || e.key === " ") {
           if (idx >= 0) {
             e.preventDefault();
-            setCelebrantPickerValue(opts[idx].dataset.value);
-            closeCelebrantPicker();
+            const el = opts[idx];
+            if (el.classList.contains("celebrant-picker__add")) {
+              openAddPriestModal();
+            } else {
+              setCelebrantPickerValue(el.dataset.value);
+              closeCelebrantPicker();
+            }
           }
         } else if (e.key === "Escape") {
           closeCelebrantPicker();
@@ -18302,7 +18627,7 @@
 
     async function saveCelebrantNamesToDatabase() {
       if (!churchMembershipState.can_edit_church_profile) {
-        throw new Error("Superadmin access is required to edit the celebrant list directly.");
+        throw new Error("Approved parish membership is required to edit the celebrant list.");
       }
       const data = await postJSON("/api/community/profile", { celebrant_names: celebrantNamesCache });
       applyCelebrantNamesFromServer(data.celebrant_names || celebrantNamesCache);
@@ -18313,11 +18638,13 @@
       const n = (name || "").trim();
       if (!n) return false;
       const key = n.toLowerCase();
-      if (celebrantNamesCache.some((x) => x.toLowerCase() === key)) return false;
-      if (!churchMembershipState.can_submit_priest && !churchMembershipState.can_edit_church_profile) {
-        throw new Error("Approved parish membership is required to submit a priest name.");
+      const existing = celebrantNamesCache.find((x) => x.toLowerCase() === key);
+      if (existing) {
+        renderCelebrantSelect(existing);
+        return { exists: true };
       }
-      if (churchMembershipState.is_superadmin) {
+      // Approved members (and superadmin) save to the parish celebrant list immediately.
+      if (churchMembershipState.can_edit_church_profile) {
         celebrantNamesCache.push(n);
         renderSettingsCelebrantList();
         renderCelebrantSelect(n);
@@ -18326,16 +18653,31 @@
         } catch (_e) {
           celebrantNamesCache = celebrantNamesCache.filter((x) => x !== n);
           renderSettingsCelebrantList();
+          renderCelebrantSelect(getMainCelebrantName());
           return false;
         }
         return true;
       }
-      try {
-        const data = await postJSON("/api/submissions/priest", { name: n });
-        return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
-      } catch (_e) {
-        return false;
+      if (churchMembershipState.can_submit_priest) {
+        try {
+          const data = await postJSON("/api/submissions/priest", { name: n });
+          // Keep the name selectable for this Mass while approval is pending.
+          celebrantNamesCache.push(n);
+          renderSettingsCelebrantList();
+          renderCelebrantSelect(n);
+          return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
+        } catch (_e) {
+          return false;
+        }
       }
+      // Complimentary / early access: keep the name for this session so generate works.
+      if (churchMembershipState.can_generate_mass) {
+        celebrantNamesCache.push(n);
+        renderSettingsCelebrantList();
+        renderCelebrantSelect(n);
+        return { local: true };
+      }
+      throw new Error("Approved parish membership is required to submit a priest name.");
     }
 
     async function migrateCelebrantsFromBrowserStorage() {
@@ -18686,6 +19028,13 @@
         can_edit_logo: true,
       can_edit_church_profile: false,
       can_use_full_app: true,
+      can_generate_mass: true,
+      free_mass_remaining: 0,
+      free_mass_used: false,
+      premium_mass_remaining: 0,
+      free_tier_mass_remaining: 0,
+      next_generation_tier: "paid",
+      can_use_premium_posters: true,
       can_submit_song: true,
       can_submit_priest: true,
       is_superadmin: false,
@@ -18693,6 +19042,7 @@
     };
 
     loadAppNotifications();
+    initAppNotificationScope();
     initServerUserNotifications();
     renderNotificationFeed();
 
@@ -19127,6 +19477,240 @@
       });
     }
 
+    var TRIAL_OFFER_SKIP_BASE = "verbum:trial-offer-skipped";
+    var trialOfferShownThisLoad = false;
+
+    function trialOfferUserId() {
+      try {
+        const auth = window.VerbumAuth;
+        const user = auth && auth.getUser ? auth.getUser() : null;
+        if (user && user.id) return String(user.id);
+      } catch (_e) { /* ignore */ }
+      const uid = (churchMembershipState && churchMembershipState.user_id) || "";
+      return uid ? String(uid) : "";
+    }
+
+    function trialOfferSkipKey() {
+      const uid = trialOfferUserId();
+      return uid ? TRIAL_OFFER_SKIP_BASE + ":u:" + uid : "";
+    }
+
+    function hasSkippedTrialOffer() {
+      try {
+        const key = trialOfferSkipKey();
+        if (!key) return false;
+        return localStorage.getItem(key) === "1";
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function markTrialOfferSkipped() {
+      try {
+        const key = trialOfferSkipKey();
+        if (key) localStorage.setItem(key, "1");
+      } catch (_e) { /* ignore */ }
+    }
+
+    function needsParishTrial(state) {
+      const s = state || churchMembershipState;
+      if (!s || s.is_superadmin || s.can_use_full_app) return false;
+      const billing = (s.billing && typeof s.billing === "object")
+        ? s.billing
+        : (billingUiState || {});
+      if (!billing.billing_enabled) return false;
+      if (billing.has_paid_access) return false;
+      // New signups and anyone who has not unlocked Mass generation yet.
+      return true;
+    }
+
+    function premiumMassRemaining(state) {
+      const s = state || churchMembershipState;
+      if (!s) return 0;
+      if (s.premium_mass_remaining != null) return Math.max(0, Number(s.premium_mass_remaining) || 0);
+      return Math.max(0, Number(s.free_mass_remaining || 0));
+    }
+
+    function freeTierMassRemaining(state) {
+      const s = state || churchMembershipState;
+      return Math.max(0, Number((s && s.free_tier_mass_remaining) || 0));
+    }
+
+    function hasFreeMassCredit(state) {
+      return premiumMassRemaining(state) > 0 || freeTierMassRemaining(state) > 0;
+    }
+
+    function canGenerateMass(state) {
+      const s = state || churchMembershipState;
+      if (!s) return false;
+      if (s.can_generate_mass != null) return !!s.can_generate_mass;
+      return !!(s.can_use_full_app || hasFreeMassCredit(s));
+    }
+
+    function shouldShowTrialOfferCard(state) {
+      if (!needsParishTrial(state)) return false;
+      // On load: only auto-open after all credits are gone.
+      // Post-generate always forces the card via showTrialOfferAfterGenerate.
+      if (hasFreeMassCredit(state)) return false;
+      if (hasSkippedTrialOffer()) return false;
+      return true;
+    }
+
+    function syncTrialOfferCopy(state) {
+      const s = state || churchMembershipState;
+      const premiumLeft = premiumMassRemaining(s);
+      const freeLeft = freeTierMassRemaining(s);
+      const title = $("trial-offer-title");
+      const desc = $("trial-offer-desc");
+      if (title) {
+        title.textContent = (premiumLeft > 0 || freeLeft > 0)
+          ? "Start your 14-day free trial"
+          : "Keep building Mass with curated posters";
+      }
+      if (desc) {
+        if (premiumLeft > 0) {
+          desc.textContent = "You still have "
+            + premiumLeft
+            + " premium Mass"
+            + (premiumLeft === 1 ? "" : "es")
+            + " with curated divider posters, plus "
+            + freeLeft
+            + " basic free Mass"
+            + (freeLeft === 1 ? "" : "es")
+            + " this month. Start a 14-day trial for unlimited decks — you won’t be charged until it ends.";
+        } else if (freeLeft > 0) {
+          desc.textContent = "You have "
+            + freeLeft
+            + " basic free Mass"
+            + (freeLeft === 1 ? "" : "es")
+            + " left this month (without curated divider posters). Start a 14-day trial for unlimited decks with beautiful posters — you won’t be charged until it ends.";
+        } else {
+          desc.textContent = "You’ve used your free Masses for this month. Start a 14-day free trial for unlimited generation with curated divider posters. Add billing now — you won’t be charged until the trial ends.";
+        }
+      }
+    }
+
+    function showTrialOfferAfterGenerate() {
+      if (!needsParishTrial(churchMembershipState)) return;
+      syncTrialOfferCopy(churchMembershipState);
+      trialOfferShownThisLoad = true;
+      openTrialOfferModal();
+    }
+
+    function applyFreeMassFromGenerate(data) {
+      if (!data || typeof data !== "object") return;
+      const hadUpdate = data.premium_mass_remaining != null
+        || data.free_tier_mass_remaining != null
+        || data.free_mass_remaining != null
+        || data.free_mass_used != null
+        || data.next_generation_tier != null;
+      if (hadUpdate) {
+        const premiumLeft = data.premium_mass_remaining != null
+          ? Math.max(0, Number(data.premium_mass_remaining) || 0)
+          : (data.free_mass_remaining != null
+            ? Math.max(0, Number(data.free_mass_remaining) || 0)
+            : churchMembershipState.premium_mass_remaining);
+        const freeLeft = data.free_tier_mass_remaining != null
+          ? Math.max(0, Number(data.free_tier_mass_remaining) || 0)
+          : churchMembershipState.free_tier_mass_remaining;
+        churchMembershipState.premium_mass_remaining = premiumLeft;
+        churchMembershipState.free_mass_remaining = premiumLeft;
+        churchMembershipState.free_mass_used = premiumLeft <= 0;
+        churchMembershipState.free_tier_mass_remaining = freeLeft;
+        churchMembershipState.next_generation_tier = data.next_generation_tier
+          || (premiumLeft > 0 ? "premium" : (freeLeft > 0 ? "free" : "none"));
+        churchMembershipState.can_use_premium_posters = data.can_use_premium_posters != null
+          ? !!data.can_use_premium_posters
+          : premiumLeft > 0;
+        churchMembershipState.can_generate_mass = !!(
+          churchMembershipState.can_use_full_app
+          || churchMembershipState.is_superadmin
+          || premiumLeft > 0
+          || freeLeft > 0
+        );
+        syncGenerateButtons();
+        syncPrivilegedUi();
+        syncGlobalMembershipBanner(churchMembershipState);
+      }
+      // After every generation, show the 14-day trial card.
+      if (needsParishTrial(churchMembershipState)) {
+        showTrialOfferAfterGenerate();
+      }
+    }
+    window.applyFreeMassFromGenerate = applyFreeMassFromGenerate;
+
+    function openTrialOfferModal() {
+      const modal = $("trial-offer-modal");
+      if (!modal) return;
+      syncTrialOfferCopy(churchMembershipState);
+      setUiOverlayOpen(modal, true);
+    }
+
+    function closeTrialOfferModal() {
+      setUiOverlayOpen($("trial-offer-modal"), false);
+    }
+
+    function skipTrialOffer() {
+      markTrialOfferSkipped();
+      closeTrialOfferModal();
+      syncGlobalMembershipBanner(churchMembershipState);
+    }
+
+    function startTrialOfferBilling() {
+      closeTrialOfferModal();
+      // Keep the card available if they leave billing without starting checkout.
+      if (typeof showRoute === "function") {
+        showRoute("/settings/billing");
+      } else {
+        window.location.assign("/settings/billing");
+      }
+    }
+
+    function maybeShowTrialOffer(state) {
+      if (!shouldShowTrialOfferCard(state)) return;
+      if (trialOfferShownThisLoad) return;
+      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
+
+      function tryOpen() {
+        if (trialOfferShownThisLoad) return;
+        if (!shouldShowTrialOfferCard(churchMembershipState)) return;
+        if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
+        const blockers = [
+          $("membership-welcome-modal"),
+          $("mobile-welcome-modal"),
+          $("songs-whats-new-modal"),
+        ];
+        if (blockers.some((el) => el && el.classList.contains("is-open"))) {
+          setTimeout(tryOpen, 500);
+          return;
+        }
+        trialOfferShownThisLoad = true;
+        openTrialOfferModal();
+      }
+
+      setTimeout(tryOpen, 700);
+    }
+
+    function initTrialOfferModal() {
+      const modal = $("trial-offer-modal");
+      if (!modal || modal.dataset.bound === "1") return;
+      modal.dataset.bound = "1";
+      const backdrop = $("trial-offer-backdrop");
+      if (backdrop) {
+        backdrop.addEventListener("click", () => {
+          if (modal.classList.contains("is-open")) skipTrialOffer();
+        });
+      }
+      const skipBtn = $("trial-offer-skip");
+      if (skipBtn) skipBtn.addEventListener("click", skipTrialOffer);
+      const startBtn = $("trial-offer-start");
+      if (startBtn) startBtn.addEventListener("click", startTrialOfferBilling);
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (modal.classList.contains("is-open")) skipTrialOffer();
+      });
+    }
+
     var billingUiState = {
       billing_enabled: false,
       has_paid_access: false,
@@ -19550,10 +20134,31 @@
       const billing = state.billing || billingUiState || {};
       const billingOn = !!billing.billing_enabled;
       if (!state.is_superadmin && !state.can_use_full_app) {
-        if (billingOn) {
-          show = true;
-          cls += " is-pending";
-          html = "Start your parish’s <strong>14-day free trial</strong> under <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a> to unlock Mass generation.";
+        if (billingOn && needsParishTrial(state)) {
+          if (hasFreeMassCredit(state)) {
+            const premiumLeft = premiumMassRemaining(state);
+            const freeLeft = freeTierMassRemaining(state);
+            show = true;
+            cls += " is-pending";
+            const bits = [];
+            if (premiumLeft > 0) {
+              bits.push("<strong>" + premiumLeft + " premium</strong> Mass" + (premiumLeft === 1 ? "" : "es") + " with curated posters");
+            }
+            if (freeLeft > 0) {
+              bits.push("<strong>" + freeLeft + " basic free</strong> Mass" + (freeLeft === 1 ? "" : "es") + " this month");
+            }
+            html = "You have "
+              + bits.join(" and ")
+              + ". Start a 14-day trial anytime under <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a>.";
+          } else if (shouldShowTrialOfferCard(state)) {
+            // Card first; banner only after they skip.
+            show = false;
+            maybeShowTrialOffer(state);
+          } else {
+            show = true;
+            cls += " is-pending";
+            html = "Ready for your <strong>14-day free trial</strong>? Open <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a>, add your billing details, and start the trial to unlock Mass generation.";
+          }
         } else if (status === "pending" || status === "draft") {
           // Pending-approval users get the welcome + tour popups instead of a global banner.
           show = false;
@@ -19597,6 +20202,18 @@
       if (billing && typeof billing === "object") {
         billingUiState = Object.assign({}, billingUiState, billing);
       }
+      const premiumRemaining = data.premium_mass_remaining != null
+        ? Math.max(0, Number(data.premium_mass_remaining) || 0)
+        : (data.free_mass_remaining != null ? Math.max(0, Number(data.free_mass_remaining) || 0) : 0);
+      const freeTierRemaining = data.free_tier_mass_remaining != null
+        ? Math.max(0, Number(data.free_tier_mass_remaining) || 0)
+        : 0;
+      const canFull = data.can_use_full_app != null
+        ? !!data.can_use_full_app
+        : !!data.can_edit_church_profile;
+      const canGen = data.can_generate_mass != null
+        ? !!data.can_generate_mass
+        : !!(canFull || premiumRemaining > 0 || freeTierRemaining > 0);
       churchMembershipState = {
         membership_status: data.membership_status || "draft",
         community_name_locked: !!data.community_name_locked,
@@ -19607,9 +20224,19 @@
         can_request_parish_rename: !!data.can_request_parish_rename,
         can_edit_logo: data.can_edit_logo != null ? !!data.can_edit_logo : !data.logo_locked,
         can_edit_church_profile: !!data.can_edit_church_profile,
-        can_use_full_app: data.can_use_full_app != null ? !!data.can_use_full_app : !!data.can_edit_church_profile,
-        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!data.can_use_full_app && !data.is_superadmin),
-        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!data.can_use_full_app && !data.is_superadmin),
+        can_use_full_app: canFull,
+        can_generate_mass: canGen,
+        free_mass_remaining: premiumRemaining,
+        free_mass_used: data.free_mass_used != null ? !!data.free_mass_used : premiumRemaining <= 0,
+        premium_mass_remaining: premiumRemaining,
+        free_tier_mass_remaining: freeTierRemaining,
+        next_generation_tier: data.next_generation_tier
+          || (canFull ? "paid" : (premiumRemaining > 0 ? "premium" : (freeTierRemaining > 0 ? "free" : "none"))),
+        can_use_premium_posters: data.can_use_premium_posters != null
+          ? !!data.can_use_premium_posters
+          : !!(canFull || premiumRemaining > 0),
+        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!canFull && !data.is_superadmin),
+        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!canFull && !data.is_superadmin),
         is_superadmin: !!data.is_superadmin,
         role: (data.role || "member").toLowerCase(),
         parish_role: (data.parish_role || "").toLowerCase(),
@@ -19725,13 +20352,14 @@
     function syncPrivilegedUi() {
       const sa = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       const canFull = !!churchMembershipState.can_use_full_app;
+      const canGen = canGenerateMass(churchMembershipState);
       document.body.classList.toggle("is-superadmin", sa);
-      document.body.classList.toggle("is-limited-member", !canFull);
+      document.body.classList.toggle("is-limited-member", !canFull && !canGen);
       if (typeof applyAppVersionLabelLocalTime === "function") applyAppVersionLabelLocalTime();
       if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
 
       const flowPage = $("flow-page");
-      if (flowPage) flowPage.classList.toggle("is-readonly", !canFull);
+      if (flowPage) flowPage.classList.toggle("is-readonly", !canGen);
       const themePage = $("theme-page");
       if (themePage) themePage.classList.toggle("is-readonly", !sa);
 
@@ -19762,17 +20390,29 @@
     }
 
     function syncGenerateButtons() {
-      const canGen = churchMembershipState.can_use_full_app;
+      const canGen = canGenerateMass(churchMembershipState);
+      const premiumLeft = premiumMassRemaining(churchMembershipState);
+      const freeLeft = freeTierMassRemaining(churchMembershipState);
+      const tier = churchMembershipState.next_generation_tier || "";
       ["btn-generate-flow", "btn-generate-flow-inline"].forEach((id) => {
         const btn = $(id);
         if (!btn) return;
         btn.disabled = !canGen;
-        btn.title = canGen ? "" : "Mass generation requires approved parish membership.";
+        let title = "";
+        if (!canGen) {
+          title = "Start a 14-day trial under Settings → Billing to unlock Mass generation.";
+        } else if (tier === "premium" || (premiumLeft > 0 && tier !== "free")) {
+          title = "Uses 1 premium Mass with curated divider posters (" + premiumLeft + " left)";
+        } else if (tier === "free" || freeLeft > 0) {
+          title = "Uses 1 basic free Mass this month — no curated divider posters (" + freeLeft + " left)";
+        }
+        btn.title = title;
       });
     }
 
     window.addEventListener("verbum:membership", (event) => {
       if (event.detail) syncMembershipUi(event.detail);
+      renderCelebrantSelect(getMainCelebrantName());
     });
 
     function applyCommunityPayload(data) {
@@ -20645,9 +21285,10 @@
       platform: {
         label: "Platform",
         group: "System",
-        desc: "AI quotas, banners, storage, flags, health, and audit.",
+        desc: "AI quotas, Gospel posters, banners, storage, flags, health, and audit.",
         panels: [
           { id: "system-ai", label: "AI & quota" },
+          { id: "system-gospel-posters", label: "Gospel posters" },
           { id: "system-announcement", label: "Announce" },
           { id: "system-storage", label: "Storage" },
           { id: "system-flags", label: "Flags" },
@@ -20759,6 +21400,12 @@
         loadSaSongPreviews();
       }
       else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); loadSaParishQuotaTable(); }
+      else if (saState.panel === "system-gospel-posters") {
+        if (typeof initWeeklyStylePosters === "function") initWeeklyStylePosters();
+        if (typeof scheduleWeeklyStylePosterRefresh === "function") {
+          scheduleWeeklyStylePosterRefresh({ force: true });
+        }
+      }
       else if (saState.panel === "system-announcement") loadSaAnnouncementAdmin();
       else if (saState.panel === "system-storage") loadSaStorageBrowser();
       else if (saState.panel === "system-flags") loadSaFeatureFlags();
@@ -25922,6 +26569,7 @@
       { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
       { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
       { id: "page-calendar", label: "Liturgical Calendar", hint: "Page", group: "Pages", route: "/mass/calendar", keywords: ["calendar", "liturgical", "readings"] },
+      { id: "page-themes", label: "Themes", hint: "Page", group: "Pages", route: "/themes", keywords: ["theme", "marketplace", "design", "pack"] },
       { id: "page-theme", label: "Theme Lab", hint: "Page", group: "Pages", route: "/design/theme-lab", keywords: ["design", "theme", "style", "color"] },
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
       { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
@@ -26398,15 +27046,34 @@
       return objectUrl;
     }
 
+    function setWeeklyPosterCardHydrateLoading(card, on) {
+      if (!card) return;
+      card.classList.toggle("is-loading", !!on);
+      const badge = card.querySelector(".mw-weekly-posters__badge");
+      if (!badge) return;
+      if (on) {
+        if (!badge.dataset.idleText) badge.dataset.idleText = String(badge.textContent || "").trim();
+        badge.textContent = "Loading…";
+        badge.hidden = false;
+      } else if (!card.classList.contains("is-pending")) {
+        badge.hidden = true;
+      } else if (badge.dataset.idleText) {
+        badge.textContent = badge.dataset.idleText;
+        badge.hidden = false;
+      }
+    }
+
     async function hydrateWeeklyPosterCardImages(root) {
       const host = root || $("mw-weekly-posters-track");
       if (!host) return;
       const imgs = host.querySelectorAll("img[data-weekly-src]:not([data-weekly-hydrated='1'])");
       await Promise.all(Array.prototype.map.call(imgs, async (img) => {
+        const card = img.closest(".mw-weekly-posters__card");
         const src = img.getAttribute("data-weekly-src") || "";
         const full = img.getAttribute("data-weekly-full") || "";
         const proxy = img.getAttribute("data-weekly-proxy") || "";
         const tryUrls = [src, proxy, full].filter((u, i, arr) => u && arr.indexOf(u) === i);
+        setWeeklyPosterCardHydrateLoading(card, true);
         let ok = false;
         for (let i = 0; i < tryUrls.length; i += 1) {
           const candidate = tryUrls[i];
@@ -26436,8 +27103,19 @@
             if (resolvedProxy) {
               img.src = resolvedProxy;
               img.setAttribute("data-weekly-hydrated", "1");
+              ok = true;
             }
           } catch (_e3) { /* keep placeholder */ }
+        }
+        setWeeklyPosterCardHydrateLoading(card, false);
+        if (!ok && card && !card.classList.contains("is-pending")) {
+          // Ready in catalog but image failed — keep a soft loading shell, not white.
+          card.classList.add("is-pending");
+          const badge = card.querySelector(".mw-weekly-posters__badge");
+          if (badge) {
+            badge.hidden = false;
+            badge.textContent = "Retrying…";
+          }
         }
       }));
       if (typeof syncAiPosterOpacityPreview === "function") syncAiPosterOpacityPreview();
@@ -26678,10 +27356,14 @@
     }
 
     var HOME_CTA_POSTER_STYLE_KEY = "home_cta_weekly_poster_style";
-    var HOME_CTA_POSTER_FADE_MS = 900;
+    var HOME_CTA_POSTER_SLIDE_MS = 720;
     var HOME_CTA_POSTER_AUTO_MS = 9000;
     var homeCtaPosterBgInflight = null;
     var homeCtaPosterSyncingFromHome = false;
+    var homeCtaPosterAwaitRetryTimer = null;
+    var homeCtaPosterAwaitRetries = 0;
+    var HOME_CTA_POSTER_AWAIT_MAX = 8;
+    var HOME_CTA_POSTER_AWAIT_MS = 8000;
     var homeCtaPosterState = {
       sunday: "",
       items: [],
@@ -26697,6 +27379,62 @@
       const card = $("home-mass-card");
       if (!card) return [];
       return Array.prototype.slice.call(card.querySelectorAll(".redesign-mass-bg--layer"));
+    }
+
+    function clearHomeCtaPosterMotionClasses(bg) {
+      if (!bg) return;
+      bg.classList.remove(
+        "is-enter-next",
+        "is-enter-prev",
+        "is-exit-next",
+        "is-exit-prev",
+        "is-sliding",
+        "is-animating"
+      );
+    }
+
+    function settleHomeCtaPosterLayers(activeLayer) {
+      const layers = homeCtaPosterLayers();
+      if (!layers.length) return;
+      const active = activeLayer && layers.indexOf(activeLayer) >= 0
+        ? activeLayer
+        : (layers.find((bg) => bg.classList.contains("is-visible")) || layers[0]);
+      layers.forEach((bg) => {
+        clearHomeCtaPosterMotionClasses(bg);
+        bg.classList.toggle("is-visible", bg === active);
+      });
+      // Recovery: never leave has-poster-bg without a painted visible layer.
+      const card = $("home-mass-card");
+      if (card && card.classList.contains("has-poster-bg")) {
+        const painted = !!(active && String(active.style.backgroundImage || "").trim());
+        if (!painted) {
+          card.classList.remove("has-poster-bg");
+          // Keep loading chrome — don't flash the empty white card.
+          setHomeCtaPosterLoading(true);
+        }
+      }
+    }
+
+    function stopHomeCtaPosterAwaitRetry() {
+      if (homeCtaPosterAwaitRetryTimer) {
+        clearTimeout(homeCtaPosterAwaitRetryTimer);
+        homeCtaPosterAwaitRetryTimer = null;
+      }
+    }
+
+    function keepHomeCtaPosterAwaiting(styleLabel) {
+      const card = $("home-mass-card");
+      if (!card) return;
+      if (!card.classList.contains("has-poster-bg")) {
+        setHomeCtaPosterLoading(true, styleLabel || "");
+      }
+      stopHomeCtaPosterAwaitRetry();
+      if (homeCtaPosterAwaitRetries >= HOME_CTA_POSTER_AWAIT_MAX) return;
+      homeCtaPosterAwaitRetries += 1;
+      homeCtaPosterAwaitRetryTimer = setTimeout(() => {
+        homeCtaPosterAwaitRetryTimer = null;
+        void refreshHomeMassCtaPosterBg({ forceReload: true });
+      }, HOME_CTA_POSTER_AWAIT_MS);
     }
 
     function activeExtrasPosterStyleId() {
@@ -26748,12 +27486,20 @@
       prev.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        void showHomeCtaPosterAt(homeCtaPosterState.index - 1, { animate: true, source: "manual" });
+        void showHomeCtaPosterAt(homeCtaPosterState.index - 1, {
+          animate: true,
+          source: "manual",
+          dir: -1,
+        });
       });
       next.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, { animate: true, source: "manual" });
+        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, {
+          animate: true,
+          source: "manual",
+          dir: 1,
+        });
       });
     }
 
@@ -26782,42 +27528,49 @@
     }
     window.syncHomeCtaPosterToExtrasStyle = syncHomeCtaPosterToExtrasStyle;
 
-    function setHomeCtaPosterLoading(on) {
+    function setHomeCtaPosterLoading(on, styleLabel) {
       const card = $("home-mass-card");
       if (!card) return;
-      card.classList.toggle("is-poster-loading", !!on);
+      // Never drop loading chrome unless a poster is actually painted.
+      const painted = card.classList.contains("has-poster-bg");
+      const show = !!on || !painted;
+      card.classList.toggle("is-poster-loading", show);
       const el = $("home-mass-poster-loading");
       if (el) {
-        el.hidden = !on;
-        el.setAttribute("aria-busy", on ? "true" : "false");
+        el.hidden = !show;
+        el.setAttribute("aria-busy", show ? "true" : "false");
+        const labelEl = el.querySelector(".home-mass-poster-loading__label");
+        if (labelEl) {
+          const name = String(styleLabel || "").trim();
+          labelEl.textContent = show
+            ? (name ? ("Loading " + name + "…") : "Loading this week poster…")
+            : "Loading this week poster…";
+        }
       }
       const veil = $("home-mass-poster-loading-veil");
-      if (veil) veil.hidden = !on;
+      if (veil) veil.hidden = !show;
     }
 
-    function clearHomeMassCtaPosterBg() {
+    function clearHomeMassCtaPosterBg(opts) {
       stopHomeCtaPosterAutoplay();
+      stopHomeCtaPosterAwaitRetry();
+      homeCtaPosterAwaitRetries = 0;
       const card = $("home-mass-card");
       const layers = homeCtaPosterLayers();
       const nav = $("home-mass-poster-nav");
       if (card) {
         card.classList.remove("has-poster-bg");
-        card.classList.remove("is-poster-loading");
         card.removeAttribute("data-home-poster-style");
       }
       layers.forEach((bg, i) => {
         bg.style.backgroundImage = "";
         bg.removeAttribute("data-poster-url");
+        clearHomeCtaPosterMotionClasses(bg);
         bg.classList.toggle("is-visible", i === 0);
       });
       if (nav) nav.hidden = true;
-      const loading = $("home-mass-poster-loading");
-      if (loading) {
-        loading.hidden = true;
-        loading.setAttribute("aria-busy", "false");
-      }
-      const veil = $("home-mass-poster-loading-veil");
-      if (veil) veil.hidden = true;
+      // After clear there is no painted poster — always keep loading chrome.
+      setHomeCtaPosterLoading(true, (opts && opts.styleLabel) || "");
       homeCtaPosterState = Object.assign(homeCtaPosterState, {
         sunday: "",
         items: [],
@@ -26841,17 +27594,26 @@
     async function resolveHomeCtaPosterItem(item) {
       if (!item) return null;
       if (item._resolvedUrl) return item;
+      const sunday = String(
+        homeCtaPosterState.sunday ||
+        (typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "") ||
+        ""
+      ).trim();
+      const styleId = String(item.id || "").trim();
       const full = String(item.full_url || "").trim();
       const card = String(item.card_url || "").trim();
-      const cardProxy = card || (item.id
-        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(homeCtaPosterState.sunday || "") + "&style=" + encodeURIComponent(item.id) + "&variant=card")
-        : "");
+      // Always keep an active (non-versioned) card proxy as a last-resort paint path.
+      const activeCard = styleId && sunday
+        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(sunday) + "&style=" + encodeURIComponent(styleId) + "&variant=card")
+        : "";
+      const cardProxy = card || activeCard;
       // Prefer HTTPS signed assets in CSS directly (no JS blob hydrate) — sharp + fast CDN load.
       // Fall back to sharp 1600px card WebP, never the tiny 720 picker thumb.
       const candidates = [];
       if (/^https?:\/\//i.test(full)) candidates.push(full);
       if (/^https?:\/\//i.test(card)) candidates.push(card);
       if (cardProxy) candidates.push(cardProxy);
+      if (activeCard && activeCard !== cardProxy) candidates.push(activeCard);
       if (full) candidates.push(full);
       const seen = {};
       const urls = [];
@@ -26871,6 +27633,9 @@
             continue;
           }
           if (!resolved) continue;
+          // Confirm the asset actually decodes before accepting it as the CTA bg.
+          const ok = await preloadHomeCtaPosterUrl(resolved);
+          if (!ok) continue;
           item._resolvedUrl = resolved;
           item._rawUrl = raw;
           return item;
@@ -26893,24 +27658,75 @@
       if (index === homeCtaPosterState.index && card.classList.contains("has-poster-bg") && animate) {
         return true;
       }
-      const item = await resolveHomeCtaPosterItem(items[index]);
-      if (!item || !item._resolvedUrl) return false;
+      const pendingItem = items[index];
+      const needsResolve = !(pendingItem && pendingItem._resolvedUrl);
+      if (needsResolve) {
+        setHomeCtaPosterLoading(true, (pendingItem && (pendingItem.label || pendingItem.id)) || "");
+      }
+      const item = await resolveHomeCtaPosterItem(pendingItem);
+      if (!item || !item._resolvedUrl) {
+        // Still waiting on decode/hydrate — keep loading, never flash white.
+        if (needsResolve && !card.classList.contains("has-poster-bg")) {
+          setHomeCtaPosterLoading(true, (pendingItem && (pendingItem.label || pendingItem.id)) || "");
+        } else if (needsResolve && card.classList.contains("has-poster-bg")) {
+          setHomeCtaPosterLoading(false);
+        }
+        return false;
+      }
 
       const incoming = layers[homeCtaPosterState.layer === 0 ? 1 % layers.length : 0];
       const outgoing = layers[homeCtaPosterState.layer] || layers[0];
       const targetLayer = layers.length > 1 ? incoming : outgoing;
+      // dir > 0 = forever-next (enter from right); dir < 0 = previous (enter from left).
+      // Infer neighbor direction when callers omit dir so wrap-around still feels forward/back.
+      let dir = Number(opts && opts.dir);
+      if (!dir || !Number.isFinite(dir)) {
+        const from = Number(homeCtaPosterState.index) || 0;
+        if ((from + 1) % total === index) dir = 1;
+        else if ((from - 1 + total) % total === index) dir = -1;
+        else dir = index >= from ? 1 : -1;
+      }
+      dir = dir < 0 ? -1 : 1;
+      const reduceMotion = !!(window.matchMedia
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
       targetLayer.style.backgroundImage = 'url("' + item._resolvedUrl.replace(/"/g, '\\"') + '")';
       targetLayer.setAttribute("data-poster-url", item._rawUrl || "");
 
+      layers.forEach((bg) => clearHomeCtaPosterMotionClasses(bg));
+
       if (animate && layers.length > 1 && outgoing !== targetLayer) {
         homeCtaPosterState.fading = true;
-        targetLayer.classList.add("is-visible");
-        outgoing.classList.remove("is-visible");
+        if (!reduceMotion) {
+          // 1) Park incoming off-screen with transitions off (paint "from" frame).
+          targetLayer.classList.remove("is-visible");
+          targetLayer.classList.add(
+            "is-sliding",
+            dir > 0 ? "is-enter-next" : "is-enter-prev"
+          );
+          outgoing.classList.add("is-sliding", "is-visible");
+          void targetLayer.offsetWidth;
+          // 2) Next frames: enable transition, then push both panels together.
+          requestAnimationFrame(() => {
+            targetLayer.classList.add("is-animating");
+            outgoing.classList.add("is-animating");
+            requestAnimationFrame(() => {
+              targetLayer.classList.remove("is-enter-next", "is-enter-prev");
+              targetLayer.classList.add("is-visible");
+              outgoing.classList.remove("is-visible");
+              outgoing.classList.add(dir > 0 ? "is-exit-next" : "is-exit-prev");
+            });
+          });
+        } else {
+          settleHomeCtaPosterLayers(targetLayer);
+        }
         homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
-        window.setTimeout(() => { homeCtaPosterState.fading = false; }, HOME_CTA_POSTER_FADE_MS);
+        window.setTimeout(() => {
+          settleHomeCtaPosterLayers(targetLayer);
+          homeCtaPosterState.fading = false;
+        }, HOME_CTA_POSTER_SLIDE_MS + 40);
       } else {
-        layers.forEach((bg) => bg.classList.toggle("is-visible", bg === targetLayer));
+        settleHomeCtaPosterLayers(targetLayer);
         homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
       }
 
@@ -26926,12 +27742,17 @@
         try { setWeeklyPosterStyle(item.id); } finally { homeCtaPosterSyncingFromHome = false; }
       }
 
-      // Wait for the image to decode before dropping the loading veil.
-      if (!(opts && opts.animate)) {
-        await preloadHomeCtaPosterUrl(item._resolvedUrl);
-        setHomeCtaPosterLoading(false);
+      stopHomeCtaPosterAwaitRetry();
+      homeCtaPosterAwaitRetries = 0;
+      setHomeCtaPosterLoading(false);
+      // Final guard: visible layer must have paint (CSS !important + settle).
+      if (!String(targetLayer.style.backgroundImage || "").trim()) {
+        settleHomeCtaPosterLayers(targetLayer);
+        if (!card.classList.contains("has-poster-bg")) {
+          keepHomeCtaPosterAwaiting((item && (item.label || item.id)) || "");
+        }
+        return false;
       }
-
       if (opts && opts.source === "manual") startHomeCtaPosterAutoplay();
       return true;
     }
@@ -26951,25 +27772,52 @@
       return 0;
     }
 
+    function homeCtaPosterSundayKey(iso) {
+      const raw = String(iso || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
+      // Normalize any mass date to that week's Sunday (local noon).
+      try {
+        const d = new Date(raw + "T12:00:00");
+        if (Number.isNaN(d.getTime())) return raw;
+        const add = d.getDay() === 0 ? 0 : -d.getDay();
+        d.setDate(d.getDate() + add);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return y + "-" + m + "-" + day;
+      } catch (_e) {
+        return raw;
+      }
+    }
+
     async function refreshHomeMassCtaPosterBg(opts) {
       const card = $("home-mass-card");
       if (!card) return;
       bindHomeCtaPosterNav();
       let forceReload = !!(opts && opts.forceReload);
       const preferStyle = String((opts && opts.preferStyle) || activeExtrasPosterStyleId() || "").trim();
-      const sunday = typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "";
+      const sunday = homeCtaPosterSundayKey(
+        (typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "") || ""
+      );
       const activeVer = Number(
         (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
           ? (weeklyPosterVersionState.active || 0)
           : 0
       );
+      const extrasSunday = homeCtaPosterSundayKey(
+        (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState && weeklyPosterVersionState.sunday)
+          || (typeof weeklyPosterCatalogState !== "undefined" && weeklyPosterCatalogState && weeklyPosterCatalogState.sunday)
+          || ""
+      );
       if (!sunday) {
-        clearHomeMassCtaPosterBg();
+        // Sunday not known yet — keep loading chrome, never flash white mesh.
+        keepHomeCtaPosterAwaiting();
         return;
       }
       if (
         !forceReload &&
         activeVer &&
+        extrasSunday === sunday &&
         homeCtaPosterState.activeVersion &&
         homeCtaPosterState.activeVersion !== activeVer
       ) {
@@ -26984,52 +27832,63 @@
         if (preferStyle) {
           const idx = homeCtaPosterState.items.findIndex((it) => String(it.id) === preferStyle);
           if (idx >= 0 && idx !== homeCtaPosterState.index) {
-            await showHomeCtaPosterAt(idx, { animate: false, source: "extras" });
+            const shown = await showHomeCtaPosterAt(idx, { animate: false, source: "extras" });
+            if (!shown) forceReload = true;
           }
         }
-        setHomeCtaPosterLoading(false);
-        startHomeCtaPosterAutoplay();
-        syncHomeCtaPosterNav();
-        return;
+        if (!forceReload) {
+          stopHomeCtaPosterAwaitRetry();
+          homeCtaPosterAwaitRetries = 0;
+          setHomeCtaPosterLoading(false);
+          startHomeCtaPosterAutoplay();
+          syncHomeCtaPosterNav();
+          return;
+        }
       }
       if (homeCtaPosterBgInflight) return homeCtaPosterBgInflight;
       if (!card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(true);
       homeCtaPosterBgInflight = (async () => {
+        let data = null;
+        let painted = false;
         try {
           if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
             await window.VerbumAuth.waitUntilReady(4000);
           }
-          // Prefer the Extras active version archive when known (matches what Step 6 shows).
           let ready = [];
+          // Only reuse the Extras version catalog when it is for THIS upcoming Sunday.
           try {
-            if (typeof weeklyPosterViewCatalogForActiveVersion === "function") {
+            if (typeof weeklyPosterViewCatalogForActiveVersion === "function" && extrasSunday === sunday) {
               const view = weeklyPosterViewCatalogForActiveVersion();
-              if (view && Array.isArray(view.items)) {
+              const viewSunday = homeCtaPosterSundayKey((view && view.sunday) || extrasSunday);
+              if (view && viewSunday === sunday && Array.isArray(view.items)) {
                 ready = view.items.filter((it) => it && it.id && it.ready);
               }
             }
           } catch (_eView) { /* fall through to API catalog */ }
 
-          if (!ready.length) {
-            const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
-              ? await window.VerbumAuth.getAuthHeaders()
-              : {};
-            const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
-              headers: headers,
-              credentials: "same-origin",
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || !data.ok) {
-              if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
-              return;
-            }
+          // Authoritative source: active disk heroes for the upcoming Sunday.
+          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+            ? await window.VerbumAuth.getAuthHeaders()
+            : {};
+          const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
+            headers: headers,
+            credentials: "same-origin",
+          });
+          data = await res.json().catch(() => ({}));
+          if (res.ok && data && data.ok) {
             if (data.versions && typeof syncWeeklyPosterVersionUi === "function") {
               try { syncWeeklyPosterVersionUi(data.versions); } catch (_eVer) { /* ignore */ }
             }
-            ready = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
+            const apiReady = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
+            // Prefer API active heroes (what parishioners get). Keep versioned
+            // preview only when API has nothing yet for this Sunday.
+            if (apiReady.length) ready = apiReady;
+          } else if (!ready.length) {
+            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
+            return;
           }
           if (!ready.length) {
-            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
             return;
           }
 
@@ -27039,47 +27898,57 @@
           homeCtaPosterState.sunday = sunday;
           homeCtaPosterState.items = ready;
           homeCtaPosterState.activeVersion = Number(
-            (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
+            (data && data.versions && data.versions.active_version)
+            || ((typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
               ? (weeklyPosterVersionState.active || activeVer || 0)
-              : activeVer
+              : activeVer)
+            || 0
           );
 
           const startIndex = pickInitialHomeCtaPosterIndex(homeCtaPosterState.items, preferStyle);
-          // Resolve preferred first, but race the rest so a faster asset can still paint quickly.
           const preferred = resolveHomeCtaPosterItem(homeCtaPosterState.items[startIndex]);
           homeCtaPosterState.items.forEach((it, i) => {
             if (i === startIndex) return;
             void resolveHomeCtaPosterItem(it);
           });
           let first = await preferred;
-          if (!first) {
+          let shown = false;
+          if (first) {
+            shown = await showHomeCtaPosterAt(startIndex, { animate: false, source: "boot" });
+          }
+          if (!shown) {
             for (let i = 0; i < homeCtaPosterState.items.length; i++) {
               if (i === startIndex) continue;
               first = await resolveHomeCtaPosterItem(homeCtaPosterState.items[i]);
-              if (first) {
-                await showHomeCtaPosterAt(i, { animate: false, source: "boot" });
-                startHomeCtaPosterAutoplay();
-                return;
-              }
+              if (!first) continue;
+              shown = await showHomeCtaPosterAt(i, { animate: false, source: "boot" });
+              if (shown) break;
             }
-            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+          }
+          if (!shown) {
+            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
             return;
           }
-          await showHomeCtaPosterAt(startIndex, { animate: false, source: "boot" });
-          // Decode remaining assets in the background for smooth fades.
+          painted = true;
           homeCtaPosterState.items.forEach((it) => {
             if (it && it._resolvedUrl) void preloadHomeCtaPosterUrl(it._resolvedUrl);
           });
           startHomeCtaPosterAutoplay();
         } catch (_e) {
-          if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+          if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
         } finally {
           homeCtaPosterBgInflight = null;
-          if (card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(false);
+          // Only drop the veil once a poster is actually painted.
+          if (painted || card.classList.contains("has-poster-bg")) {
+            setHomeCtaPosterLoading(false);
+          } else if (!card.classList.contains("is-poster-loading")) {
+            setHomeCtaPosterLoading(true);
+          }
         }
       })();
       return homeCtaPosterBgInflight;
     }
+
     window.refreshHomeMassCtaPosterBg = refreshHomeMassCtaPosterBg;
     if (!window.__homeCtaPosterAuthHook) {
       window.__homeCtaPosterAuthHook = true;
@@ -28319,9 +29188,9 @@
         ? '<span class="mass-gen-loader__step-icon" aria-hidden="true">✕</span>'
         : '<span class="mass-gen-loader__step-icon" aria-hidden="true"><span class="mass-gen-loader__step-spinner"></span></span>';
       list.innerHTML =
-        '<li class="mass-gen-loader__step ' + state + '" role="listitem">' +
-          icon +
-          '<span class="mass-gen-loader__step-label">' + escapeHtml(label) + "</span>" +
+          '<li class="mass-gen-loader__step ' + state + '" role="listitem">' +
+            icon +
+            '<span class="mass-gen-loader__step-label">' + escapeHtml(label) + "</span>" +
         "</li>";
     }
 
@@ -28357,7 +29226,7 @@
       massGenProgressState.steps = steps;
       massGenProgressState.current = idx;
       renderMassGenSteps(steps, idx, o.failedIndex);
-      const msgEl = $("mass-gen-loader-msg");
+        const msgEl = $("mass-gen-loader-msg");
       let statusText = "This may take a moment…";
       if (msgEl) {
         const beat = steps[idx] || "";
@@ -28524,10 +29393,10 @@
       const retryBtn = $("mass-gen-loader-retry");
       if (retryBtn) {
         retryBtn.addEventListener("click", () => {
-          const retry = massGenProgressState.onRetry;
-          setMassGenLoading(false);
-          if (retry) retry();
-        });
+        const retry = massGenProgressState.onRetry;
+        setMassGenLoading(false);
+        if (retry) retry();
+      });
       }
     })();
 
@@ -28711,6 +29580,7 @@
     var weeklyPosterAutoTimer = 0;
     var weeklyPosterEnsureInflight = false;
     var weeklyPosterForceInflight = false;
+    var weeklyPosterOverwriteInflight = false;
     var weeklyPosterUnlockReadyChecks = false;
     var weeklyPosterRefreshToken = 0;
     var weeklyPosterRefreshDate = "";
@@ -28718,11 +29588,24 @@
     var weeklyPosterVersionState = { sunday: "", active: 0, versions: [], sundays: [] };
     var weeklyPosterCatalogState = { ready: false, sunday: "", date: "", readyCount: 0, total: 0 };
 
+    function weeklyPosterSaPanelOpen() {
+      const page = $("superadmin-page");
+      if (!page || page.hidden || !page.classList.contains("active")) return false;
+      const panel = document.querySelector('.sa-panel[data-sa-panel="system-gospel-posters"]');
+      return !!(panel && !panel.hidden);
+    }
+
     function weeklyPosterMassDate() {
+      // Superadmin Gospel posters panel: Sunday picker is the catalog date.
+      if (weeklyPosterSaPanelOpen()) {
+        const sunSel = $("mw-weekly-posters-sunday");
+        const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
+        if (fromSun) return fromSun;
+      }
       const el = $("mass-date") || $("flow-mass-date");
       const fromMass = el && el.value ? String(el.value).trim() : "";
       if (fromMass) return fromMass;
-      // Fallback: Sunday dropdown (SA browsing) — never invent today's date.
+      // Fallback: Sunday dropdown when set (SA) — never invent today's date.
       const sunSel = $("mw-weekly-posters-sunday");
       const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
       return fromSun;
@@ -28751,7 +29634,7 @@
 
     /** First carousel card that is ready (not pending), or "". */
     function firstReadyWeeklyPosterStyleId() {
-      const track = $("mw-weekly-posters-track");
+      const track = $("mw-weekly-posters-track") || $("sa-weekly-posters-track");
       if (!track) return "";
       const btn = track.querySelector(".mw-weekly-posters__card:not(.is-pending)");
       return btn ? String(btn.getAttribute("data-weekly-style") || "").trim() : "";
@@ -28777,8 +29660,6 @@
     }
 
     function syncWeeklyPosterDateIndicator(catalog) {
-      const el = $("mw-weekly-posters-date");
-      if (!el) return;
       const sunday = String(
         (catalog && catalog.sunday) ||
         weeklyPosterCatalogState.sunday ||
@@ -28786,13 +29667,24 @@
         weeklyPosterMassDate() ||
         ""
       ).trim();
-      if (!sunday) {
-        el.hidden = true;
-        el.textContent = "";
-        return;
+      const label = sunday ? ("Mass Sunday · " + formatWeeklyPosterSundayLabel(sunday)) : "";
+      ["mw-weekly-posters-date", "sa-weekly-posters-date"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        if (!sunday) {
+          el.hidden = true;
+          el.textContent = "";
+          return;
+        }
+        el.hidden = false;
+        el.textContent = label;
+      });
+      const saHint = $("mw-weekly-posters-sa-hint");
+      if (saHint) {
+        const sa = isWeeklyPosterSuperadmin();
+        saHint.hidden = !sa;
+        if (sa) saHint.removeAttribute("hidden");
       }
-      el.hidden = false;
-      el.textContent = "Mass Sunday · " + formatWeeklyPosterSundayLabel(sunday);
     }
 
     function setWeeklyPosterProgress(state) {
@@ -28801,12 +29693,12 @@
       const pctEl = $("mw-weekly-posters-progress-pct");
       const fill = $("mw-weekly-posters-progress-fill");
       const track = $("mw-weekly-posters-progress-track");
-      const host = $("mw-weekly-posters");
+      const hosts = [$("mw-weekly-posters"), $("sa-weekly-posters")].filter(Boolean);
       if (!wrap) return;
       if (!state || !state.active) {
         wrap.hidden = true;
         wrap.classList.remove("is-active");
-        if (host) host.classList.remove("is-generating");
+        hosts.forEach((host) => host.classList.remove("is-generating"));
         if (fill) fill.style.width = "0%";
         if (track) track.setAttribute("aria-valuenow", "0");
         if (pctEl) pctEl.textContent = "0%";
@@ -28820,7 +29712,7 @@
       const dateLabel = String(state.dateLabel || "").trim();
       wrap.hidden = false;
       wrap.classList.add("is-active");
-      if (host) host.classList.add("is-generating");
+      hosts.forEach((host) => host.classList.add("is-generating"));
       if (fill) fill.style.width = pct + "%";
       if (track) track.setAttribute("aria-valuenow", String(pct));
       if (pctEl) pctEl.textContent = pct + "%";
@@ -28833,12 +29725,32 @@
     }
 
     function markWeeklyPosterCardLoading(styleId, on) {
-      const track = $("mw-weekly-posters-track");
-      if (!track) return;
-      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
-        const match = btn.getAttribute("data-weekly-style") === styleId;
-        btn.classList.toggle("is-loading", !!(on && match));
-        if (!on) btn.classList.remove("is-loading");
+      ["mw-weekly-posters-track", "sa-weekly-posters-track"].forEach((id) => {
+        const track = $(id);
+        if (!track) return;
+        track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+          const match = btn.getAttribute("data-weekly-style") === styleId;
+          if (on && match) {
+            btn.classList.add("is-loading");
+            const badge = btn.querySelector(".mw-weekly-posters__badge");
+            if (badge) {
+              if (!badge.dataset.idleText) {
+                badge.dataset.idleText = String(badge.textContent || "").trim() || "Not generated yet";
+              }
+              badge.hidden = false;
+              badge.textContent = "Generating…";
+            }
+          } else if (!on) {
+            btn.classList.remove("is-loading");
+            const badge = btn.querySelector(".mw-weekly-posters__badge");
+            if (badge && btn.classList.contains("is-pending")) {
+              badge.hidden = false;
+              badge.textContent = badge.dataset.idleText || "Not generated yet";
+            } else if (badge && !btn.classList.contains("is-pending")) {
+              badge.hidden = true;
+            }
+          }
+        });
       });
     }
 
@@ -28893,17 +29805,16 @@
       } else {
         stopWeeklyPosterAutoScroll();
       }
+      syncWeeklyPosterExpandUi();
       window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
     }
 
     function syncWeeklyPosterSelectionUi() {
       const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
-      const track = $("mw-weekly-posters-track");
-      const viewport = $("mw-weekly-posters-viewport");
-      if (!track) return;
       let val = sel ? String(sel.value || "cinematic") : "cinematic";
       let pick = val === "auto" ? "cinematic" : val;
-      let pickBtn = track.querySelector('[data-weekly-style="' + pick + '"]');
+      const extrasTrack = $("mw-weekly-posters-track");
+      let pickBtn = extrasTrack && extrasTrack.querySelector('[data-weekly-style="' + pick + '"]');
       // Never leave a pending (not-yet-generated) style selected.
       if (!pickBtn || pickBtn.classList.contains("is-pending")) {
         const readyId = firstReadyWeeklyPosterStyleId();
@@ -28916,22 +29827,28 @@
               if (el && el.value !== readyId) el.value = readyId;
             });
           }
-          pickBtn = track.querySelector('[data-weekly-style="' + pick + '"]');
         }
       }
-      let selectedBtn = null;
-      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
-        const on = btn.getAttribute("data-weekly-style") === pick;
-        btn.classList.toggle("is-selected", on);
-        btn.setAttribute("aria-selected", on ? "true" : "false");
-        if (on) selectedBtn = btn;
+      [
+        { track: $("mw-weekly-posters-track"), viewport: $("mw-weekly-posters-viewport") },
+        { track: $("sa-weekly-posters-track"), viewport: $("sa-weekly-posters-viewport") },
+      ].forEach((pair) => {
+        const track = pair.track;
+        if (!track) return;
+        let selectedBtn = null;
+        track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+          const on = btn.getAttribute("data-weekly-style") === pick;
+          btn.classList.toggle("is-selected", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+          if (on) selectedBtn = btn;
+        });
+        if (selectedBtn && pair.viewport && !selectedBtn.classList.contains("is-pending")) {
+          const left = selectedBtn.offsetLeft;
+          if (Math.abs(pair.viewport.scrollLeft - left) > 4) {
+            pair.viewport.scrollTo({ left: left, behavior: "smooth" });
+          }
+        }
       });
-      if (selectedBtn && viewport && !selectedBtn.classList.contains("is-pending")) {
-        const left = selectedBtn.offsetLeft;
-        if (Math.abs(viewport.scrollLeft - left) > 4) {
-          viewport.scrollTo({ left: left, behavior: "smooth" });
-        }
-      }
       syncAiPosterOpacityPreview();
     }
 
@@ -28952,17 +29869,222 @@
       });
       syncAiPosterToggleState();
       syncWeeklyPosterSelectionUi();
+      syncWeeklyPosterExpandUi();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
       if (!homeCtaPosterSyncingFromHome && typeof syncHomeCtaPosterToExtrasStyle === "function") {
         void syncHomeCtaPosterToExtrasStyle(sid);
       }
     }
 
-    function scrollWeeklyPostersBy(dir) {
-      const viewport = $("mw-weekly-posters-viewport");
-      if (!viewport) return;
-      const delta = Math.max(1, viewport.clientWidth) * (dir < 0 ? -1 : 1);
-      viewport.scrollBy({ left: delta, behavior: "smooth" });
+    function currentWeeklyPosterExpandTarget() {
+      const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
+      let styleId = sel ? String(sel.value || "").trim() : "";
+      if (!styleId || styleId === "auto") styleId = firstReadyWeeklyPosterStyleId() || "cinematic";
+      const tracks = [$("mw-weekly-posters-track"), $("sa-weekly-posters-track")].filter(Boolean);
+      let btn = null;
+      for (let i = 0; i < tracks.length; i++) {
+        btn = tracks[i].querySelector('[data-weekly-style="' + styleId + '"]');
+        if (btn) break;
+      }
+      if (!btn || btn.classList.contains("is-pending")) {
+        for (let i = 0; i < tracks.length; i++) {
+          const ready = tracks[i].querySelector(".mw-weekly-posters__card:not(.is-pending)");
+          if (ready) {
+            btn = ready;
+            styleId = String(ready.getAttribute("data-weekly-style") || styleId);
+            break;
+          }
+        }
+      }
+      if (!btn) return null;
+      const img = btn.querySelector("img.mw-weekly-posters__img");
+      const full = img && (img.getAttribute("data-weekly-full") || img.getAttribute("data-weekly-src") || img.currentSrc || img.src);
+      const label = String(btn.getAttribute("title") || styleId || "Poster").trim();
+      return {
+        styleId: styleId,
+        label: label,
+        fullUrl: String(full || "").trim(),
+        ready: !btn.classList.contains("is-pending"),
+      };
+    }
+
+    function syncWeeklyPosterExpandUi() {
+      const btn = $("mw-weekly-posters-expand");
+      if (!btn) return;
+      const target = currentWeeklyPosterExpandTarget();
+      const canView = !!(target && target.ready && target.fullUrl);
+      btn.hidden = !canView;
+      btn.disabled = !canView;
+      if (canView) {
+        btn.setAttribute("aria-label", "View " + target.label + " poster larger");
+        btn.title = "View " + target.label + " larger";
+      } else {
+        btn.setAttribute("aria-label", "View poster larger");
+        btn.title = "View poster larger";
+      }
+    }
+
+    function closeWeeklyPosterExpandModal() {
+      const modal = $("mw-weekly-poster-expand-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      const img = $("mw-weekly-poster-expand-img");
+      if (img) {
+        img.removeAttribute("src");
+        img.alt = "";
+      }
+    }
+
+    async function openWeeklyPosterExpandModal() {
+      const target = currentWeeklyPosterExpandTarget();
+      if (!target || !target.ready || !target.fullUrl) return;
+      const modal = $("mw-weekly-poster-expand-modal");
+      const img = $("mw-weekly-poster-expand-img");
+      const title = $("mw-weekly-poster-expand-title");
+      if (!modal || !img) return;
+      if (title) title.textContent = target.label || "Poster";
+      img.alt = (target.label || "Poster") + " preview";
+      let src = target.fullUrl;
+      try {
+        if (typeof hydrateWeeklyPosterUrl === "function") {
+          src = (await hydrateWeeklyPosterUrl(src)) || src;
+        }
+      } catch (_e) { /* keep original */ }
+      img.src = src;
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      const closeBtn = $("mw-weekly-poster-expand-close");
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function bindWeeklyPosterExpandUi() {
+      const expandBtn = $("mw-weekly-posters-expand");
+      const modal = $("mw-weekly-poster-expand-modal");
+      if (expandBtn && expandBtn.dataset.bound !== "1") {
+        expandBtn.dataset.bound = "1";
+        expandBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void openWeeklyPosterExpandModal();
+        });
+      }
+      if (!modal || modal.dataset.bound === "1") {
+        syncWeeklyPosterExpandUi();
+        return;
+      }
+      modal.dataset.bound = "1";
+      const backdrop = $("mw-weekly-poster-expand-backdrop");
+      const closeBtn = $("mw-weekly-poster-expand-close");
+      [backdrop, closeBtn].forEach((el) => {
+        if (el) el.addEventListener("click", () => closeWeeklyPosterExpandModal());
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (!modal.classList.contains("is-open")) return;
+        e.preventDefault();
+        closeWeeklyPosterExpandModal();
+      });
+      syncWeeklyPosterExpandUi();
+    }
+
+    var weeklyPosterScrollLockUntil = Object.create(null);
+
+    function weeklyPosterCardStep(viewport) {
+      if (!viewport) return 1;
+      const track = viewport.querySelector(".mw-weekly-posters__track");
+      const card = track && track.querySelector(".mw-weekly-posters__card");
+      const w = card ? card.getBoundingClientRect().width : 0;
+      return Math.max(1, Math.round(w) || viewport.clientWidth || 1);
+    }
+
+    function weeklyPosterViewportReady(viewport) {
+      if (!viewport) return false;
+      // Hidden / not laid out viewports report 0 width — never reorder then.
+      return viewport.clientWidth >= 48 && viewport.scrollWidth > viewport.clientWidth + 8;
+    }
+
+    function snapWeeklyPosterViewport(viewport, preferredBtn) {
+      if (!viewport || !weeklyPosterViewportReady(viewport)) return;
+      const track = viewport.querySelector(".mw-weekly-posters__track");
+      if (!track) return;
+      const cards = Array.prototype.slice.call(track.querySelectorAll(".mw-weekly-posters__card"));
+      if (!cards.length) return;
+      let target = preferredBtn && cards.indexOf(preferredBtn) >= 0 ? preferredBtn : null;
+      if (!target) {
+        let best = Infinity;
+        cards.forEach((card) => {
+          const d = Math.abs(card.offsetLeft - viewport.scrollLeft);
+          if (d < best) {
+            best = d;
+            target = card;
+          }
+        });
+      }
+      if (!target) return;
+      const prevBehavior = viewport.style.scrollBehavior;
+      viewport.style.scrollBehavior = "auto";
+      viewport.scrollLeft = target.offsetLeft;
+      viewport.style.scrollBehavior = prevBehavior || "";
+    }
+
+    function scrollWeeklyPostersBy(dir, viewportId) {
+      const id = viewportId || "mw-weekly-posters-viewport";
+      const viewport = $(id)
+        || $("mw-weekly-posters-viewport")
+        || $("sa-weekly-posters-viewport");
+      if (!viewport || !weeklyPosterViewportReady(viewport)) return;
+      const lockKey = viewport.id || id;
+      if (Date.now() < (weeklyPosterScrollLockUntil[lockKey] || 0)) return;
+      const track = viewport.querySelector(".mw-weekly-posters__track");
+      if (!track) return;
+      const cards = Array.prototype.slice.call(track.querySelectorAll(".mw-weekly-posters__card"));
+      if (cards.length < 2) return;
+      const step = weeklyPosterCardStep(viewport);
+      const direction = dir < 0 ? -1 : 1;
+      const max = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      const atStart = viewport.scrollLeft <= 4;
+      const atEnd = viewport.scrollLeft >= max - 4;
+
+      const jumpThenAnimate = (prepare) => {
+        weeklyPosterScrollLockUntil[lockKey] = Date.now() + 520;
+        const prevSnap = viewport.style.scrollSnapType;
+        const prevBehavior = viewport.style.scrollBehavior;
+        viewport.style.scrollSnapType = "none";
+        viewport.style.scrollBehavior = "auto";
+        prepare();
+        void viewport.offsetWidth;
+        requestAnimationFrame(() => {
+          viewport.style.scrollBehavior = prevBehavior || "";
+          viewport.scrollBy({ left: step * direction, behavior: "smooth" });
+          window.setTimeout(() => {
+            viewport.style.scrollSnapType = prevSnap || "";
+            snapWeeklyPosterViewport(viewport);
+            recoverWeeklyPosterCardImages();
+          }, 420);
+        });
+      };
+
+      // Endless loop: rotate DOM so wrap-around always animates in the click direction
+      // (5 → 1 feels like next, not a rewind to the start).
+      if (direction > 0 && atEnd) {
+        const keepCard = cards[cards.length - 1];
+        jumpThenAnimate(() => {
+          track.appendChild(cards[0]);
+          viewport.scrollLeft = keepCard.offsetLeft;
+        });
+        return;
+      }
+      if (direction < 0 && atStart) {
+        const keepCard = cards[0];
+        jumpThenAnimate(() => {
+          track.insertBefore(cards[cards.length - 1], cards[0]);
+          viewport.scrollLeft = keepCard.offsetLeft;
+        });
+        return;
+      }
+      weeklyPosterScrollLockUntil[lockKey] = Date.now() + 420;
+      viewport.scrollBy({ left: step * direction, behavior: "smooth" });
     }
 
     function stopWeeklyPosterAutoScroll() {
@@ -28985,82 +30107,117 @@
           return;
         }
         if (host.matches(":hover") || host.classList.contains("is-paused")) return;
-        const max = viewport.scrollWidth - viewport.clientWidth;
-        if (max <= 8) return;
-        if (viewport.scrollLeft >= max - 4) {
-          viewport.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          scrollWeeklyPostersBy(1);
-        }
+        if (!weeklyPosterViewportReady(viewport)) return;
+        // Always advance forward — wrap uses endless-next reorder, never rewind.
+        scrollWeeklyPostersBy(1, "mw-weekly-posters-viewport");
       }, 4200);
     }
 
-    function renderWeeklyStylePosterCards(items) {
-      const track = $("mw-weekly-posters-track");
-      if (!track) return;
-      const list = Array.isArray(items) ? items : [];
-      const fp = list.map((it) => [
-        String((it && it.id) || ""),
-        (it && it.ready) ? "1" : "0",
-        String((it && (it.thumb_url || it.proxy_url)) || ""),
-      ].join("|")).join(";");
-      if (fp && fp === weeklyPosterItemsFp && track.querySelector(".mw-weekly-posters__card")) {
-        syncWeeklyPosterSelectionUi();
-        syncWeeklyPosterGenerateUi();
-        return;
-      }
-      weeklyPosterItemsFp = fp;
-      track.innerHTML = list.map((item) => {
-        const id = escapeHtml(item.id || "");
-        const label = escapeHtml(item.label || item.id || "Style");
-        const ready = !!item.ready;
-        const rawProxy = String(item.proxy_url || "").trim();
-        // Prefer same-origin proxy after generate (fresh + auth-hydrated). Signed URLs
-        // are fine for first paint when they work, but must not skip hydrate forever.
-        const rawSrc = String(item.thumb_url || item.proxy_url || "").trim();
-        const rawFull = String(item.full_url || "").trim();
-        const src = escapeHtml(rawSrc);
-        const full = escapeHtml(rawFull);
-        const proxy = escapeHtml(rawProxy || (rawSrc.startsWith("/api/") ? rawSrc : ""));
-        const needsAuthHydrate = rawSrc.startsWith("/api/");
-        const cached = needsAuthHydrate ? weeklyThumbBlobCache[rawSrc] : "";
-        // Never put bare /api/ in src — browser can't send Bearer and it 401-loops.
-        // Do not mark signed HTTPS as hydrated until hydrateWeeklyPosterCardImages confirms load.
-        const initialSrc = ready ? (cached || "") : "";
-        const img = ready && src
-          ? (
-            '<img class="mw-weekly-posters__img" alt="" decoding="async" loading="eager" ' +
-            'data-weekly-src="' + src + '" data-weekly-full="' + full + '" data-weekly-proxy="' + proxy + '"' +
-            (cached ? ' data-weekly-hydrated="1"' : "") +
-            (initialSrc ? (' src="' + escapeHtml(initialSrc) + '"') : "") +
-            " />"
-          )
-          : '<div class="mw-weekly-posters__placeholder" aria-hidden="true"></div>';
-        return (
-          '<button type="button" class="mw-weekly-posters__card' + (ready ? "" : " is-pending") + '" ' +
-            'role="option" data-weekly-style="' + id + '" aria-selected="false" title="' + label + '">' +
-            '<span class="mw-weekly-posters__frame">' + img + "</span>" +
-            '<span class="mw-weekly-posters__label">' + label + "</span>" +
-            (ready ? "" : '<span class="mw-weekly-posters__badge">Not generated yet</span>') +
-          "</button>"
+    function weeklyPosterCardHtml(item) {
+      const id = escapeHtml(item.id || "");
+      const label = escapeHtml(item.label || item.id || "Style");
+      const ready = !!item.ready;
+      const rawProxy = String(item.proxy_url || "").trim();
+      const rawSrc = String(item.thumb_url || item.proxy_url || "").trim();
+      const rawFull = String(item.full_url || "").trim();
+      const src = escapeHtml(rawSrc);
+      const full = escapeHtml(rawFull);
+      const proxy = escapeHtml(rawProxy || (rawSrc.startsWith("/api/") ? rawSrc : ""));
+      const needsAuthHydrate = rawSrc.startsWith("/api/");
+      const cached = needsAuthHydrate ? weeklyThumbBlobCache[rawSrc] : "";
+      const initialSrc = ready ? (cached || "") : "";
+      const awaitingPaint = !!(ready && src && !initialSrc);
+      const img = ready && src
+        ? (
+          '<img class="mw-weekly-posters__img" alt="" decoding="async" loading="eager" ' +
+          'data-weekly-src="' + src + '" data-weekly-full="' + full + '" data-weekly-proxy="' + proxy + '"' +
+          (cached ? ' data-weekly-hydrated="1"' : "") +
+          (initialSrc ? (' src="' + escapeHtml(initialSrc) + '"') : "") +
+          " />"
+        )
+        : (
+          '<div class="mw-weekly-posters__placeholder" aria-hidden="true">' +
+            '<span class="mw-weekly-posters__skel"></span>' +
+          "</div>"
         );
-      }).join("");
+      const badgeText = ready
+        ? (awaitingPaint ? "Loading…" : "")
+        : "Not generated yet";
+      const cardCls = "mw-weekly-posters__card"
+        + (ready ? "" : " is-pending")
+        + (awaitingPaint ? " is-loading" : "");
+      return (
+        '<button type="button" class="' + cardCls + '" ' +
+          'role="option" data-weekly-style="' + id + '" aria-selected="false" title="' + label + '">' +
+          '<span class="mw-weekly-posters__frame">' + img + "</span>" +
+          '<span class="mw-weekly-posters__label">' + label + "</span>" +
+          (badgeText
+            ? ('<span class="mw-weekly-posters__badge"' + (ready && !awaitingPaint ? " hidden" : "") + ">" + badgeText + "</span>")
+            : '<span class="mw-weekly-posters__badge" hidden></span>') +
+        "</button>"
+      );
+    }
+
+    function bindWeeklyPosterTrackClicks(track, hostId) {
+      if (!track) return;
       track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
         btn.addEventListener("click", () => {
           if (btn.classList.contains("is-pending")) return;
           if (!areWeeklyAiPostersReady() && !isWeeklyPosterSuperadmin()) return;
           setWeeklyPosterStyle(btn.getAttribute("data-weekly-style"));
-          const host = $("mw-weekly-posters");
+          const host = $(hostId);
           if (host) {
             host.classList.add("is-paused");
             setTimeout(() => host.classList.remove("is-paused"), 8000);
           }
         });
       });
-      void hydrateWeeklyPosterCardImages(track);
+    }
+
+    function renderWeeklyStylePosterCards(items) {
+      const tracks = [
+        { el: $("mw-weekly-posters-track"), hostId: "mw-weekly-posters" },
+        { el: $("sa-weekly-posters-track"), hostId: "sa-weekly-posters" },
+      ].filter((t) => t.el);
+      if (!tracks.length) return;
+      const list = Array.isArray(items) ? items : [];
+      const fp = list.map((it) => [
+        String((it && it.id) || ""),
+        (it && it.ready) ? "1" : "0",
+        String((it && (it.thumb_url || it.proxy_url)) || ""),
+      ].join("|")).join(";");
+      // Require every track (Extras + Superadmin) to be populated — otherwise SA
+      // preview stays empty after Extras already rendered the same fingerprint.
+      const allPopulated = tracks.every((t) => t.el.querySelector(".mw-weekly-posters__card"));
+      if (fp && fp === weeklyPosterItemsFp && allPopulated) {
+        syncWeeklyPosterSelectionUi();
+        syncWeeklyPosterGenerateUi();
+        syncWeeklyPosterExpandUi();
+        return;
+      }
+      weeklyPosterItemsFp = fp;
+      const html = list.map(weeklyPosterCardHtml).join("");
+      tracks.forEach((t) => {
+        t.el.innerHTML = html;
+        bindWeeklyPosterTrackClicks(t.el, t.hostId);
+        void hydrateWeeklyPosterCardImages(t.el);
+      });
       preloadWeeklyPosterThumbs(list);
       syncWeeklyPosterSelectionUi();
       syncWeeklyPosterGenerateUi();
+      syncWeeklyPosterExpandUi();
+      // After rebuild, snap viewports so endless-loop scrollLeft can't leave a blank gap.
+      requestAnimationFrame(() => {
+        [
+          { track: $("mw-weekly-posters-track"), viewport: $("mw-weekly-posters-viewport") },
+          { track: $("sa-weekly-posters-track"), viewport: $("sa-weekly-posters-viewport") },
+        ].forEach((pair) => {
+          if (!pair.track || !pair.viewport) return;
+          const selected = pair.track.querySelector(".mw-weekly-posters__card.is-selected")
+            || pair.track.querySelector(".mw-weekly-posters__card:not(.is-pending)");
+          snapWeeklyPosterViewport(pair.viewport, selected);
+        });
+      });
     }
 
     function isWeeklyPosterSuperadmin() {
@@ -29374,6 +30531,7 @@
       const optimistic = weeklyPosterVersionCatalogItems(ver);
       weeklyPosterItemsFp = "";
       renderWeeklyStylePosterCards(optimistic);
+      recoverWeeklyPosterCardImages();
       const optimisticReady = optimistic.filter((it) => it && it.ready).length;
       syncWeeklyPosterGenerateUi({
         items: optimistic,
@@ -29551,8 +30709,10 @@
       if (!host) return;
       const readyMap = weeklyPosterReadyStyleMap(catalog);
       const inflight = !!weeklyPosterEnsureInflight;
-      // New-version flow unlocks already-generated styles so they can be remade.
-      const unlockReady = !!weeklyPosterUnlockReadyChecks || !!weeklyPosterForceInflight;
+      // New-version / in-place remake unlocks already-generated styles so they can be remade.
+      const unlockReady = !!weeklyPosterUnlockReadyChecks
+        || !!weeklyPosterForceInflight
+        || !!weeklyPosterOverwriteInflight;
       host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
         const id = String(box.value || "").trim();
         const isReady = !!readyMap[id];
@@ -29577,15 +30737,56 @@
       });
     }
 
+    function weeklyPosterSelectedCarouselStyleId() {
+      const track = $("sa-weekly-posters-track") || $("mw-weekly-posters-track");
+      if (!track) return "";
+      const active = track.querySelector("[data-weekly-style].is-active, [data-weekly-style].is-selected, [data-weekly-style][aria-pressed='true']");
+      if (active) return String(active.getAttribute("data-weekly-style") || "").trim();
+      const first = track.querySelector("[data-weekly-style]");
+      return first ? String(first.getAttribute("data-weekly-style") || "").trim() : "";
+    }
+
+    function unlockWeeklyPosterReadyChecks(opts) {
+      const options = opts && typeof opts === "object" ? opts : {};
+      weeklyPosterUnlockReadyChecks = true;
+      const host = $("mw-weekly-posters-style-checks");
+      if (!host) return;
+      host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+        box.disabled = false;
+        const label = box.closest(".mw-weekly-posters__style-check");
+        if (label) label.classList.remove("is-ready");
+      });
+      if (weeklyPosterCheckedStyleIds().length) return;
+      const prefer = String(options.preferStyle || weeklyPosterSelectedCarouselStyleId() || "").trim();
+      if (prefer) {
+        const box = host.querySelector('input[name="mw-weekly-gen-style"][value="' + prefer + '"]');
+        if (box) {
+          box.checked = true;
+          return;
+        }
+      }
+      if (options.checkAll) {
+        host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+          box.checked = true;
+        });
+      }
+    }
+
     function syncWeeklyPosterGenerateUi(catalog) {
       const btn = $("mw-weekly-posters-generate");
       const regenBtn = $("mw-weekly-posters-regenerate");
+      const regenInPlaceBtn = $("mw-weekly-posters-regen-inplace");
       const status = $("mw-weekly-posters-gen-status");
       const checks = $("mw-weekly-posters-style-checks");
-      const toolbar = (btn || regenBtn) && (btn || regenBtn).closest("[data-superadmin-only]");
+      const toolbar = $("mw-weekly-posters-toolbar")
+        || ((btn || regenBtn || regenInPlaceBtn) && (btn || regenBtn || regenInPlaceBtn).closest(".mw-weekly-posters__toolbar"));
       const sa = isWeeklyPosterSuperadmin();
       bindWeeklyPosterStyleChecks();
-      if (toolbar) toolbar.hidden = !sa;
+      if (toolbar) {
+        // Controls live on Superadmin Gospel posters panel only.
+        toolbar.hidden = !sa;
+        if (sa) toolbar.removeAttribute("hidden");
+      }
       if (checks) {
         checks.hidden = !sa;
         if (sa) checks.removeAttribute("hidden");
@@ -29593,6 +30794,7 @@
       if (!sa) {
         if (btn) btn.hidden = true;
         if (regenBtn) regenBtn.hidden = true;
+        if (regenInPlaceBtn) regenInPlaceBtn.hidden = true;
         if (status) status.textContent = "";
         syncWeeklyPosterVersionUi();
         return;
@@ -29606,10 +30808,12 @@
       const picked = weeklyPosterCheckedStyleIds();
       const pickCount = picked.length;
       const inflight = !!weeklyPosterEnsureInflight;
+      const activeVer = Number(weeklyPosterVersionState.active || 0);
+      const hasVersions = (weeklyPosterVersionState.versions || []).length > 0 || ready > 0;
       if (btn) {
         btn.hidden = false;
         btn.disabled = inflight || pickCount <= 0 || missing <= 0;
-        if (inflight && !weeklyPosterForceInflight) {
+        if (inflight && !weeklyPosterForceInflight && !weeklyPosterOverwriteInflight) {
           btn.textContent = "Generating…";
         } else if (missing <= 0) {
           btn.textContent = "Styles ready";
@@ -29619,9 +30823,19 @@
           btn.textContent = "Generate " + pickCount + " style" + (pickCount === 1 ? "" : "s");
         }
       }
+      if (regenInPlaceBtn) {
+        regenInPlaceBtn.hidden = !hasVersions;
+        regenInPlaceBtn.disabled = inflight || !activeVer;
+        if (weeklyPosterOverwriteInflight) {
+          regenInPlaceBtn.textContent = "Regenerating in v" + activeVer + "…";
+        } else if (activeVer) {
+          regenInPlaceBtn.textContent = "Regenerate selected in v" + activeVer;
+        } else {
+          regenInPlaceBtn.textContent = "Regenerate selected in this version";
+        }
+      }
       if (regenBtn) {
         // New version is available once a baseline exists (or while generating).
-        const hasVersions = (weeklyPosterVersionState.versions || []).length > 0 || ready > 0;
         regenBtn.hidden = !hasVersions && missing > 0;
         regenBtn.disabled = inflight;
         if (weeklyPosterForceInflight) {
@@ -29637,7 +30851,7 @@
       if (status && !inflight && missing <= 0) {
         const active = Number(weeklyPosterVersionState.active || 0);
         status.textContent = active
-          ? ("Poster styles ready · active v" + active + ". Use New version to regenerate.")
+          ? ("Poster styles ready · active v" + active + ". Remake checked styles in this version, or create a new version.")
           : "Poster styles are ready. Use New version to regenerate.";
       } else if (status && !inflight && weeklyPosterVersionIsPartial(weeklyPosterActiveVersionMeta())) {
         const active = Number(weeklyPosterVersionState.active || 0);
@@ -29660,7 +30874,7 @@
         { id: "stained_glass", label: "Stained Glass" },
         { id: "modern", label: "Modern" },
       ];
-      const track = $("mw-weekly-posters-track");
+      const track = $("sa-weekly-posters-track") || $("mw-weekly-posters-track");
       const fromDom = [];
       if (track) {
         track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
@@ -29701,10 +30915,36 @@
         } catch (_e) {}
         delete weeklyThumbBlobCache[k];
       });
-      if (!unversionedOnly) {
-        weeklyPosterCatalogFp = "";
-        weeklyPosterItemsFp = "";
-      }
+      // Always bust render fingerprints — otherwise early-return skips rehydrate
+      // and cards keep revoked blob: URLs (blank posters).
+      weeklyPosterCatalogFp = "";
+      weeklyPosterItemsFp = "";
+      // Mark matching live imgs dirty so hydrate can repaint without a full rebuild.
+      document.querySelectorAll("img.mw-weekly-posters__img[data-weekly-src]").forEach((img) => {
+        const src = String(img.getAttribute("data-weekly-src") || "");
+        if (!src) return;
+        if (sunday && src.indexOf(sunday) < 0 && src.indexOf(encodeURIComponent(sunday)) < 0) return;
+        if (unversionedOnly && /[?&]version=\d+/.test(src)) return;
+        img.removeAttribute("data-weekly-hydrated");
+        try { img.removeAttribute("src"); } catch (_e2) { /* ignore */ }
+      });
+    }
+
+    function recoverWeeklyPosterCardImages() {
+      ["mw-weekly-posters-track", "sa-weekly-posters-track"].forEach((id) => {
+        const track = $(id);
+        if (!track || !track.querySelector(".mw-weekly-posters__card")) return;
+        track.querySelectorAll("img.mw-weekly-posters__img[data-weekly-src]").forEach((img) => {
+          const painted = String(img.getAttribute("src") || "");
+          if (!painted || painted.indexOf("blob:") === 0) {
+            img.removeAttribute("data-weekly-hydrated");
+            if (painted.indexOf("blob:") === 0) {
+              try { img.removeAttribute("src"); } catch (_e) { /* ignore */ }
+            }
+          }
+        });
+        void hydrateWeeklyPosterCardImages(track);
+      });
     }
 
     function weeklyPosterViewCatalogForActiveVersion() {
@@ -29725,10 +30965,12 @@
     async function generateWeeklyStylePosters(opts) {
       const options = opts && typeof opts === "object" ? opts : {};
       const force = !!options.force;
-      const newVersion = !!(options.newVersion || force);
+      const overwriteInPlace = !!options.overwriteInPlace;
+      const newVersion = !overwriteInPlace && !!(options.newVersion || force);
       const date = weeklyPosterMassDate();
       const btn = $("mw-weekly-posters-generate");
       const regenBtn = $("mw-weekly-posters-regenerate");
+      const regenInPlaceBtn = $("mw-weekly-posters-regen-inplace");
       const status = $("mw-weekly-posters-gen-status");
       const hint = $("mw-weekly-posters-hint");
       if (!isWeeklyPosterSuperadmin()) return;
@@ -29741,35 +30983,46 @@
       const sundayLabel = formatWeeklyPosterSundayLabel(
         weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || date
       );
-      if (newVersion) {
-        // Unlock greyed (already generated) styles so the user can choose what to remake.
-        weeklyPosterUnlockReadyChecks = true;
-        const host = $("mw-weekly-posters-style-checks");
-        if (host) {
-          host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
-            box.disabled = false;
-            const label = box.closest(".mw-weekly-posters__style-check");
-            if (label) label.classList.remove("is-ready");
-          });
-          if (!weeklyPosterCheckedStyleIds().length) {
-            host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
-              box.checked = true;
-            });
-          }
+      const activeMeta = weeklyPosterActiveVersionMeta();
+      const activeVer = Number((activeMeta && activeMeta.version) || weeklyPosterVersionState.active || 0);
+      if (overwriteInPlace) {
+        if (!activeVer) {
+          if (status) status.textContent = "Activate a version first, then remake selected styles.";
+          syncWeeklyPosterGenerateUi();
+          return;
         }
+        unlockWeeklyPosterReadyChecks({ preferStyle: weeklyPosterSelectedCarouselStyleId() });
+        syncWeeklyPosterGenerateUi();
+      } else if (newVersion) {
+        unlockWeeklyPosterReadyChecks({ checkAll: true });
         syncWeeklyPosterGenerateUi();
       }
       const picked = weeklyPosterCheckedStyleIds();
       if (!picked.length) {
         weeklyPosterUnlockReadyChecks = false;
-        if (status) status.textContent = "Check one or more styles to generate.";
+        if (status) {
+          status.textContent = overwriteInPlace
+            ? "Check the style(s) to remake in v" + activeVer + "."
+            : "Check one or more styles to generate.";
+        }
         syncWeeklyPosterGenerateUi();
         return;
       }
       const partial = picked.length < 5;
-      const activeMeta = weeklyPosterActiveVersionMeta();
-      const continuingPartial = !newVersion && weeklyPosterVersionIsPartial(activeMeta);
-      if (newVersion) {
+      const continuingPartial = !newVersion && !overwriteInPlace && weeklyPosterVersionIsPartial(activeMeta);
+      if (overwriteInPlace) {
+        const ok = window.confirm(
+          "Remake " + picked.length + " style" + (picked.length === 1 ? "" : "s")
+          + " inside v" + activeVer + " for " + sundayLabel + "?\n\n"
+          + picked.join(", ").replace(/_/g, " ")
+          + "\n\nThis replaces those posters in the current version (no new version tab)."
+        );
+        if (!ok) {
+          weeklyPosterUnlockReadyChecks = false;
+          syncWeeklyPosterGenerateUi();
+          return;
+        }
+      } else if (newVersion) {
         const nextHint = (weeklyPosterVersionState.versions || []).length
           ? ("v" + ((Number(weeklyPosterVersionState.active) || (weeklyPosterVersionState.versions || []).length) + 1))
           : "v1";
@@ -29787,8 +31040,8 @@
           return;
         }
       }
-      // Partial selection / continue-partial always regenerates checked styles.
-      const queue = weeklyPosterStyleQueue(newVersion || partial || continuingPartial);
+      // Partial / continue-partial / in-place remake always regenerates checked styles.
+      const queue = weeklyPosterStyleQueue(newVersion || overwriteInPlace || partial || continuingPartial);
       if (!queue.length) {
         if (status) status.textContent = "Poster styles are already ready for " + sundayLabel + ".";
         setWeeklyPosterProgress(null);
@@ -29796,17 +31049,22 @@
       }
       weeklyPosterEnsureInflight = true;
       weeklyPosterForceInflight = newVersion;
+      weeklyPosterOverwriteInflight = overwriteInPlace;
       if (btn) {
         btn.disabled = true;
-        if (!newVersion) btn.textContent = "Generating…";
+        if (!newVersion && !overwriteInPlace) btn.textContent = "Generating…";
       }
       if (regenBtn) {
         regenBtn.disabled = true;
         if (newVersion) regenBtn.textContent = "Generating new version…";
       }
+      if (regenInPlaceBtn) {
+        regenInPlaceBtn.disabled = true;
+        if (overwriteInPlace) regenInPlaceBtn.textContent = "Regenerating in v" + activeVer + "…";
+      }
       let genCount = 0;
       let lastCatalog = null;
-      let batchVersion = null;
+      let batchVersion = overwriteInPlace ? activeVer : null;
       const total = queue.length;
       try {
         if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
@@ -29831,12 +31089,19 @@
             dateLabel: sundayLabel,
           });
           if (status) {
-            status.textContent = (newVersion ? "New version" : "Generating")
+            const phaseLabel = newVersion
+              ? "New version"
+              : (overwriteInPlace ? ("v" + activeVer) : "Generating");
+            status.textContent = phaseLabel
               + " " + step + "/" + total + " · " + item.label
               + " · " + sundayLabel;
           }
           const body = { date: date, style: item.id };
-          if (newVersion) {
+          if (overwriteInPlace) {
+            body.force = true;
+            body.overwrite_only = true;
+            body.version = batchVersion || activeVer;
+          } else if (newVersion) {
             body.force = true;
             body.new_version = true;
             if (batchVersion) body.version = batchVersion;
@@ -29849,6 +31114,7 @@
             // Prompt test: overwrite the checked styles without allocating a full new version.
             body.force = true;
             body.overwrite_only = true;
+            if (activeVer) body.version = activeVer;
           }
           const res = await fetch("/api/weekly-style-posters/ensure", {
             method: "POST",
@@ -29910,30 +31176,44 @@
         else await loadWeeklyPosterVersions(date);
         const verLabel = batchVersion ? ("v" + batchVersion) : "";
         if (status) {
-          status.textContent = newVersion
-            ? (genCount
+          if (overwriteInPlace) {
+            status.textContent = genCount
+              ? ("Updated " + (verLabel || ("v" + activeVer)) + " (" + genCount + " remade) for " + sundayLabel + ".")
+              : ("No styles remade for " + sundayLabel + ".");
+          } else if (newVersion) {
+            status.textContent = genCount
               ? ("Created " + (verLabel || "new version") + " (" + genCount + " styles) for " + sundayLabel + ".")
-              : ("New version finished for " + sundayLabel + "."))
-            : (genCount
+              : ("New version finished for " + sundayLabel + ".");
+          } else {
+            status.textContent = genCount
               ? ("Generated " + genCount + " style" + (genCount === 1 ? "" : "s") + " for " + sundayLabel + ".")
-              : ("No new styles needed for " + sundayLabel + "."));
+              : ("No new styles needed for " + sundayLabel + ".");
+          }
         }
         if (typeof notify === "function") {
           notify(
-            newVersion
-              ? (genCount ? ("Poster " + (verLabel || "version") + " ready for " + sundayLabel + ".") : "New version finished.")
-              : (genCount ? ("Weekly posters updated (" + genCount + " new) for " + sundayLabel + ".") : "Weekly posters already ready."),
+            overwriteInPlace
+              ? (genCount
+                ? ("Remade " + genCount + " style" + (genCount === 1 ? "" : "s") + " in " + (verLabel || ("v" + activeVer)) + ".")
+                : "No styles remade.")
+              : (newVersion
+                ? (genCount ? ("Poster " + (verLabel || "version") + " ready for " + sundayLabel + ".") : "New version finished.")
+                : (genCount ? ("Weekly posters updated (" + genCount + " new) for " + sundayLabel + ".") : "Weekly posters already ready.")),
             "ok"
           );
         }
       } catch (err) {
         markWeeklyPosterCardLoading("", false);
-        if (status) status.textContent = (err && err.message) || (newVersion ? "New version failed" : "Generate failed");
-        if (typeof notify === "function") notify((err && err.message) || (newVersion ? "New version failed" : "Generate failed"), "error");
+        const failLabel = overwriteInPlace
+          ? "Regenerate failed"
+          : (newVersion ? "New version failed" : "Generate failed");
+        if (status) status.textContent = (err && err.message) || failLabel;
+        if (typeof notify === "function") notify((err && err.message) || failLabel, "error");
         syncWeeklyPosterGenerateUi();
       } finally {
         weeklyPosterEnsureInflight = false;
         weeklyPosterForceInflight = false;
+        weeklyPosterOverwriteInflight = false;
         weeklyPosterUnlockReadyChecks = false;
         markWeeklyPosterCardLoading("", false);
         setTimeout(() => setWeeklyPosterProgress(null), 900);
@@ -30003,11 +31283,27 @@
         if (token !== weeklyPosterRefreshToken || weeklyPosterMassDate() !== dateNow) return;
         if (data.versions) syncWeeklyPosterVersionUi(data.versions);
         else await loadWeeklyPosterVersions(dateNow);
-        // Prefer pure versioned archive previews when a version is selected —
-        // never show hybrid active files (partial v3 over leftover v2).
-        const view = weeklyPosterViewCatalogForActiveVersion()
-          || applyWeeklyPosterVersionReadyOverlay(data)
-          || data;
+        // When browsing an older archive version in Superadmin, use versioned URLs.
+        // When viewing the active set (Extras / default), use the API catalog's
+        // unversioned active heroes — archives are often missing after regenerating
+        // only the active ``*_hero.png`` slot (which caused grey empty carousels).
+        const selectedVer = Number(weeklyPosterVersionState.active || 0);
+        const catalogActiveVer = Number(
+          (data.versions && data.versions.active_version) || 0
+        );
+        const viewingArchive = !!(
+          weeklyPosterSaPanelOpen() &&
+          selectedVer > 0 &&
+          catalogActiveVer > 0 &&
+          selectedVer !== catalogActiveVer
+        );
+        const versionView = weeklyPosterViewCatalogForActiveVersion()
+          || applyWeeklyPosterVersionReadyOverlay(data);
+        const apiHasReady = Array.isArray(data.items)
+          && data.items.some((it) => it && it.ready && (it.thumb_url || it.proxy_url || it.full_url));
+        const view = viewingArchive
+          ? (versionView || data)
+          : (apiHasReady ? data : (versionView || data));
         const sundayKey = String(view.sunday || dateNow);
         const activeVer = Number(weeklyPosterVersionState.active || (view.versions && view.versions.active_version) || 0);
         const ready = Number(view.ready_count || 0);
@@ -30031,6 +31327,18 @@
         syncWeeklyPosterGenerateUi(view);
         syncWeeklyAiPosterGate(view);
         syncWeeklyPosterDateIndicator(view);
+        // Keep the home CTA on the same active Sunday posters / selected style.
+        try {
+          const homeSun = typeof homeCtaPosterSundayKey === "function"
+            ? homeCtaPosterSundayKey(typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "")
+            : "";
+          const viewSun = typeof homeCtaPosterSundayKey === "function"
+            ? homeCtaPosterSundayKey(sundayKey)
+            : sundayKey;
+          if (homeSun && viewSun && homeSun === viewSun && typeof refreshHomeMassCtaPosterBg === "function") {
+            void refreshHomeMassCtaPosterBg({ forceReload: !!force });
+          }
+        } catch (_eHome) { /* ignore */ }
       } catch (_e) {
         if (token !== weeklyPosterRefreshToken || weeklyPosterMassDate() !== dateNow) return;
         if (hint) hint.textContent = "Could not load weekly posters for " + formatWeeklyPosterSundayLabel(dateNow) + ".";
@@ -30051,15 +31359,43 @@
       return weeklyPosterRefreshInflight;
     }
 
+    function bindWeeklyPosterCarouselHost(hostId, viewportId, navAttr) {
+      const host = $(hostId);
+      if (!host || host.dataset.bound === "1") return;
+      host.dataset.bound = "1";
+      host.querySelectorAll("[" + navAttr + "]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const dir = parseInt(btn.getAttribute(navAttr) || "1", 10) || 1;
+          scrollWeeklyPostersBy(dir, viewportId);
+          host.classList.add("is-paused");
+          setTimeout(() => host.classList.remove("is-paused"), 8000);
+        });
+      });
+      const viewport = $(viewportId);
+      if (viewport) {
+        viewport.addEventListener("pointerdown", () => {
+          host.classList.add("is-paused");
+          setTimeout(() => host.classList.remove("is-paused"), 8000);
+        });
+      }
+    }
+
     function initWeeklyStylePosters() {
-      const host = $("mw-weekly-posters");
       const genBtn = $("mw-weekly-posters-generate");
       const regenBtn = $("mw-weekly-posters-regenerate");
+      const regenInPlaceBtn = $("mw-weekly-posters-regen-inplace");
       const verSel = $("mw-weekly-posters-version");
       const sunSel = $("mw-weekly-posters-sunday");
+      const openSa = $("mw-weekly-posters-open-sa");
       if (genBtn && genBtn.dataset.bound !== "1") {
         genBtn.dataset.bound = "1";
         genBtn.addEventListener("click", () => { void generateWeeklyStylePosters(); });
+      }
+      if (regenInPlaceBtn && regenInPlaceBtn.dataset.bound !== "1") {
+        regenInPlaceBtn.dataset.bound = "1";
+        regenInPlaceBtn.addEventListener("click", () => {
+          void generateWeeklyStylePosters({ overwriteInPlace: true });
+        });
       }
       if (regenBtn && regenBtn.dataset.bound !== "1") {
         regenBtn.dataset.bound = "1";
@@ -30074,45 +31410,57 @@
       if (sunSel && sunSel.dataset.bound !== "1") {
         sunSel.dataset.bound = "1";
         sunSel.addEventListener("change", () => {
-          const iso = String(sunSel.value || "").trim();
-          const massEl = $("mass-date");
-          if (iso && massEl && massEl.value !== iso) {
-            massEl.value = iso;
-            massEl.dispatchEvent(new Event("change", { bubbles: true }));
-            if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
-          }
+          // Browse catalog for this Sunday without rewriting the Mass builder date.
           scheduleWeeklyStylePosterRefresh({ force: true });
+        });
+      }
+      if (openSa && openSa.dataset.bound !== "1") {
+        openSa.dataset.bound = "1";
+        openSa.addEventListener("click", () => {
+          try {
+            if (typeof saState !== "undefined" && saState) {
+              saState.panel = "system-gospel-posters";
+              saState.hub = "platform";
+              if (!saState.hubPanel) saState.hubPanel = {};
+              saState.hubPanel.platform = "system-gospel-posters";
+            }
+          } catch (_e) { /* ignore */ }
         });
       }
       window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
       window.scheduleWeeklyStylePosterRefresh = scheduleWeeklyStylePosterRefresh;
-      if (!host || host.dataset.bound === "1") {
-        scheduleWeeklyStylePosterRefresh({ force: true });
-        return;
-      }
-      host.dataset.bound = "1";
-      host.querySelectorAll("[data-weekly-nav]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const dir = parseInt(btn.getAttribute("data-weekly-nav") || "1", 10) || 1;
-          scrollWeeklyPostersBy(dir);
-          host.classList.add("is-paused");
-          setTimeout(() => host.classList.remove("is-paused"), 8000);
-        });
-      });
-      const viewport = $("mw-weekly-posters-viewport");
-      if (viewport) {
-        viewport.addEventListener("pointerdown", () => {
-          host.classList.add("is-paused");
-          setTimeout(() => host.classList.remove("is-paused"), 8000);
-        });
-      }
-      scheduleWeeklyStylePosterRefresh();
       window.setWeeklyPosterStyle = setWeeklyPosterStyle;
       window.preloadExtrasPosterAssets = function preloadExtrasPosterAssets() {
-        // Liturgy thumbs only — do not re-fetch weekly catalog here.
-        // Aside refresh / autosave used to loop refreshWeeklyStylePosters and restart images.
         preloadLiturgyPosterThumbs();
       };
+      bindWeeklyPosterCarouselHost("mw-weekly-posters", "mw-weekly-posters-viewport", "data-weekly-nav");
+      bindWeeklyPosterCarouselHost("sa-weekly-posters", "sa-weekly-posters-viewport", "data-sa-weekly-nav");
+      bindWeeklyPosterExpandUi();
+      scheduleWeeklyStylePosterRefresh({ force: weeklyPosterSaPanelOpen() });
+      // Recover blank carousels after cache/blob races (page restore, bfcache, tab focus).
+      if (!window.__weeklyPosterRecoverBound) {
+        window.__weeklyPosterRecoverBound = true;
+        const recover = () => {
+          recoverWeeklyPosterCardImages();
+          const card = $("home-mass-card");
+          if (card && card.classList.contains("has-poster-bg")) {
+            const layers = homeCtaPosterLayers();
+            const visible = layers.find((bg) => bg.classList.contains("is-visible")) || layers[0];
+            if (!visible || !String(visible.style.backgroundImage || "").trim()) {
+              if (typeof refreshHomeMassCtaPosterBg === "function") {
+                void refreshHomeMassCtaPosterBg({ forceReload: true });
+              }
+            } else {
+              settleHomeCtaPosterLayers(visible);
+            }
+          }
+        };
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") recover();
+        });
+        window.addEventListener("pageshow", recover);
+        window.setTimeout(recover, 1200);
+      }
     }
 
     function bindOpenAiPosterControls() {
@@ -30243,7 +31591,7 @@
         "</div>" +
         "<div class=\"mass-gen-receipt__block\">" +
           "<p class=\"mass-gen-receipt__block-label\">Music · " + model.selectedSongCount + "</p>" +
-          songLines +
+        songLines +
         "</div>" +
         (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "")
       );
@@ -31800,8 +33148,14 @@
           return null;
         }
       }
-      if (!churchMembershipState.can_use_full_app) {
-        statusFn("Mass generation requires approved parish membership.", "error");
+      const canGen = typeof canGenerateMass === "function"
+        ? canGenerateMass(churchMembershipState)
+        : !!(churchMembershipState.can_use_full_app
+          || churchMembershipState.can_generate_mass
+          || Number(churchMembershipState.premium_mass_remaining || churchMembershipState.free_mass_remaining || 0) > 0
+          || Number(churchMembershipState.free_tier_mass_remaining || 0) > 0);
+      if (!canGen) {
+        statusFn("You've used this month's free Masses. Start a 14-day trial under Settings → Billing.", "error");
         return null;
       }
       let date = o.date || $("mass-date").value;
@@ -31815,7 +33169,19 @@
       const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
         ? window.areWeeklyAiPostersReady()
         : !!posterOpts.useAi;
-      const useAiPoster = (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi) && weeklyReady;
+      const allowPremiumPosters = !!(
+        churchMembershipState.can_use_full_app
+        || churchMembershipState.can_use_premium_posters
+        || churchMembershipState.next_generation_tier === "premium"
+        || churchMembershipState.next_generation_tier === "paid"
+        || (
+          Number(churchMembershipState.premium_mass_remaining || churchMembershipState.free_mass_remaining || 0) > 0
+          && churchMembershipState.next_generation_tier !== "free"
+        )
+      );
+      const useAiPoster = allowPremiumPosters
+        && (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi)
+        && weeklyReady;
       const body = {
         date,
         celebrant: celebrantMain,
@@ -32233,6 +33599,9 @@
         }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();
+        if (typeof window.applyFreeMassFromGenerate === "function") {
+          window.applyFreeMassFromGenerate(data);
+        }
         await successUi;
         if (wantSlideshow) {
           try {
@@ -36833,7 +38202,16 @@
         statusEl.textContent = "Saving…";
         statusEl.className = "status";
       }
-      const ok = await addSettingsCelebrantName(inp.value);
+      let ok = false;
+      try {
+        ok = await addSettingsCelebrantName(inp.value);
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not add celebrant.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
       if (!ok) {
         if (statusEl) {
           statusEl.textContent = "Enter a new name, or check that the server is running.";
@@ -36845,7 +38223,7 @@
       if (statusEl) {
         statusEl.textContent = ok.pending
           ? (ok.message || "Priest submitted for superadmin approval.")
-          : "Celebrant saved to database.";
+          : (ok.exists ? "That priest is already on your list." : "Celebrant saved to database.");
         statusEl.className = "status ok";
       }
     });
@@ -37732,6 +39110,7 @@
     renderHistoryList();
     bindHomeNewsSettings();
     bindNavTabSettings();
+    if (typeof bindThemeMarketplace === "function") bindThemeMarketplace();
     applyNavTabVisibility();
     initMobileChromeLayout();
     initMobileNavDragDrop();
@@ -37744,6 +39123,7 @@
     initAccountMenu();
     initMobileWelcomeModal();
     initMembershipWelcomeModal();
+    initTrialOfferModal();
     initSongsWhatsNewModal();
     initCreateMenu();
     initVerbumSelects();
@@ -37845,4 +39225,726 @@
       if (window.VerbumAuth && window.VerbumAuth.isReady && window.VerbumAuth.isReady()) {
         run();
       }
+    }
+
+/* ==== app-10-themes.js ==== */
+
+    var __tmCatalog = null;
+    var __tmBound = false;
+    var __tmTopic = "all";
+    var __tmBuyPackId = null;
+    var __tmPreviewCtx = null;
+
+    function tmEscape(s) {
+      return typeof escapeHtml === "function" ? escapeHtml(String(s || "")) : String(s || "");
+    }
+
+    function tmSelectedTerm() {
+      const sel = $("tm-term-select");
+      return (sel && sel.value) || "monthly";
+    }
+
+    function tmSelectedOffer() {
+      const offers = (((__tmCatalog || {}).pricing || {}).offers) || [];
+      const iv = tmSelectedTerm();
+      return offers.find((o) => o.interval === iv) || offers[0] || null;
+    }
+
+    function tmStartingOffer() {
+      const offers = (((__tmCatalog || {}).pricing || {}).offers) || [];
+      return offers.find((o) => o.interval === "monthly") || offers[0] || null;
+    }
+
+    function tmSlideTone(packOrKind) {
+      if (typeof packOrKind === "string") return packOrKind;
+      if (packOrKind && packOrKind.is_placeholder) return "placeholder";
+      const slug = String((packOrKind && packOrKind.slug) || "").toLowerCase();
+      const tags = ((packOrKind && packOrKind.season_tags) || []).map((t) => String(t || "").toLowerCase());
+      if (slug.indexOf("classic") >= 0 || slug.indexOf("basic") >= 0 || (packOrKind && packOrKind.is_free)) {
+        return "classic";
+      }
+      if (slug.indexOf("amber") >= 0) return "ordinary";
+      if (tags.indexOf("advent") >= 0 || slug.indexOf("advent") >= 0) return "advent";
+      if (tags.indexOf("christmas") >= 0 || slug.indexOf("christmas") >= 0) return "christmas";
+      if (tags.indexOf("lent") >= 0 || slug.indexOf("lent") >= 0) return "lent";
+      if (tags.indexOf("easter") >= 0 || slug.indexOf("easter") >= 0) return "easter";
+      if (tags.indexOf("ordinary") >= 0 || slug.indexOf("ordinary") >= 0) return "ordinary";
+      if (tags.indexOf("placeholder") >= 0) return "placeholder";
+      return "default";
+    }
+
+    function tmSlideTitlesForTone(tone) {
+      if (tone === "advent") return ["O Come, O Come", "Gospel Acclamation", "Communion"];
+      if (tone === "christmas") return ["Silent Night", "Gloria", "Nativity"];
+      if (tone === "lent") return ["Attende Domine", "Penitential Act", "Communion"];
+      if (tone === "easter") return ["Alleluia", "Sequence", "Final Blessing"];
+      if (tone === "ordinary") return ["Entrance", "Responsorial Psalm", "Lamb of God"];
+      if (tone === "classic") return ["Gloria", "Liturgy of the Word", "Sanctus"];
+      if (tone === "parish") return ["Your master", "Reading", "Final Blessing"];
+      if (tone === "placeholder") return ["Coming soon", "Preview", "Soon"];
+      return ["Gloria", "Psalm", "Communion"];
+    }
+
+    function tmSlideTitleForTone(tone) {
+      return tmSlideTitlesForTone(tone)[0] || "Gloria";
+    }
+
+    function tmSlidePreviewHtml(opts) {
+      const tone = tmEscape(opts.tone || "default");
+      const brand = tmEscape(opts.brand || "Mass");
+      const title = tmEscape(opts.slideTitle || "Gloria");
+      const extra = opts.extraClass ? (" " + opts.extraClass) : "";
+      return (
+        "<div class=\"tm-slide tm-slide--" + tone + extra + "\" aria-hidden=\"true\">" +
+          "<div class=\"tm-slide__bg\"></div>" +
+          "<div class=\"tm-slide__vignette\"></div>" +
+          "<div class=\"tm-slide__brand\">" + brand + "</div>" +
+          "<p class=\"tm-slide__title\">" + title + "</p>" +
+          "<div class=\"tm-slide__lines\">" +
+            "<span class=\"tm-slide__line\"></span>" +
+            "<span class=\"tm-slide__line\"></span>" +
+            "<span class=\"tm-slide__line\"></span>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    function tmPinMediaHtml(tone, brand) {
+      return tmSlidePreviewHtml({
+        tone: tone,
+        brand: brand,
+        slideTitle: tmSlideTitleForTone(tone),
+      });
+    }
+
+    function tmPreviewSlidesHtml(tone, brand) {
+      const titles = tmSlideTitlesForTone(tone);
+      return titles.map((title) => {
+        return (
+          "<figure class=\"tm-preview-slide\">" +
+            tmSlidePreviewHtml({
+              tone: tone,
+              brand: brand,
+              slideTitle: title,
+              extraClass: "tm-slide--preview",
+            }) +
+            "<figcaption class=\"tm-preview-slide__cap\">" + tmEscape(title) + "</figcaption>" +
+          "</figure>"
+        );
+      }).join("");
+    }
+
+    function tmMatchesTopic(pack, topic) {
+      const t = String(topic || "all").toLowerCase();
+      if (!t || t === "all") return true;
+      if (t === "free" || t === "included") {
+        return !!pack.is_free;
+      }
+      const tags = ((pack && pack.season_tags) || []).map((x) => String(x || "").toLowerCase());
+      const slug = String((pack && pack.slug) || "").toLowerCase();
+      if (tags.indexOf(t) >= 0) return true;
+      if (slug.indexOf(t) >= 0) return true;
+      return false;
+    }
+
+    function tmPinActionsHtml(opts) {
+      const free = opts.free;
+      const owned = opts.owned;
+      const active = opts.active;
+      const hasSub = opts.hasSub;
+      const packId = opts.packId;
+      const placeholder = opts.placeholder;
+      const price = opts.priceLabel || "₱49";
+      if (placeholder) {
+        return "<span class=\"tm-pin__cta tm-pin__cta--ghost\" aria-disabled=\"true\">Soon</span>";
+      }
+      if (active) {
+        return "<span class=\"tm-badge\">In use</span>";
+      }
+      if (free || owned) {
+        return (
+          "<button type=\"button\" class=\"tm-pin__cta tm-btn-apply\" data-pack-id=\"" +
+          tmEscape(packId || "") + "\" data-free=\"" + (free ? "1" : "0") + "\">Apply</button>"
+        );
+      }
+      return (
+        "<button type=\"button\" class=\"tm-pin__cta tm-btn-buy\" data-pack-id=\"" +
+        tmEscape(packId || "") + "\" data-pack-title=\"" + tmEscape(opts.title || "Theme") +
+        "\"" + (hasSub ? "" : " data-needs-sub=\"1\"") + ">" +
+        tmEscape(price) +
+        "</button>"
+      );
+    }
+
+    function renderThemeSkeletons(count) {
+      const grid = $("tm-pack-grid");
+      if (!grid) return;
+      const n = Math.max(6, count || 10);
+      const pins = [];
+      for (let i = 0; i < n; i++) {
+        pins.push(
+          "<article class=\"tm-pin tm-pin--skeleton\" aria-hidden=\"true\" style=\"--tm-i:" + (i + 1) + "\">" +
+            "<div class=\"tm-pin__media tm-pin__media--skeleton\">" +
+              "<div class=\"tm-pin__chrome\">" +
+                "<div class=\"tm-pin__foot\">" +
+                  "<div class=\"tm-pin__foot-copy\">" +
+                    "<span class=\"tm-skel tm-skel--title\"></span>" +
+                    "<span class=\"tm-skel tm-skel--by\"></span>" +
+                  "</div>" +
+                  "<span class=\"tm-skel tm-skel--cta\"></span>" +
+                "</div>" +
+              "</div>" +
+            "</div>" +
+          "</article>"
+        );
+      }
+      grid.innerHTML = pins.join("");
+      grid.setAttribute("aria-busy", "true");
+    }
+
+    function renderThemeTermSelect() {
+      const sel = $("tm-term-select");
+      const segs = $("tm-term-segments");
+      const hint = $("tm-term-hint");
+      if (!sel) return;
+      const offers = (((__tmCatalog || {}).pricing || {}).offers) || [];
+      const prev = sel.value || "monthly";
+      sel.innerHTML = offers.map((o) => {
+        return "<option value=\"" + tmEscape(o.interval) + "\">" +
+          tmEscape(o.label) + " · " + tmEscape(o.amount_display) +
+          "</option>";
+      }).join("");
+      if (offers.some((o) => o.interval === prev)) sel.value = prev;
+      else if (offers.length) sel.value = offers[0].interval;
+      if (segs) {
+        segs.innerHTML = offers.map((o) => {
+          const active = o.interval === sel.value;
+          const price = o.amount_display || "";
+          return (
+            "<button type=\"button\" class=\"tm-term-seg" + (active ? " is-active" : "") +
+              "\" data-tm-interval=\"" + tmEscape(o.interval) + "\" aria-pressed=\"" +
+              (active ? "true" : "false") + "\">" +
+              tmEscape(o.label) +
+              (price ? "<span class=\"tm-term-seg__price\">" + tmEscape(price) + "</span>" : "") +
+            "</button>"
+          );
+        }).join("");
+      }
+      const offer = tmSelectedOffer();
+      if (hint) {
+        hint.textContent = offer
+          ? (offer.amount_display || "") + (offer.months > 1 ? " · better monthly rate" : " / month")
+          : "";
+      }
+    }
+
+    function syncThemeTopics() {
+      const nav = $("tm-topics");
+      if (!nav) return;
+      nav.querySelectorAll("[data-tm-topic]").forEach((btn) => {
+        const on = btn.getAttribute("data-tm-topic") === __tmTopic;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    }
+
+    function renderThemePackGrid() {
+      const grid = $("tm-pack-grid");
+      if (!grid) return;
+      const packs = ((__tmCatalog || {}).packs) || [];
+      const offer = tmStartingOffer();
+      const hasSub = !!(__tmCatalog || {}).has_app_subscription;
+      const state = (__tmCatalog || {}).state || {};
+      const dnaActive = state.active_deck_source === "parish_dna";
+      const topic = __tmTopic || "all";
+      const pins = [];
+      let pinIndex = 0;
+
+      const showDna =
+        !!state.has_parish_dna &&
+        (topic === "all" || topic === "free" || topic === "included");
+
+      if (showDna) {
+        const dnaActions = dnaActive
+          ? "<span class=\"tm-badge\">In use</span>"
+          : "<button type=\"button\" class=\"tm-pin__cta tm-btn-apply-dna\">Apply</button>";
+        pins.push(
+          "<article class=\"tm-pin" + (dnaActive ? " is-active" : "") +
+            "\" role=\"button\" tabindex=\"0\" data-tm-preview=\"dna\"" +
+            " aria-label=\"Preview Parish Deck DNA\"" +
+            " style=\"--tm-i:" + (pinIndex + 1) + "\">" +
+            "<div class=\"tm-pin__media\">" +
+              tmPinMediaHtml("parish", "Parish DNA") +
+              "<div class=\"tm-pin__chrome\">" +
+                "<div class=\"tm-pin__foot\">" +
+                  "<div class=\"tm-pin__foot-copy\">" +
+                    "<h3 class=\"tm-pin__title\">Parish Deck DNA</h3>" +
+                    "<p class=\"tm-pin__by\"><strong>Your parish</strong> · Free</p>" +
+                  "</div>" +
+                  "<div class=\"tm-pin__foot-cta\">" + dnaActions + "</div>" +
+                "</div>" +
+              "</div>" +
+            "</div>" +
+          "</article>"
+        );
+        pinIndex += 1;
+      }
+
+      packs.forEach((pack) => {
+        if (!tmMatchesTopic(pack, topic)) return;
+        const free = !!pack.is_free;
+        const owned = !!pack.owned;
+        const active = !!pack.is_active;
+        const placeholder = !!pack.is_placeholder;
+        const buyPrice = (offer && offer.amount_display) || "₱49";
+        const statusLabel = placeholder
+          ? "Coming soon"
+          : (free ? "Free" : (owned ? "Owned" : null));
+        const tone = tmSlideTone(pack);
+        const actions = tmPinActionsHtml({
+          free: free,
+          owned: owned,
+          active: active,
+          hasSub: hasSub,
+          packId: pack.id,
+          placeholder: placeholder,
+          title: pack.title,
+          priceLabel: buyPrice,
+        });
+        pins.push(
+          "<article class=\"tm-pin" +
+            (active ? " is-active" : "") +
+            (placeholder ? " is-placeholder" : "") +
+            "\" role=\"button\" tabindex=\"0\" data-tm-preview=\"pack\"" +
+            " data-pack-id=\"" + tmEscape(pack.id || "") +
+            "\" aria-label=\"Preview " + tmEscape(pack.title || "theme") +
+            "\" style=\"--tm-i:" + (pinIndex + 1) + "\">" +
+            "<div class=\"tm-pin__media\">" +
+              tmPinMediaHtml(tone, pack.designer_label || "Designer") +
+              "<div class=\"tm-pin__chrome\">" +
+                "<div class=\"tm-pin__foot\">" +
+                  "<div class=\"tm-pin__foot-copy\">" +
+                    "<h3 class=\"tm-pin__title\">" + tmEscape(pack.title) + "</h3>" +
+                    "<p class=\"tm-pin__by\"><strong>" + tmEscape(pack.designer_label || "Designer") +
+                      "</strong>" + (statusLabel ? " · " + tmEscape(statusLabel) : "") + "</p>" +
+                  "</div>" +
+                  "<div class=\"tm-pin__foot-cta\">" + actions + "</div>" +
+                "</div>" +
+              "</div>" +
+            "</div>" +
+          "</article>"
+        );
+        pinIndex += 1;
+      });
+
+      if (!pins.length) {
+        grid.innerHTML = "<p class=\"muted\">No themes in this topic yet.</p>";
+        grid.removeAttribute("aria-busy");
+        return;
+      }
+      grid.innerHTML = pins.join("");
+      grid.removeAttribute("aria-busy");
+      bindThemePinInteractions(grid);
+    }
+
+    function bindThemePinInteractions(grid) {
+      if (!grid) return;
+      grid.querySelectorAll(".tm-btn-apply").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          tmApplyPack(btn.dataset.packId, btn.dataset.free === "1");
+        });
+      });
+      grid.querySelectorAll(".tm-btn-apply-dna").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          try {
+            await parishFetch("/api/themes/apply", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ source: "parish_dna" }),
+            });
+            if (typeof notify === "function") notify("Parish DNA applied for new Mass decks.", "success");
+            await loadThemeMarketplace({ force: true });
+          } catch (err) {
+            if (typeof notify === "function") notify((err && err.message) || "Could not apply DNA.", "error");
+          }
+        });
+      });
+      grid.querySelectorAll(".tm-btn-buy").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (btn.dataset.needsSub === "1" && !((__tmCatalog || {}).has_app_subscription)) {
+            if (typeof notify === "function") {
+              notify("Subscribe to LiturgyFlow first, then you can buy theme packs.", "info");
+            }
+            if (typeof showRoute === "function") showRoute("/settings/billing");
+            return;
+          }
+          openThemeBuyModal(btn.dataset.packId, btn.dataset.packTitle || "Theme");
+        });
+      });
+      grid.querySelectorAll("[data-tm-preview]").forEach((pin) => {
+        const open = () => {
+          if (pin.getAttribute("data-tm-preview") === "dna") {
+            openThemePreview({
+              kind: "dna",
+              title: "Parish Deck DNA",
+              designer: "Your parish",
+              tone: "parish",
+              free: true,
+              owned: true,
+              active: (((__tmCatalog || {}).state || {}).active_deck_source === "parish_dna"),
+              inspiration:
+                "Built from your parish’s own Mass deck — the fonts, colors, and slide rhythm your community already knows.",
+            });
+            return;
+          }
+          const packId = pin.getAttribute("data-pack-id");
+          const pack = ((((__tmCatalog || {}).packs) || []).find((p) => String(p.id) === String(packId))) || null;
+          if (!pack) return;
+          openThemePreview({
+            kind: "pack",
+            packId: pack.id,
+            title: pack.title,
+            designer: pack.designer_label || "Designer",
+            tone: tmSlideTone(pack),
+            free: !!pack.is_free,
+            owned: !!pack.owned,
+            active: !!pack.is_active,
+            placeholder: !!pack.is_placeholder,
+            inspiration: tmInspirationText(pack),
+          });
+        };
+        pin.addEventListener("click", (e) => {
+          if (e.target.closest(".tm-pin__foot-cta, .tm-pin__cta, .tm-badge, button, a")) return;
+          open();
+        });
+        pin.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          if (e.target.closest(".tm-pin__foot-cta, .tm-pin__cta, button, a")) return;
+          e.preventDefault();
+          open();
+        });
+      });
+    }
+
+    function tmInspirationText(pack) {
+      const desc = String((pack && pack.description) || "").trim();
+      const sub = String((pack && pack.subtitle) || "").trim();
+      if (desc && (!sub || desc.toLowerCase() !== sub.toLowerCase())) return desc;
+      if (desc) return desc;
+      if (sub) return sub;
+      return "A Mass look shaped for the liturgy — quiet enough for prayer, clear enough for the assembly.";
+    }
+
+    function openThemePreview(ctx) {
+      __tmPreviewCtx = ctx || null;
+      const modal = $("tm-preview-modal");
+      const titleEl = $("tm-preview-modal-title");
+      const byEl = $("tm-preview-modal-by");
+      const rail = $("tm-preview-rail");
+      const inspEl = $("tm-preview-modal-inspiration");
+      const inspBy = $("tm-preview-modal-inspiration-by");
+      const cta = $("tm-preview-modal-cta");
+      if (!modal || !rail) return;
+      const tone = (ctx && ctx.tone) || "default";
+      const brand = (ctx && ctx.designer) || "Mass";
+      if (titleEl) titleEl.textContent = (ctx && ctx.title) || "Theme preview";
+      if (byEl) {
+        byEl.textContent = ctx && ctx.placeholder
+          ? ((ctx.designer || "Designer") + " · Coming soon")
+          : ((ctx && ctx.designer ? ctx.designer : "Designer") +
+            (ctx && ctx.free ? " · Free" : (ctx && ctx.owned ? " · Owned" : "")));
+      }
+      if (inspEl) {
+        inspEl.textContent = (ctx && ctx.inspiration) ||
+          "A Mass look shaped for the liturgy — quiet enough for prayer, clear enough for the assembly.";
+      }
+      if (inspBy) {
+        inspBy.textContent = "— " + ((ctx && ctx.designer) || "Designer");
+      }
+      rail.innerHTML = tmPreviewSlidesHtml(tone, brand);
+      if (cta) {
+        const offer = tmStartingOffer();
+        const price = (offer && offer.amount_display) || "₱49";
+        cta.innerHTML = tmPinActionsHtml({
+          free: !!(ctx && ctx.free),
+          owned: !!(ctx && ctx.owned),
+          active: !!(ctx && ctx.active),
+          hasSub: !!(__tmCatalog || {}).has_app_subscription,
+          packId: (ctx && ctx.packId) || "",
+          placeholder: !!(ctx && ctx.placeholder),
+          title: (ctx && ctx.title) || "Theme",
+          priceLabel: price,
+        });
+        if (ctx && ctx.kind === "dna" && !(ctx && ctx.active)) {
+          cta.innerHTML = "<button type=\"button\" class=\"tm-pin__cta tm-btn-apply-dna\">Apply</button>";
+        }
+        cta.querySelectorAll(".tm-btn-apply").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            await tmApplyPack(btn.dataset.packId, btn.dataset.free === "1");
+            closeThemePreview();
+          });
+        });
+        cta.querySelectorAll(".tm-btn-apply-dna").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            try {
+              await parishFetch("/api/themes/apply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ source: "parish_dna" }),
+              });
+              if (typeof notify === "function") notify("Parish DNA applied for new Mass decks.", "success");
+              closeThemePreview();
+              await loadThemeMarketplace({ force: true });
+            } catch (err) {
+              if (typeof notify === "function") notify((err && err.message) || "Could not apply DNA.", "error");
+            }
+          });
+        });
+        cta.querySelectorAll(".tm-btn-buy").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            closeThemePreview();
+            if (btn.dataset.needsSub === "1" && !((__tmCatalog || {}).has_app_subscription)) {
+              if (typeof notify === "function") {
+                notify("Subscribe to LiturgyFlow first, then you can buy theme packs.", "info");
+              }
+              if (typeof showRoute === "function") showRoute("/settings/billing");
+              return;
+            }
+            openThemeBuyModal(btn.dataset.packId, btn.dataset.packTitle || "Theme");
+          });
+        });
+      }
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeThemePreview() {
+      __tmPreviewCtx = null;
+      const modal = $("tm-preview-modal");
+      if (modal) {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    function openThemeBuyModal(packId, title) {
+      if (!((__tmCatalog || {}).has_app_subscription)) {
+        if (typeof notify === "function") {
+          notify("Subscribe to LiturgyFlow first, then you can buy theme packs.", "info");
+        }
+        if (typeof showRoute === "function") showRoute("/settings/billing");
+        return;
+      }
+      __tmBuyPackId = packId;
+      const modal = $("tm-buy-modal");
+      const nameEl = $("tm-buy-pack-name");
+      if (nameEl) nameEl.textContent = title || "Theme";
+      renderThemeTermSelect();
+      if (modal) {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+    }
+
+    function closeThemeBuyModal() {
+      __tmBuyPackId = null;
+      const modal = $("tm-buy-modal");
+      if (modal) {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    async function confirmThemeBuyModal() {
+      const packId = __tmBuyPackId;
+      if (!packId) return;
+      const confirmBtn = $("tm-buy-modal-confirm");
+      if (confirmBtn) confirmBtn.disabled = true;
+      try {
+        const isSuper = !!(__tmCatalog || {}).is_superadmin;
+        const billingOn = !!(__tmCatalog || {}).billing_enabled;
+        if (isSuper || !billingOn) {
+          await tmDevGrantPack(packId);
+        } else {
+          await tmBuyPack(packId);
+        }
+        closeThemeBuyModal();
+      } finally {
+        if (confirmBtn) confirmBtn.disabled = false;
+      }
+    }
+
+    async function loadThemeMarketplace(opts) {
+      const force = !!(opts && opts.force);
+      const status = $("tm-status");
+      if (status) status.textContent = "";
+
+      // Returning to the tab: paint from cache — no skeleton flash.
+      if (__tmCatalog && !force) {
+        syncThemeTopics();
+        renderThemePackGrid();
+        return;
+      }
+
+      const firstLoad = !__tmCatalog;
+      if (firstLoad) renderThemeSkeletons(10);
+      try {
+        const cur = (((__tmCatalog || {}).pricing || {}).currency) || "";
+        const q = cur ? ("?currency=" + encodeURIComponent(cur)) : "";
+        __tmCatalog = await parishFetch("/api/themes/catalog" + q);
+        syncThemeTopics();
+        renderThemePackGrid();
+        if (status) status.textContent = "";
+        const params = new URLSearchParams(window.location.search || "");
+        if (params.get("theme_checkout") === "success") {
+          if (typeof notify === "function") notify("Theme license activated.", "success");
+          history.replaceState({}, "", "/themes");
+        } else if (params.get("theme_checkout") === "cancel") {
+          if (typeof notify === "function") notify("Theme checkout canceled.", "info");
+          history.replaceState({}, "", "/themes");
+        }
+      } catch (err) {
+        if (firstLoad) {
+          const grid = $("tm-pack-grid");
+          if (grid) {
+            grid.innerHTML = "";
+            grid.removeAttribute("aria-busy");
+          }
+        }
+        if (status) status.textContent = (err && err.message) || "Could not load themes.";
+      }
+    }
+
+    async function tmApplyPack(packId, isFree) {
+      try {
+        const body = isFree
+          ? { source: "default" }
+          : { source: "marketplace", pack_id: packId };
+        await parishFetch("/api/themes/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (typeof notify === "function") notify("Theme applied for new Mass decks.", "success");
+        await loadThemeMarketplace({ force: true });
+      } catch (err) {
+        if (typeof notify === "function") notify((err && err.message) || "Could not apply theme.", "error");
+      }
+    }
+
+    async function tmBuyPack(packId) {
+      const offer = tmSelectedOffer();
+      if (!((__tmCatalog || {}).has_app_subscription)) {
+        if (typeof notify === "function") {
+          notify("Subscribe to LiturgyFlow first, then you can buy theme packs.", "info");
+        }
+        if (typeof showRoute === "function") showRoute("/settings/billing");
+        return;
+      }
+      try {
+        const data = await parishFetch("/api/themes/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pack_id: packId,
+            interval: (offer && offer.interval) || "monthly",
+            currency: (offer && offer.currency) || (((__tmCatalog || {}).pricing || {}).currency) || "php",
+          }),
+        });
+        if (data && data.granted) {
+          if (typeof notify === "function") notify("Theme activated.", "success");
+          await loadThemeMarketplace({ force: true });
+          return;
+        }
+        if (data && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error("Checkout did not return a URL.");
+      } catch (err) {
+        const msg = (err && err.message) || "Checkout failed.";
+        if (typeof notify === "function") notify(msg, "error");
+        if (/subscribe/i.test(msg) && typeof showRoute === "function") showRoute("/settings/billing");
+      }
+    }
+
+    async function tmDevGrantPack(packId) {
+      const offer = tmSelectedOffer();
+      if (!((__tmCatalog || {}).has_app_subscription)) {
+        if (typeof notify === "function") {
+          notify("Subscribe to LiturgyFlow first, then you can activate theme packs.", "info");
+        }
+        if (typeof showRoute === "function") showRoute("/settings/billing");
+        return;
+      }
+      try {
+        await parishFetch("/api/themes/dev-grant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pack_id: packId,
+            interval: (offer && offer.interval) || "monthly",
+            currency: (offer && offer.currency) || (((__tmCatalog || {}).pricing || {}).currency) || "php",
+          }),
+        });
+        if (typeof notify === "function") notify("Theme activated.", "success");
+        await loadThemeMarketplace({ force: true });
+      } catch (err) {
+        if (typeof notify === "function") notify((err && err.message) || "Could not activate theme.", "error");
+      }
+    }
+
+    function bindThemeMarketplace() {
+      if (__tmBound) return;
+      __tmBound = true;
+      const sel = $("tm-term-select");
+      if (sel) {
+        sel.addEventListener("change", () => {
+          renderThemeTermSelect();
+        });
+      }
+      const segs = $("tm-term-segments");
+      if (segs) {
+        segs.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-tm-interval]");
+          if (!btn || !sel) return;
+          sel.value = btn.dataset.tmInterval;
+          renderThemeTermSelect();
+        });
+      }
+      const topics = $("tm-topics");
+      if (topics) {
+        topics.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-tm-topic]");
+          if (!btn) return;
+          __tmTopic = btn.getAttribute("data-tm-topic") || "all";
+          syncThemeTopics();
+          renderThemePackGrid();
+        });
+      }
+      const closeBuy = () => closeThemeBuyModal();
+      ["tm-buy-modal-close", "tm-buy-modal-cancel", "tm-buy-modal-backdrop"].forEach((id) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", closeBuy);
+      });
+      const confirm = $("tm-buy-modal-confirm");
+      if (confirm) confirm.addEventListener("click", () => confirmThemeBuyModal());
+      const closePreview = () => closeThemePreview();
+      ["tm-preview-modal-close", "tm-preview-modal-backdrop"].forEach((id) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", closePreview);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const preview = $("tm-preview-modal");
+        if (preview && preview.classList.contains("is-open")) {
+          closeThemePreview();
+          return;
+        }
+        const buy = $("tm-buy-modal");
+        if (buy && buy.classList.contains("is-open")) closeThemeBuyModal();
+      });
     }

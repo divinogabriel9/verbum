@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal, Optional
 
 from fastapi import Depends, HTTPException, Query
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from services.api_security import AuthSession, require_superadmin
@@ -54,6 +55,14 @@ from services.email_notifications import (
 from services.email_reminders import list_reminder_recipients, run_weekly_reminders
 from services.platform_invites import create_invite, list_invites
 from services.platform_announcements import get_admin_announcement, save_announcement
+from services.marketing_outreach import (
+    export_contacts_csv,
+    list_campaigns,
+    list_contacts,
+    send_promo_campaign,
+    set_contact_subscribed,
+    sync_contacts_from_profiles,
+)
 from services.superadmin.merge_parishes import merge_parishes
 from services.superadmin.storage_browser import list_storage_browser
 from services.superadmin.analytics import build_analytics_payload
@@ -131,6 +140,20 @@ class PlatformAnnouncementBody(BaseModel):
     active: bool = False
     starts_at: Optional[str] = Field(None, max_length=40)
     ends_at: Optional[str] = Field(None, max_length=40)
+
+
+class MarketingPromoBody(BaseModel):
+    title: str = Field(..., min_length=1, max_length=160)
+    message: str = Field(..., min_length=1, max_length=500)
+    link_url: Optional[str] = Field(None, max_length=500)
+    channels: list[Literal["in_app", "email"]] = Field(
+        default_factory=lambda: ["in_app"]
+    )
+    audience: Literal["subscribed", "all"] = "subscribed"
+
+
+class MarketingSubscribeBody(BaseModel):
+    subscribed: bool = True
 
 
 class MergeParishesBody(BaseModel):
@@ -229,6 +252,124 @@ def register_admin_routes(app) -> None:
             entity_type="platform_announcement",
             entity_id=str(ann.get("id") or "announcement"),
             detail={"active": ann.get("active"), "severity": ann.get("severity")},
+        )
+        return result
+
+    @app.get("/api/admin/marketing/contacts")
+    def api_admin_marketing_contacts(
+        page: int = Query(1, ge=1, le=500),
+        per_page: int = Query(50, ge=1, le=200),
+        q: str = Query("", max_length=120),
+        subscribed_only: bool = Query(False),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_contacts(
+            page=page, per_page=per_page, q=q, subscribed_only=subscribed_only
+        )
+
+    @app.post("/api/admin/marketing/contacts/sync")
+    def api_admin_marketing_contacts_sync(
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = sync_contacts_from_profiles()
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400, detail=result.get("error") or "Sync failed."
+            )
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="sync",
+            entity_type="marketing_contacts",
+            entity_id="profiles",
+            detail={
+                "created": result.get("created"),
+                "updated": result.get("updated"),
+                "scanned": result.get("scanned"),
+            },
+        )
+        return result
+
+    @app.get("/api/admin/marketing/contacts/export")
+    def api_admin_marketing_contacts_export(
+        subscribed_only: bool = Query(False),
+        session: AuthSession = Depends(require_superadmin),
+    ):
+        result = export_contacts_csv(subscribed_only=subscribed_only)
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400, detail=result.get("error") or "Export failed."
+            )
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="export",
+            entity_type="marketing_contacts",
+            entity_id="csv",
+            detail={"count": result.get("count"), "subscribed_only": subscribed_only},
+        )
+        filename = "liturgyflow-registered-emails.csv"
+        return Response(
+            content=result.get("csv") or "",
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    @app.patch("/api/admin/marketing/contacts/{contact_id}")
+    def api_admin_marketing_contact_patch(
+        contact_id: str,
+        body: MarketingSubscribeBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = set_contact_subscribed(contact_id, body.subscribed)
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400, detail=result.get("error") or "Update failed."
+            )
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="update",
+            entity_type="marketing_contact",
+            entity_id=contact_id,
+            detail={"subscribed": body.subscribed},
+        )
+        return result
+
+    @app.get("/api/admin/marketing/campaigns")
+    def api_admin_marketing_campaigns(
+        limit: int = Query(20, ge=1, le=50),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_campaigns(limit=limit)
+
+    @app.post("/api/admin/marketing/promo")
+    def api_admin_marketing_promo(
+        body: MarketingPromoBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = send_promo_campaign(
+            title=body.title,
+            message=body.message,
+            link_url=body.link_url or "",
+            channels=list(body.channels or []),
+            audience=body.audience,
+            acting_user_id=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400, detail=result.get("error") or "Send failed."
+            )
+        campaign = result.get("campaign") or {}
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="create",
+            entity_type="marketing_campaign",
+            entity_id=str(campaign.get("id") or "promo"),
+            detail={
+                "channels": campaign.get("channels"),
+                "audience": campaign.get("audience"),
+                "in_app_sent": result.get("in_app_sent"),
+                "email_sent": result.get("email_sent"),
+                "recipient_count": result.get("recipient_count"),
+            },
         )
         return result
 

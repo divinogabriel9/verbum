@@ -1169,6 +1169,34 @@
 
     <form id="auth-form" hidden novalidate>
       <div id="auth-form-stage">
+      <div id="auth-designer-fields" hidden>
+        <p class="muted" style="margin:0 0 14px;font-size:0.88rem;line-height:1.45;">
+          Theme designer accounts only use the Themes studio — no parish Mass tools.
+        </p>
+        <div class="field-row field-row--names">
+          <div class="field">
+            <label for="auth-designer-first-name">First Name</label>
+            <input type="text" id="auth-designer-first-name" autocomplete="given-name" maxlength="80" />
+          </div>
+          <div class="field">
+            <label for="auth-designer-last-name">Last Name</label>
+            <input type="text" id="auth-designer-last-name" autocomplete="family-name" maxlength="80" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="auth-designer-display-name">Designer display name</label>
+          <input type="text" id="auth-designer-display-name" maxlength="120" placeholder="Studio or brand name" />
+        </div>
+        <div class="field">
+          <label for="auth-designer-bio">About your work</label>
+          <textarea id="auth-designer-bio" rows="3" maxlength="2000" placeholder="Liturgical seasons, parish media style…"></textarea>
+        </div>
+        <div class="field">
+          <label for="auth-designer-payout-email">Payout email</label>
+          <input type="email" id="auth-designer-payout-email" maxlength="200" placeholder="you@email.com" />
+        </div>
+        <button type="button" class="auth-submit" id="auth-designer-submit">Finish designer signup</button>
+      </div>
       <div id="auth-signup-fields" hidden>
         <div class="auth-steps" id="auth-steps">
           <div class="auth-step is-active" id="auth-step-1" data-step="1">
@@ -1406,8 +1434,13 @@
     <p class="auth-footer" id="auth-footer">
       {% if mode == "sign-in" %}
         Don’t have an account? <a href="/sign-up" id="auth-signin-signup-link">Sign up</a>
+        · <a href="/sign-up?intent=designer">Theme designer</a>
+      {% elif designer_intent %}
+        Parish account? <a href="/sign-up">Sign up for parish</a>
+        · <a href="/sign-in">Sign in</a>
       {% else %}
         Already have an account? <a href="/sign-in">Sign in</a>
+        · <a href="/sign-up?intent=designer">Theme designer</a>
       {% endif %}
     </p>
     <p class="auth-footer" style="margin-top:6px;opacity:0.8;font-size:0.75rem;line-height:1.45;">
@@ -1440,9 +1473,10 @@
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
     window.__VERBUM_HCAPTCHA_SITE_KEY__ = {{ (hcaptcha_site_key or "") | tojson }};
+    window.__VERBUM_DESIGNER_INTENT__ = {{ (designer_intent or false) | tojson }};
   </script>
   <script src="/static/js/cookie-consent.js?v=20261004-panel" defer></script>
   {% include "partials/posthog.html" %}
-  <script src="/static/js/auth-page.js?v=20261004-parish-join" defer></script>
+  <script src="/static/js/auth-page.js?v=20261010-designer" defer></script>
 </body>
 </html>

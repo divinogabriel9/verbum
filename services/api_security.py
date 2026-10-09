@@ -174,6 +174,14 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
 
         require_profile_onboarding_complete(profile_row or None)
 
+    from services.membership_config import is_theme_designer_profile
+
+    if is_theme_designer_profile(profile_row or None):
+        raise HTTPException(
+            status_code=403,
+            detail="Theme designer accounts can only use the Themes studio.",
+        )
+
     if membership_allows_full_access(
         church, user=session.user, profile_role=profile_role
     ):
@@ -206,6 +214,14 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
         from services.stripe_billing import billing_enabled
 
         if billing_enabled():
+            # Premium one-time tokens and/or monthly free-tier Masses.
+            try:
+                from services.free_mass_credit import user_has_free_mass_credit
+
+                if user_has_free_mass_credit(session.user.user_id):
+                    return session
+            except Exception:
+                pass
             sub = ((church or {}).get("stripe_subscription_status") or "").strip().lower()
             if sub in {"canceled", "unpaid", "incomplete_expired"}:
                 raise HTTPException(
@@ -214,7 +230,7 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
                 )
             raise HTTPException(
                 status_code=403,
-                detail="Start a 14-day parish trial under Settings → Billing to unlock the app.",
+                detail="You've used this month's free Masses. Start a 14-day parish trial under Settings → Billing for unlimited decks with curated posters.",
             )
     except HTTPException:
         raise

@@ -1165,12 +1165,44 @@
       syncFlowDockVisibility("setup");
     })();
 
-    var NOTIF_STORAGE_KEY = "verbumNotifications";
+    var NOTIF_STORAGE_BASE = "verbumNotifications";
     var appNotifications = [];
+    var appNotificationsUserScope = null;
+
+    function notifCurrentUserId() {
+      try {
+        const auth = window.VerbumAuth;
+        const user = auth && auth.getUser ? auth.getUser() : null;
+        if (user && user.id) return String(user.id);
+      } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function notifStorageKey(userId) {
+      const uid = userId != null && String(userId).trim()
+        ? String(userId).trim()
+        : notifCurrentUserId();
+      // Per-user only — never a shared account / anonymous bucket.
+      return uid ? NOTIF_STORAGE_BASE + ":u:" + uid : "";
+    }
+
+    function dropLegacySharedNotifStorage() {
+      try {
+        localStorage.removeItem(NOTIF_STORAGE_BASE);
+      } catch (_e) { /* ignore */ }
+    }
 
     function loadAppNotifications() {
       try {
-        appNotifications = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY) || "[]");
+        dropLegacySharedNotifStorage();
+        const uid = notifCurrentUserId();
+        appNotificationsUserScope = uid || null;
+        const key = notifStorageKey(uid);
+        if (!key) {
+          appNotifications = [];
+          return;
+        }
+        appNotifications = JSON.parse(localStorage.getItem(key) || "[]");
         if (!Array.isArray(appNotifications)) appNotifications = [];
         appNotifications = appNotifications.map((item) => ({
           ...item,
@@ -1196,8 +1228,37 @@
 
     function saveAppNotifications() {
       try {
-        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(appNotifications.slice(0, 120)));
+        const uid = notifCurrentUserId();
+        const key = notifStorageKey(uid);
+        if (!key) return;
+        if (appNotificationsUserScope !== (uid || null)) {
+          appNotificationsUserScope = uid || null;
+        }
+        localStorage.setItem(key, JSON.stringify(appNotifications.slice(0, 120)));
       } catch (_e) { /* ignore */ }
+    }
+
+    function resetAppNotificationsForAuthChange() {
+      loadAppNotifications();
+      renderNotificationFeed();
+      try {
+        const auth = window.VerbumAuth;
+        if (auth && typeof auth.getPendingNotifications === "function") {
+          const pending = auth.getPendingNotifications();
+          if (pending && pending.length) syncServerUserNotifications(pending);
+        }
+      } catch (_e) { /* ignore */ }
+    }
+
+    function initAppNotificationScope() {
+      window.addEventListener("verbum:auth-ready", () => {
+        resetAppNotificationsForAuthChange();
+      });
+      window.addEventListener("verbum:signed-out", () => {
+        appNotifications = [];
+        appNotificationsUserScope = null;
+        renderNotificationFeed();
+      });
     }
 
     function getUnreadAppNotificationCount() {
@@ -1327,6 +1388,13 @@
     }
 
     function pushAppNotification(message, kind, meta) {
+      const uid = notifCurrentUserId();
+      // Never write personal alerts into another user's (or a shared) bucket.
+      if (appNotificationsUserScope && uid && appNotificationsUserScope !== uid) {
+        loadAppNotifications();
+      } else if (!appNotificationsUserScope && uid) {
+        loadAppNotifications();
+      }
       const key = meta && meta.key ? String(meta.key) : "";
       const item = {
         id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
@@ -1443,7 +1511,7 @@
 
     function mapServerNotificationKind(kind) {
       const k = String(kind || "").toLowerCase();
-      if (k === "song_approved" || k === "ok") return "ok";
+      if (k === "song_approved" || k === "ok" || k === "promo" || k === "info") return "ok";
       if (k === "song_rejected" || k === "error" || k === "warn") return "error";
       return "ok";
     }
@@ -1582,10 +1650,26 @@
 
     var CELEBRANT_PLACEHOLDER = "Select celebrant";
 
+    function canAddPriestName() {
+      if (typeof churchMembershipState === "undefined" || !churchMembershipState) return false;
+      return !!(
+        churchMembershipState.can_submit_priest ||
+        churchMembershipState.can_edit_church_profile ||
+        churchMembershipState.can_generate_mass
+      );
+    }
+
+    function syncCelebrantPickerDisabledState() {
+      const picker = $("celebrant-picker");
+      if (!picker) return;
+      // Keep the picker openable whenever Add a priest is available (even if list is empty).
+      const disable = !celebrantNamesCache.length && !canAddPriestName();
+      picker.classList.toggle("celebrant-picker--disabled", disable);
+    }
+
     function setCelebrantPickerValue(name) {
       const hidden = $("celebrant");
       const display = $("celebrant-display");
-      const picker = $("celebrant-picker");
       const list = $("celebrant-list");
       if (!hidden || !display) return;
       const value = (name || "").trim();
@@ -1604,7 +1688,7 @@
           btn.classList.toggle("is-active", on);
         });
       }
-      if (picker) picker.classList.toggle("celebrant-picker--disabled", !celebrantNamesCache.length);
+      syncCelebrantPickerDisabledState();
       syncCelebrantFromSelect();
     }
 
@@ -1636,37 +1720,231 @@
       return !!(picker && picker.classList.contains("celebrant-picker--disabled"));
     }
 
+    function celebrantPickerActionButtons() {
+      const list = $("celebrant-list");
+      if (!list) return [];
+      return Array.from(list.querySelectorAll(".celebrant-picker__option, .celebrant-picker__add"));
+    }
+
     function renderCelebrantSelect(selectedName) {
       const list = $("celebrant-list");
       const empty = $("celebrant-picker-empty");
-      const picker = $("celebrant-picker");
       const hidden = $("celebrant");
       if (!list || !hidden) return;
       const keep = (selectedName || getMainCelebrantName() || "").trim();
       const names = celebrantNamesCache.slice();
-      if (!names.length) {
-        list.innerHTML = "";
-        if (empty) empty.hidden = false;
-        if (picker) picker.classList.add("celebrant-picker--disabled");
-        setCelebrantPickerValue("");
-        return;
-      }
-      if (empty) empty.hidden = true;
-      if (picker) picker.classList.remove("celebrant-picker--disabled");
-      list.innerHTML = names.map((name) => (
+      const canAdd = canAddPriestName();
+      const nameItems = names.map((name) => (
         "<li role=\"presentation\">" +
           "<button type=\"button\" class=\"vb-dropdown-item celebrant-picker__option\" role=\"option\" data-value=\"" +
           escapeHtml(name) + "\" aria-selected=\"false\">" +
           "<span class=\"vb-dropdown-item__label\">" + escapeHtml(name) + "</span></button>" +
         "</li>"
       )).join("");
+      const addItem = canAdd
+        ? (
+          "<li role=\"presentation\" class=\"celebrant-picker__add-item\">" +
+            "<button type=\"button\" class=\"vb-dropdown-item celebrant-picker__add\" role=\"option\" data-celebrant-add=\"1\">" +
+              "<span class=\"celebrant-picker__add-icon\" aria-hidden=\"true\">+</span>" +
+              "<span class=\"vb-dropdown-item__label\">Add a priest</span>" +
+            "</button>" +
+          "</li>"
+        )
+        : "";
+      list.innerHTML = nameItems + addItem;
+      if (empty) {
+        empty.hidden = !(names.length === 0 && !canAdd);
+      }
+      syncCelebrantPickerDisabledState();
       let chosen = "";
       if (keep && names.indexOf(keep) >= 0) {
         chosen = keep;
+      } else if (keep) {
+        const match = names.find((n) => n.toLowerCase() === keep.toLowerCase());
+        chosen = match || (names.length ? names[0] : "");
       } else if (names.length) {
         chosen = names[0];
       }
       setCelebrantPickerValue(chosen);
+    }
+
+    function setAddPriestModalStep(step) {
+      const modal = $("add-priest-modal");
+      if (!modal) return;
+      const enter = step !== "confirm";
+      modal.setAttribute("data-step", enter ? "enter" : "confirm");
+      const enterStep = $("add-priest-enter-step");
+      const confirmStep = $("add-priest-confirm-step");
+      const footEnter = $("add-priest-footer-enter");
+      const footConfirm = $("add-priest-footer-confirm");
+      const title = $("add-priest-modal-title");
+      const desc = $("add-priest-modal-desc");
+      if (enterStep) enterStep.hidden = !enter;
+      if (confirmStep) confirmStep.hidden = enter;
+      if (footEnter) footEnter.hidden = !enter;
+      if (footConfirm) footConfirm.hidden = enter;
+      if (title) title.textContent = enter ? "Add a priest" : "Confirm spelling";
+      if (desc) {
+        desc.textContent = enter
+          ? "Enter the celebrant name exactly as it should appear on Mass slides."
+          : "Double-check the name below before adding it to your parish list.";
+      }
+    }
+
+    function closeAddPriestModal() {
+      const modal = $("add-priest-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      const err = $("add-priest-error");
+      if (err) {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      const confirmBtn = $("add-priest-confirm");
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Confirm spelling";
+      }
+    }
+
+    function openAddPriestModal() {
+      if (!canAddPriestName()) {
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus("Approved parish membership is required to add a priest name.", "error");
+        }
+        return;
+      }
+      closeCelebrantPicker();
+      const modal = $("add-priest-modal");
+      const input = $("add-priest-name");
+      const err = $("add-priest-error");
+      if (!modal) return;
+      if (err) {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      if (input) input.value = "";
+      setAddPriestModalStep("enter");
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(() => {
+        if (input) input.focus();
+      });
+    }
+
+    function showAddPriestConfirmStep() {
+      const input = $("add-priest-name");
+      const err = $("add-priest-error");
+      const preview = $("add-priest-confirm-name");
+      const name = ((input && input.value) || "").trim();
+      if (!name) {
+        if (err) {
+          err.hidden = false;
+          err.textContent = "Enter a priest name first.";
+        }
+        if (input) input.focus();
+        return;
+      }
+      if (err) {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      if (preview) preview.textContent = name;
+      setAddPriestModalStep("confirm");
+      const confirmBtn = $("add-priest-confirm");
+      if (confirmBtn) confirmBtn.focus();
+    }
+
+    async function confirmAddPriestName() {
+      const input = $("add-priest-name");
+      const preview = $("add-priest-confirm-name");
+      const confirmBtn = $("add-priest-confirm");
+      const name = (
+        ((preview && preview.textContent) || (input && input.value) || "")
+      ).trim();
+      if (!name) {
+        setAddPriestModalStep("enter");
+        return;
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Saving…";
+      }
+      try {
+        const result = await addSettingsCelebrantName(name);
+        if (!result) {
+          if (typeof setFlowStatus === "function") {
+            setFlowStatus("Could not add that priest name. Try again.", "error");
+          }
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Confirm spelling";
+          }
+          return;
+        }
+        closeAddPriestModal();
+        if (typeof setFlowStatus === "function") {
+          if (result.pending) {
+            setFlowStatus(result.message || "Priest submitted for approval and selected for this Mass.", "ok");
+          } else if (result.exists) {
+            setFlowStatus("That priest is already on your list.", "ok");
+          } else if (result.local) {
+            setFlowStatus("Priest selected for this Mass.", "ok");
+          } else {
+            setFlowStatus("Priest added and selected.", "ok");
+          }
+        }
+      } catch (err) {
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus((err && err.message) || "Could not add that priest name.", "error");
+        }
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm spelling";
+        }
+      }
+    }
+
+    function bindAddPriestModal() {
+      const modal = $("add-priest-modal");
+      if (!modal || modal.dataset.bound === "1") return;
+      modal.dataset.bound = "1";
+      const closeBtn = $("add-priest-modal-close");
+      const cancelBtn = $("add-priest-cancel");
+      const continueBtn = $("add-priest-continue");
+      const backBtn = $("add-priest-back");
+      const confirmBtn = $("add-priest-confirm");
+      const backdrop = $("add-priest-modal-backdrop");
+      const input = $("add-priest-name");
+      [closeBtn, cancelBtn, backdrop].forEach((el) => {
+        if (el) el.addEventListener("click", () => closeAddPriestModal());
+      });
+      if (continueBtn) continueBtn.addEventListener("click", () => showAddPriestConfirmStep());
+      if (backBtn) {
+        backBtn.addEventListener("click", () => {
+          setAddPriestModalStep("enter");
+          if (input) input.focus();
+        });
+      }
+      if (confirmBtn) confirmBtn.addEventListener("click", () => { void confirmAddPriestName(); });
+      if (input) {
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            showAddPriestConfirmStep();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeAddPriestModal();
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (!modal.classList.contains("is-open")) return;
+        e.preventDefault();
+        closeAddPriestModal();
+      });
     }
 
     function bindCelebrantSelect() {
@@ -1675,6 +1953,7 @@
       const trigger = $("celebrant-picker-trigger");
       if (!list || !picker || picker.dataset.bound === "1") return;
       picker.dataset.bound = "1";
+      bindAddPriestModal();
       if (trigger) {
         trigger.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -1685,13 +1964,19 @@
         });
       }
       list.addEventListener("click", (e) => {
+        const addBtn = e.target.closest(".celebrant-picker__add");
+        if (addBtn) {
+          e.preventDefault();
+          openAddPriestModal();
+          return;
+        }
         const btn = e.target.closest(".celebrant-picker__option");
         if (!btn || !btn.dataset.value) return;
         setCelebrantPickerValue(btn.dataset.value);
         closeCelebrantPicker();
       });
       list.addEventListener("keydown", (e) => {
-        const opts = Array.from(list.querySelectorAll(".celebrant-picker__option"));
+        const opts = celebrantPickerActionButtons();
         if (!opts.length) return;
         const idx = opts.indexOf(document.activeElement);
         if (e.key === "ArrowDown") {
@@ -1703,8 +1988,13 @@
         } else if (e.key === "Enter" || e.key === " ") {
           if (idx >= 0) {
             e.preventDefault();
-            setCelebrantPickerValue(opts[idx].dataset.value);
-            closeCelebrantPicker();
+            const el = opts[idx];
+            if (el.classList.contains("celebrant-picker__add")) {
+              openAddPriestModal();
+            } else {
+              setCelebrantPickerValue(el.dataset.value);
+              closeCelebrantPicker();
+            }
           }
         } else if (e.key === "Escape") {
           closeCelebrantPicker();
@@ -1722,7 +2012,7 @@
 
     async function saveCelebrantNamesToDatabase() {
       if (!churchMembershipState.can_edit_church_profile) {
-        throw new Error("Superadmin access is required to edit the celebrant list directly.");
+        throw new Error("Approved parish membership is required to edit the celebrant list.");
       }
       const data = await postJSON("/api/community/profile", { celebrant_names: celebrantNamesCache });
       applyCelebrantNamesFromServer(data.celebrant_names || celebrantNamesCache);
@@ -1733,11 +2023,13 @@
       const n = (name || "").trim();
       if (!n) return false;
       const key = n.toLowerCase();
-      if (celebrantNamesCache.some((x) => x.toLowerCase() === key)) return false;
-      if (!churchMembershipState.can_submit_priest && !churchMembershipState.can_edit_church_profile) {
-        throw new Error("Approved parish membership is required to submit a priest name.");
+      const existing = celebrantNamesCache.find((x) => x.toLowerCase() === key);
+      if (existing) {
+        renderCelebrantSelect(existing);
+        return { exists: true };
       }
-      if (churchMembershipState.is_superadmin) {
+      // Approved members (and superadmin) save to the parish celebrant list immediately.
+      if (churchMembershipState.can_edit_church_profile) {
         celebrantNamesCache.push(n);
         renderSettingsCelebrantList();
         renderCelebrantSelect(n);
@@ -1746,16 +2038,31 @@
         } catch (_e) {
           celebrantNamesCache = celebrantNamesCache.filter((x) => x !== n);
           renderSettingsCelebrantList();
+          renderCelebrantSelect(getMainCelebrantName());
           return false;
         }
         return true;
       }
-      try {
-        const data = await postJSON("/api/submissions/priest", { name: n });
-        return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
-      } catch (_e) {
-        return false;
+      if (churchMembershipState.can_submit_priest) {
+        try {
+          const data = await postJSON("/api/submissions/priest", { name: n });
+          // Keep the name selectable for this Mass while approval is pending.
+          celebrantNamesCache.push(n);
+          renderSettingsCelebrantList();
+          renderCelebrantSelect(n);
+          return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
+        } catch (_e) {
+          return false;
+        }
       }
+      // Complimentary / early access: keep the name for this session so generate works.
+      if (churchMembershipState.can_generate_mass) {
+        celebrantNamesCache.push(n);
+        renderSettingsCelebrantList();
+        renderCelebrantSelect(n);
+        return { local: true };
+      }
+      throw new Error("Approved parish membership is required to submit a priest name.");
     }
 
     async function migrateCelebrantsFromBrowserStorage() {
@@ -2106,6 +2413,13 @@
         can_edit_logo: true,
       can_edit_church_profile: false,
       can_use_full_app: true,
+      can_generate_mass: true,
+      free_mass_remaining: 0,
+      free_mass_used: false,
+      premium_mass_remaining: 0,
+      free_tier_mass_remaining: 0,
+      next_generation_tier: "paid",
+      can_use_premium_posters: true,
       can_submit_song: true,
       can_submit_priest: true,
       is_superadmin: false,
@@ -2113,6 +2427,7 @@
     };
 
     loadAppNotifications();
+    initAppNotificationScope();
     initServerUserNotifications();
     renderNotificationFeed();
 
@@ -2547,6 +2862,240 @@
       });
     }
 
+    var TRIAL_OFFER_SKIP_BASE = "verbum:trial-offer-skipped";
+    var trialOfferShownThisLoad = false;
+
+    function trialOfferUserId() {
+      try {
+        const auth = window.VerbumAuth;
+        const user = auth && auth.getUser ? auth.getUser() : null;
+        if (user && user.id) return String(user.id);
+      } catch (_e) { /* ignore */ }
+      const uid = (churchMembershipState && churchMembershipState.user_id) || "";
+      return uid ? String(uid) : "";
+    }
+
+    function trialOfferSkipKey() {
+      const uid = trialOfferUserId();
+      return uid ? TRIAL_OFFER_SKIP_BASE + ":u:" + uid : "";
+    }
+
+    function hasSkippedTrialOffer() {
+      try {
+        const key = trialOfferSkipKey();
+        if (!key) return false;
+        return localStorage.getItem(key) === "1";
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function markTrialOfferSkipped() {
+      try {
+        const key = trialOfferSkipKey();
+        if (key) localStorage.setItem(key, "1");
+      } catch (_e) { /* ignore */ }
+    }
+
+    function needsParishTrial(state) {
+      const s = state || churchMembershipState;
+      if (!s || s.is_superadmin || s.can_use_full_app) return false;
+      const billing = (s.billing && typeof s.billing === "object")
+        ? s.billing
+        : (billingUiState || {});
+      if (!billing.billing_enabled) return false;
+      if (billing.has_paid_access) return false;
+      // New signups and anyone who has not unlocked Mass generation yet.
+      return true;
+    }
+
+    function premiumMassRemaining(state) {
+      const s = state || churchMembershipState;
+      if (!s) return 0;
+      if (s.premium_mass_remaining != null) return Math.max(0, Number(s.premium_mass_remaining) || 0);
+      return Math.max(0, Number(s.free_mass_remaining || 0));
+    }
+
+    function freeTierMassRemaining(state) {
+      const s = state || churchMembershipState;
+      return Math.max(0, Number((s && s.free_tier_mass_remaining) || 0));
+    }
+
+    function hasFreeMassCredit(state) {
+      return premiumMassRemaining(state) > 0 || freeTierMassRemaining(state) > 0;
+    }
+
+    function canGenerateMass(state) {
+      const s = state || churchMembershipState;
+      if (!s) return false;
+      if (s.can_generate_mass != null) return !!s.can_generate_mass;
+      return !!(s.can_use_full_app || hasFreeMassCredit(s));
+    }
+
+    function shouldShowTrialOfferCard(state) {
+      if (!needsParishTrial(state)) return false;
+      // On load: only auto-open after all credits are gone.
+      // Post-generate always forces the card via showTrialOfferAfterGenerate.
+      if (hasFreeMassCredit(state)) return false;
+      if (hasSkippedTrialOffer()) return false;
+      return true;
+    }
+
+    function syncTrialOfferCopy(state) {
+      const s = state || churchMembershipState;
+      const premiumLeft = premiumMassRemaining(s);
+      const freeLeft = freeTierMassRemaining(s);
+      const title = $("trial-offer-title");
+      const desc = $("trial-offer-desc");
+      if (title) {
+        title.textContent = (premiumLeft > 0 || freeLeft > 0)
+          ? "Start your 14-day free trial"
+          : "Keep building Mass with curated posters";
+      }
+      if (desc) {
+        if (premiumLeft > 0) {
+          desc.textContent = "You still have "
+            + premiumLeft
+            + " premium Mass"
+            + (premiumLeft === 1 ? "" : "es")
+            + " with curated divider posters, plus "
+            + freeLeft
+            + " basic free Mass"
+            + (freeLeft === 1 ? "" : "es")
+            + " this month. Start a 14-day trial for unlimited decks — you won’t be charged until it ends.";
+        } else if (freeLeft > 0) {
+          desc.textContent = "You have "
+            + freeLeft
+            + " basic free Mass"
+            + (freeLeft === 1 ? "" : "es")
+            + " left this month (without curated divider posters). Start a 14-day trial for unlimited decks with beautiful posters — you won’t be charged until it ends.";
+        } else {
+          desc.textContent = "You’ve used your free Masses for this month. Start a 14-day free trial for unlimited generation with curated divider posters. Add billing now — you won’t be charged until the trial ends.";
+        }
+      }
+    }
+
+    function showTrialOfferAfterGenerate() {
+      if (!needsParishTrial(churchMembershipState)) return;
+      syncTrialOfferCopy(churchMembershipState);
+      trialOfferShownThisLoad = true;
+      openTrialOfferModal();
+    }
+
+    function applyFreeMassFromGenerate(data) {
+      if (!data || typeof data !== "object") return;
+      const hadUpdate = data.premium_mass_remaining != null
+        || data.free_tier_mass_remaining != null
+        || data.free_mass_remaining != null
+        || data.free_mass_used != null
+        || data.next_generation_tier != null;
+      if (hadUpdate) {
+        const premiumLeft = data.premium_mass_remaining != null
+          ? Math.max(0, Number(data.premium_mass_remaining) || 0)
+          : (data.free_mass_remaining != null
+            ? Math.max(0, Number(data.free_mass_remaining) || 0)
+            : churchMembershipState.premium_mass_remaining);
+        const freeLeft = data.free_tier_mass_remaining != null
+          ? Math.max(0, Number(data.free_tier_mass_remaining) || 0)
+          : churchMembershipState.free_tier_mass_remaining;
+        churchMembershipState.premium_mass_remaining = premiumLeft;
+        churchMembershipState.free_mass_remaining = premiumLeft;
+        churchMembershipState.free_mass_used = premiumLeft <= 0;
+        churchMembershipState.free_tier_mass_remaining = freeLeft;
+        churchMembershipState.next_generation_tier = data.next_generation_tier
+          || (premiumLeft > 0 ? "premium" : (freeLeft > 0 ? "free" : "none"));
+        churchMembershipState.can_use_premium_posters = data.can_use_premium_posters != null
+          ? !!data.can_use_premium_posters
+          : premiumLeft > 0;
+        churchMembershipState.can_generate_mass = !!(
+          churchMembershipState.can_use_full_app
+          || churchMembershipState.is_superadmin
+          || premiumLeft > 0
+          || freeLeft > 0
+        );
+        syncGenerateButtons();
+        syncPrivilegedUi();
+        syncGlobalMembershipBanner(churchMembershipState);
+      }
+      // After every generation, show the 14-day trial card.
+      if (needsParishTrial(churchMembershipState)) {
+        showTrialOfferAfterGenerate();
+      }
+    }
+    window.applyFreeMassFromGenerate = applyFreeMassFromGenerate;
+
+    function openTrialOfferModal() {
+      const modal = $("trial-offer-modal");
+      if (!modal) return;
+      syncTrialOfferCopy(churchMembershipState);
+      setUiOverlayOpen(modal, true);
+    }
+
+    function closeTrialOfferModal() {
+      setUiOverlayOpen($("trial-offer-modal"), false);
+    }
+
+    function skipTrialOffer() {
+      markTrialOfferSkipped();
+      closeTrialOfferModal();
+      syncGlobalMembershipBanner(churchMembershipState);
+    }
+
+    function startTrialOfferBilling() {
+      closeTrialOfferModal();
+      // Keep the card available if they leave billing without starting checkout.
+      if (typeof showRoute === "function") {
+        showRoute("/settings/billing");
+      } else {
+        window.location.assign("/settings/billing");
+      }
+    }
+
+    function maybeShowTrialOffer(state) {
+      if (!shouldShowTrialOfferCard(state)) return;
+      if (trialOfferShownThisLoad) return;
+      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
+
+      function tryOpen() {
+        if (trialOfferShownThisLoad) return;
+        if (!shouldShowTrialOfferCard(churchMembershipState)) return;
+        if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
+        const blockers = [
+          $("membership-welcome-modal"),
+          $("mobile-welcome-modal"),
+          $("songs-whats-new-modal"),
+        ];
+        if (blockers.some((el) => el && el.classList.contains("is-open"))) {
+          setTimeout(tryOpen, 500);
+          return;
+        }
+        trialOfferShownThisLoad = true;
+        openTrialOfferModal();
+      }
+
+      setTimeout(tryOpen, 700);
+    }
+
+    function initTrialOfferModal() {
+      const modal = $("trial-offer-modal");
+      if (!modal || modal.dataset.bound === "1") return;
+      modal.dataset.bound = "1";
+      const backdrop = $("trial-offer-backdrop");
+      if (backdrop) {
+        backdrop.addEventListener("click", () => {
+          if (modal.classList.contains("is-open")) skipTrialOffer();
+        });
+      }
+      const skipBtn = $("trial-offer-skip");
+      if (skipBtn) skipBtn.addEventListener("click", skipTrialOffer);
+      const startBtn = $("trial-offer-start");
+      if (startBtn) startBtn.addEventListener("click", startTrialOfferBilling);
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (modal.classList.contains("is-open")) skipTrialOffer();
+      });
+    }
+
     var billingUiState = {
       billing_enabled: false,
       has_paid_access: false,
@@ -2970,10 +3519,31 @@
       const billing = state.billing || billingUiState || {};
       const billingOn = !!billing.billing_enabled;
       if (!state.is_superadmin && !state.can_use_full_app) {
-        if (billingOn) {
-          show = true;
-          cls += " is-pending";
-          html = "Start your parish’s <strong>14-day free trial</strong> under <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a> to unlock Mass generation.";
+        if (billingOn && needsParishTrial(state)) {
+          if (hasFreeMassCredit(state)) {
+            const premiumLeft = premiumMassRemaining(state);
+            const freeLeft = freeTierMassRemaining(state);
+            show = true;
+            cls += " is-pending";
+            const bits = [];
+            if (premiumLeft > 0) {
+              bits.push("<strong>" + premiumLeft + " premium</strong> Mass" + (premiumLeft === 1 ? "" : "es") + " with curated posters");
+            }
+            if (freeLeft > 0) {
+              bits.push("<strong>" + freeLeft + " basic free</strong> Mass" + (freeLeft === 1 ? "" : "es") + " this month");
+            }
+            html = "You have "
+              + bits.join(" and ")
+              + ". Start a 14-day trial anytime under <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a>.";
+          } else if (shouldShowTrialOfferCard(state)) {
+            // Card first; banner only after they skip.
+            show = false;
+            maybeShowTrialOffer(state);
+          } else {
+            show = true;
+            cls += " is-pending";
+            html = "Ready for your <strong>14-day free trial</strong>? Open <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a>, add your billing details, and start the trial to unlock Mass generation.";
+          }
         } else if (status === "pending" || status === "draft") {
           // Pending-approval users get the welcome + tour popups instead of a global banner.
           show = false;
@@ -3017,6 +3587,18 @@
       if (billing && typeof billing === "object") {
         billingUiState = Object.assign({}, billingUiState, billing);
       }
+      const premiumRemaining = data.premium_mass_remaining != null
+        ? Math.max(0, Number(data.premium_mass_remaining) || 0)
+        : (data.free_mass_remaining != null ? Math.max(0, Number(data.free_mass_remaining) || 0) : 0);
+      const freeTierRemaining = data.free_tier_mass_remaining != null
+        ? Math.max(0, Number(data.free_tier_mass_remaining) || 0)
+        : 0;
+      const canFull = data.can_use_full_app != null
+        ? !!data.can_use_full_app
+        : !!data.can_edit_church_profile;
+      const canGen = data.can_generate_mass != null
+        ? !!data.can_generate_mass
+        : !!(canFull || premiumRemaining > 0 || freeTierRemaining > 0);
       churchMembershipState = {
         membership_status: data.membership_status || "draft",
         community_name_locked: !!data.community_name_locked,
@@ -3027,9 +3609,19 @@
         can_request_parish_rename: !!data.can_request_parish_rename,
         can_edit_logo: data.can_edit_logo != null ? !!data.can_edit_logo : !data.logo_locked,
         can_edit_church_profile: !!data.can_edit_church_profile,
-        can_use_full_app: data.can_use_full_app != null ? !!data.can_use_full_app : !!data.can_edit_church_profile,
-        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!data.can_use_full_app && !data.is_superadmin),
-        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!data.can_use_full_app && !data.is_superadmin),
+        can_use_full_app: canFull,
+        can_generate_mass: canGen,
+        free_mass_remaining: premiumRemaining,
+        free_mass_used: data.free_mass_used != null ? !!data.free_mass_used : premiumRemaining <= 0,
+        premium_mass_remaining: premiumRemaining,
+        free_tier_mass_remaining: freeTierRemaining,
+        next_generation_tier: data.next_generation_tier
+          || (canFull ? "paid" : (premiumRemaining > 0 ? "premium" : (freeTierRemaining > 0 ? "free" : "none"))),
+        can_use_premium_posters: data.can_use_premium_posters != null
+          ? !!data.can_use_premium_posters
+          : !!(canFull || premiumRemaining > 0),
+        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!canFull && !data.is_superadmin),
+        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!canFull && !data.is_superadmin),
         is_superadmin: !!data.is_superadmin,
         role: (data.role || "member").toLowerCase(),
         parish_role: (data.parish_role || "").toLowerCase(),
@@ -3145,13 +3737,14 @@
     function syncPrivilegedUi() {
       const sa = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       const canFull = !!churchMembershipState.can_use_full_app;
+      const canGen = canGenerateMass(churchMembershipState);
       document.body.classList.toggle("is-superadmin", sa);
-      document.body.classList.toggle("is-limited-member", !canFull);
+      document.body.classList.toggle("is-limited-member", !canFull && !canGen);
       if (typeof applyAppVersionLabelLocalTime === "function") applyAppVersionLabelLocalTime();
       if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
 
       const flowPage = $("flow-page");
-      if (flowPage) flowPage.classList.toggle("is-readonly", !canFull);
+      if (flowPage) flowPage.classList.toggle("is-readonly", !canGen);
       const themePage = $("theme-page");
       if (themePage) themePage.classList.toggle("is-readonly", !sa);
 
@@ -3182,17 +3775,29 @@
     }
 
     function syncGenerateButtons() {
-      const canGen = churchMembershipState.can_use_full_app;
+      const canGen = canGenerateMass(churchMembershipState);
+      const premiumLeft = premiumMassRemaining(churchMembershipState);
+      const freeLeft = freeTierMassRemaining(churchMembershipState);
+      const tier = churchMembershipState.next_generation_tier || "";
       ["btn-generate-flow", "btn-generate-flow-inline"].forEach((id) => {
         const btn = $(id);
         if (!btn) return;
         btn.disabled = !canGen;
-        btn.title = canGen ? "" : "Mass generation requires approved parish membership.";
+        let title = "";
+        if (!canGen) {
+          title = "Start a 14-day trial under Settings → Billing to unlock Mass generation.";
+        } else if (tier === "premium" || (premiumLeft > 0 && tier !== "free")) {
+          title = "Uses 1 premium Mass with curated divider posters (" + premiumLeft + " left)";
+        } else if (tier === "free" || freeLeft > 0) {
+          title = "Uses 1 basic free Mass this month — no curated divider posters (" + freeLeft + " left)";
+        }
+        btn.title = title;
       });
     }
 
     window.addEventListener("verbum:membership", (event) => {
       if (event.detail) syncMembershipUi(event.detail);
+      renderCelebrantSelect(getMainCelebrantName());
     });
 
     function applyCommunityPayload(data) {
@@ -4065,9 +4670,10 @@
       platform: {
         label: "Platform",
         group: "System",
-        desc: "AI quotas, banners, storage, flags, health, and audit.",
+        desc: "AI quotas, Gospel posters, banners, storage, flags, health, and audit.",
         panels: [
           { id: "system-ai", label: "AI & quota" },
+          { id: "system-gospel-posters", label: "Gospel posters" },
           { id: "system-announcement", label: "Announce" },
           { id: "system-storage", label: "Storage" },
           { id: "system-flags", label: "Flags" },
@@ -4179,6 +4785,12 @@
         loadSaSongPreviews();
       }
       else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); loadSaParishQuotaTable(); }
+      else if (saState.panel === "system-gospel-posters") {
+        if (typeof initWeeklyStylePosters === "function") initWeeklyStylePosters();
+        if (typeof scheduleWeeklyStylePosterRefresh === "function") {
+          scheduleWeeklyStylePosterRefresh({ force: true });
+        }
+      }
       else if (saState.panel === "system-announcement") loadSaAnnouncementAdmin();
       else if (saState.panel === "system-storage") loadSaStorageBrowser();
       else if (saState.panel === "system-flags") loadSaFeatureFlags();

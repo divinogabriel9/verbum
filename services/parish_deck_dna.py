@@ -471,6 +471,8 @@ def save_dna_supabase(
                 "deck_dna_path": stored.path,
                 "deck_dna_slide_map": dict(slide_map),
                 "deck_dna_updated_at": updated_at,
+                "active_deck_source": "parish_dna",
+                "active_theme_pack_id": None,
             }
         ).eq("id", parish_id).execute()
     except Exception as exc:
@@ -512,6 +514,8 @@ def clear_dna_supabase(parish_id: str) -> dict[str, Any]:
                     "deck_dna_path": None,
                     "deck_dna_slide_map": None,
                     "deck_dna_updated_at": None,
+                    "active_deck_source": "default",
+                    "active_theme_pack_id": None,
                 }
             ).eq("id", parish_id).execute()
         except Exception:
@@ -566,6 +570,40 @@ def materialize_dna_for_generate(parish_id: str) -> Optional[dict[str, Any]]:
     """Return ``{path, slide_map}`` ready for powerpoint generation, or None."""
     from services.auth_config import supabase_enabled
     from services.storage_assets import download_service_asset, parish_storage_ready
+
+    pid = (parish_id or "").strip() or "local"
+    source = "parish_dna"
+    try:
+        from services.parish_store import get_parish_by_id
+
+        parish = get_parish_by_id(pid) if pid != "local" else None
+        source = str((parish or {}).get("active_deck_source") or "parish_dna").strip().lower()
+    except Exception:
+        source = "parish_dna"
+
+    if source == "default":
+        return None
+
+    if source == "marketplace" and pid != "local":
+        try:
+            from services.theme_marketplace import resolve_marketplace_dna_for_parish
+
+            market = resolve_marketplace_dna_for_parish(pid)
+            if market and market.get("storage_path") and supabase_enabled() and parish_storage_ready():
+                raw = download_service_asset(path=str(market["storage_path"]))
+                d = _local_dir(pid)
+                master = d / "marketplace_master.pptx"
+                master.write_bytes(raw)
+                slide_map = market.get("slide_map") or {}
+                if not slide_map:
+                    scanned = scan_deck_dna(master)
+                    if scanned.get("ok"):
+                        slide_map = scanned["slide_map"]
+                return {"path": str(master), "slide_map": slide_map}
+        except Exception:
+            logger.debug("DNA: marketplace resolve skipped", exc_info=True)
+        # Pack has no master yet — stock Theme 1 until designers upload DNA.
+        return None
 
     status = get_dna_status(parish_id)
     if not status.get("has_dna"):

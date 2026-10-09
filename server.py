@@ -206,6 +206,7 @@ from routes.distribution import register_distribution_routes
 from routes.email_jobs import register_email_job_routes
 from routes.readings_jobs import register_readings_job_routes
 from routes.parish import register_parish_routes
+from routes.theme_marketplace import register_theme_marketplace_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
 _BUNDLE_OPTIONAL = (
@@ -1248,6 +1249,7 @@ register_admin_routes(app)
 register_distribution_routes(app)
 register_parish_routes(app)
 register_billing_routes(app)
+register_theme_marketplace_routes(app)
 register_email_job_routes(app)
 register_readings_job_routes(app)
 register_security_middleware(app)
@@ -3070,14 +3072,34 @@ def api_weekly_style_poster_image(
         hero = versioned_hero_path(
             _OUTPUT_DIR, sunday=sunday, style=resolved, version=version_no
         )
+        # Archives can be missing after local regenerations that only write the
+        # active ``*_hero.png``. Fall back so Extras/SA preview still works.
         if not hero.is_file():
-            raise HTTPException(status_code=404, detail="poster_not_ready")
+            active = resolve_hero_file(
+                sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR
+            )
+            if active is not None and Path(active).is_file():
+                hero = Path(active)
+            else:
+                raise HTTPException(status_code=404, detail="poster_not_ready")
         if want_thumb or want_card:
             max_w = 1600 if want_card else 720
             path = ui_thumb_path(hero, max_w=max_w)
             if not path.is_file():
                 path = ensure_ui_thumb(
                     hero, sunday=sunday, style=resolved, max_w=max_w, quality=70
+                )
+            if path is None or not path.is_file():
+                # Active UI derivatives may already exist even when the versioned
+                # archive slot does not.
+                path = (
+                    resolve_ui_card_file(
+                        sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR
+                    )
+                    if want_card
+                    else resolve_ui_thumb_file(
+                        sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR
+                    )
                 )
             if path is None or not path.is_file():
                 raise HTTPException(status_code=404, detail="poster_not_ready")
@@ -3300,26 +3322,45 @@ async def api_weekly_style_poster_activate(
         _OUTPUT_DIR, sunday=sunday, version=version_no, sync_shared=False
     )
     if not result.get("promoted"):
-        raise HTTPException(status_code=404, detail="version_not_found")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Version archive not found on disk. Re-generate this week’s styles "
+                "to create a new version, then switch again."
+            ),
+        )
     actor = ""
     try:
         actor = ((session.user.email if session and session.user else "") or "").strip()
     except Exception:
         actor = ""
     logger.info(
-        "[weekly-activate] sunday=%s version=%s actor=%s promoted=%s",
+        "[weekly-activate] sunday=%s version=%s actor=%s promoted=%s soft=%s",
         sunday,
         version_no,
         actor or "unknown",
         result.get("promoted"),
+        bool(result.get("soft")),
     )
     # Point UI at archived version URLs — only styles that exist for this version.
     owned = set(version_styles_on_disk(_OUTPUT_DIR, sunday=sunday, version=version_no))
+    if not owned:
+        # Soft activate with no archives: fall back to active hero readiness.
+        from services.weekly_style_posters import local_hero_path as _local_hero
+
+        owned = {
+            sid
+            for sid in weekly_style_ids()
+            if _local_hero(_OUTPUT_DIR, sunday=sunday, style=sid).is_file()
+        }
     items: list[dict[str, Any]] = []
     for sid in weekly_style_ids():
-        ready = sid in owned and versioned_hero_path(
+        versioned = versioned_hero_path(
             _OUTPUT_DIR, sunday=sunday, style=sid, version=version_no
-        ).is_file()
+        )
+        ready = sid in owned and (
+            versioned.is_file() or bool(result.get("soft"))
+        )
         base = (
             f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
             f"&version={version_no}"
@@ -3469,7 +3510,17 @@ def _community_api_payload(session: Optional[AuthSession] = None) -> dict[str, A
         celebrants = get_celebrant_names()
     church_ctx = get_church_profile_context()
     user = session.user if session else None
-    membership = membership_payload(church_ctx, user=user)
+    user_profile: Optional[dict[str, Any]] = None
+    if session and session.user and session.user.user_id and supabase_enabled():
+        try:
+            from services.supabase_client import get_profile
+
+            user_profile = get_profile(
+                session.user.user_id, access_token=session.token
+            )
+        except Exception:
+            user_profile = None
+    membership = membership_payload(church_ctx, user=user, profile=user_profile)
     logo_url: Optional[str] = None
     storage_logo = str((church_ctx or {}).get("logo_path") or "").strip()
     if session and storage_logo:
@@ -4545,6 +4596,7 @@ def cookies_redirect() -> Any:
 @app.get("/library/songs", response_class=HTMLResponse)
 @app.get("/library/practice", response_class=HTMLResponse)
 @app.get("/library/collections", response_class=HTMLResponse)
+@app.get("/themes", response_class=HTMLResponse)
 @app.get("/design/theme-lab", response_class=HTMLResponse)
 @app.get("/design/templates", response_class=HTMLResponse)
 @app.get("/settings/account", response_class=HTMLResponse)
@@ -5552,11 +5604,44 @@ def api_generate(
         session, body.video_replacements, temp_assets=temp_assets
     )
 
+    # Resolve credit tier before building media so free-tier gens skip curated posters.
+    generation_tier = "paid"
+    if session and session.user and session.user.user_id:
+        try:
+            from services.free_mass_credit import resolve_generation_tier
+            from services.membership_config import membership_allows_full_access
+            from services.stripe_billing import billing_enabled as _billing_on
+
+            church_ctx = get_church_profile_context()
+            has_full = membership_allows_full_access(church_ctx, user=session.user)
+            if _billing_on() and not has_full:
+                generation_tier = resolve_generation_tier(
+                    session.user.user_id,
+                    has_full_access=False,
+                    billing_on=True,
+                )
+                if generation_tier == "none":
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You've used this month's free Masses. Start a 14-day trial under Settings → Billing.",
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            logger.warning("generation tier resolve failed", exc_info=True)
+            generation_tier = "paid"
+
     # Prefer shared weekly heroes only — never generate a one-off poster here.
     # Partial weeks are fine: reuse the requested style when ready, else any ready
     # style. If nothing is ready, fall back to non-AI dividers (no quota burn).
+    # Free-tier monthly Masses never get curated AI divider posters.
     reuse_poster = False
-    include_ai = bool(body.include_ai_mass_poster) and not bool(body.leaflet_only)
+    allow_premium_posters = generation_tier in {"paid", "premium"}
+    include_ai = (
+        bool(body.include_ai_mass_poster)
+        and not bool(body.leaflet_only)
+        and allow_premium_posters
+    )
     resolved_ai_style = (body.ai_poster_style or "cinematic").strip() or "cinematic"
     if include_ai:
         from services.ai_styles import resolve_ai_image_style
@@ -5580,21 +5665,25 @@ def api_generate(
         if style_ok:
             resolved_ai_style = style_key
             reuse_poster = True
-            _enforce_ai_image_quota(
-                session,
-                request,
-                source="mass-poster:weekly",
-            )
+            # One-time premium welcome gens include curated posters without burning
+            # the weekly free-tier poster allowance.
+            if generation_tier != "premium":
+                _enforce_ai_image_quota(
+                    session,
+                    request,
+                    source="mass-poster:weekly",
+                )
         elif ready_ids and sunday:
             # Requested style (often cinematic default) not ready yet — use a ready one.
             fallback = ready_ids[0]
             resolved_ai_style = fallback
             reuse_poster = True
-            _enforce_ai_image_quota(
-                session,
-                request,
-                source="mass-poster:weekly",
-            )
+            if generation_tier != "premium":
+                _enforce_ai_image_quota(
+                    session,
+                    request,
+                    source="mass-poster:weekly",
+                )
         else:
             include_ai = False
 
@@ -5730,6 +5819,24 @@ def api_generate(
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
 
     print("[generate] ppt ready — returning URLs (zip/upload in background)", flush=True)
+
+    credit_status: Optional[dict[str, Any]] = None
+    if session and session.user and session.user.user_id and generation_tier in {"premium", "free"}:
+        try:
+            from services.free_mass_credit import (
+                consume_generation_credit,
+                free_mass_status_for_user,
+            )
+
+            consume_generation_credit(session.user.user_id, generation_tier)  # type: ignore[arg-type]
+            credit_status = free_mass_status_for_user(
+                session.user.user_id,
+                has_full_access=False,
+                billing_on=True,
+            )
+        except Exception:
+            logger.warning("mass generation credit update failed", exc_info=True)
+
     bundle_rel = _bundle_zip_name(result.export_stem)
     # Prefer an existing zip from a prior run; never block the response on zipping.
     zip_ready = (_OUTPUT_DIR / bundle_rel).is_file()
@@ -5875,6 +5982,20 @@ def api_generate(
         "export_stem": result.export_stem,
         "ai_poster_urls": _ai_poster_download_urls(),
     }
+    if credit_status is not None:
+        out["generation_tier_used"] = generation_tier
+        out["premium_mass_limit"] = int(credit_status.get("premium_mass_limit") or 0)
+        out["premium_mass_remaining"] = int(credit_status.get("premium_mass_remaining") or 0)
+        out["premium_mass_used"] = bool(credit_status.get("premium_mass_used"))
+        out["free_tier_mass_limit"] = int(credit_status.get("free_tier_mass_limit") or 0)
+        out["free_tier_mass_remaining"] = int(credit_status.get("free_tier_mass_remaining") or 0)
+        out["free_tier_mass_used"] = bool(credit_status.get("free_tier_mass_used"))
+        out["next_generation_tier"] = credit_status.get("next_generation_tier") or "none"
+        out["can_use_premium_posters"] = bool(credit_status.get("can_use_premium_posters"))
+        # Legacy aliases (= premium one-time).
+        out["free_mass_limit"] = int(credit_status.get("free_mass_limit") or 0)
+        out["free_mass_remaining"] = int(credit_status.get("free_mass_remaining") or 0)
+        out["free_mass_used"] = bool(credit_status.get("free_mass_used"))
     if ppt_url:
         out["pptx_url"] = ppt_url
     if poster_url:

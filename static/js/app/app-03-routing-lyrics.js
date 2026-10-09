@@ -50,6 +50,9 @@
           consumeEmailDeepLinkIntent();
         }
       }
+      if (r === "/themes" && typeof loadThemeMarketplace === "function") {
+        loadThemeMarketplace();
+      }
       window.__homeCtaLastRoute = r;
       if (r === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
         updateLiturgicalCountdowns();

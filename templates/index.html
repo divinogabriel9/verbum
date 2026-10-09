@@ -26,7 +26,8 @@
     })();
   </script>
   <style id="home-cta-poster-loading-critical">
-    /* First-paint: hide missal + use poster loading chrome before verbum-app.css arrives */
+    /* First-paint: dark loading chrome until a poster bg is painted (has-poster-bg). */
+    #home-mass-card:not(.has-poster-bg),
     #home-mass-card.is-poster-loading {
       --rmc-ink-strong: #f5f5f5;
       --rmc-ink-body: #e0e0e0;
@@ -34,12 +35,23 @@
       background: #14161c !important;
       color: #f5f5f5;
     }
+    #home-mass-card:not(.has-poster-bg) .redesign-mass-bg--layer,
+    #home-mass-card:not(.has-poster-bg)::before,
+    #home-mass-card:not(.has-poster-bg)::after,
     #home-mass-card.is-poster-loading .redesign-mass-bg--layer,
     #home-mass-card.is-poster-loading::before,
     #home-mass-card.is-poster-loading::after {
       display: none !important;
       opacity: 0 !important;
     }
+    #home-mass-card:not(.has-poster-bg) .rmc-hero-title,
+    #home-mass-card:not(.has-poster-bg) .rmc-welcome,
+    #home-mass-card:not(.has-poster-bg) .rmc-stat__value,
+    #home-mass-card:not(.has-poster-bg) .rmc-hero-sub,
+    #home-mass-card:not(.has-poster-bg) .rmc-cta-meta,
+    #home-mass-card:not(.has-poster-bg) .rmc-cta-secondary,
+    #home-mass-card:not(.has-poster-bg) .rmc-stat__label,
+    #home-mass-card:not(.has-poster-bg) .rmc-stat__sub,
     #home-mass-card.is-poster-loading .rmc-hero-title,
     #home-mass-card.is-poster-loading .rmc-welcome,
     #home-mass-card.is-poster-loading .rmc-stat__value,
@@ -66,14 +78,18 @@
       z-index: 5;
       pointer-events: none;
     }
-    #home-mass-card:not(.is-poster-loading) #home-mass-poster-loading-veil,
-    #home-mass-card:not(.is-poster-loading) #home-mass-poster-loading,
-    #home-mass-poster-loading-veil[hidden],
-    #home-mass-poster-loading[hidden] {
+    #home-mass-card:not(.has-poster-bg) #home-mass-poster-loading-veil,
+    #home-mass-card:not(.has-poster-bg) #home-mass-poster-loading,
+    #home-mass-card.is-poster-loading #home-mass-poster-loading-veil,
+    #home-mass-card.is-poster-loading #home-mass-poster-loading {
+      display: block !important;
+    }
+    #home-mass-card.has-poster-bg:not(.is-poster-loading) #home-mass-poster-loading-veil,
+    #home-mass-card.has-poster-bg:not(.is-poster-loading) #home-mass-poster-loading {
       display: none !important;
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261004-book-cross-revert" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261010-cta-no-white" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
@@ -83,7 +99,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261005-weekly-select1" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261010-poster-skel" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -161,6 +177,10 @@
           <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
           <span class="nav-label">Lyrics Library</span>
         </a>
+        <a class="app-sidebar__link" data-nav-tab="themes" data-route="/themes" href="/themes" data-nav-tooltip="Themes">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          <span class="nav-label">Themes</span>
+        </a>
         <a class="app-sidebar__link" data-nav-tab="radio" data-route="/radio" href="/radio" data-nav-tooltip="Media">
           <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
           <span class="nav-label">Media</span>
@@ -174,7 +194,7 @@
           <span class="nav-label">Calendar</span>
         </a>
         <a class="app-sidebar__link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab" data-nav-tooltip="Design">
-          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"/><path d="M5.2 6.2a9 9 0 0 1 13.6 0"/><path d="M7.5 9.5a5.5 5.5 0 0 1 9 0"/><circle cx="12" cy="14.5" r="1.5" fill="currentColor"/><path d="M4 20h16"/></svg>
           <span class="nav-label">Design</span>
         </a>
       </nav>
@@ -468,8 +488,12 @@
                     <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
                     <span>Posters</span>
                   </a>
-                  <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="themes" data-route="/themes" href="/themes">
                     <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                    <span>Themes</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"/><path d="M5.2 6.2a9 9 0 0 1 13.6 0"/><path d="M7.5 9.5a5.5 5.5 0 0 1 9 0"/><circle cx="12" cy="14.5" r="1.5" fill="currentColor"/><path d="M4 20h16"/></svg>
                     <span>Theme Lab</span>
                   </a>
                   <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/templates" href="/design/templates">
@@ -815,6 +839,54 @@
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="home-mass-new-cancel">Keep Draft</button>
             <button type="button" class="primary" id="home-mass-new-confirm">Start New</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="mw-weekly-poster-expand-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="mw-weekly-poster-expand-backdrop"></div>
+        <article class="ui-card mw-weekly-poster-expand-card" role="dialog" aria-labelledby="mw-weekly-poster-expand-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="mw-weekly-poster-expand-title">Poster</h3>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="mw-weekly-poster-expand-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content mw-weekly-poster-expand-card__body">
+            <img id="mw-weekly-poster-expand-img" class="mw-weekly-poster-expand-card__img" alt="" />
+          </div>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="add-priest-modal" aria-hidden="true" role="presentation" data-step="enter">
+        <div class="ui-overlay__backdrop" id="add-priest-modal-backdrop"></div>
+        <article class="ui-card add-priest-card" role="dialog" aria-labelledby="add-priest-modal-title" aria-describedby="add-priest-modal-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="add-priest-modal-title">Add a priest</h3>
+              <p class="ui-card__description" id="add-priest-modal-desc">Enter the celebrant name exactly as it should appear on Mass slides.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="add-priest-modal-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <div class="field" id="add-priest-enter-step">
+              <label for="add-priest-name">Priest name</label>
+              <input type="text" id="add-priest-name" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
+              <p class="status error" id="add-priest-error" hidden aria-live="polite"></p>
+            </div>
+            <div class="add-priest-confirm" id="add-priest-confirm-step" hidden>
+              <p class="add-priest-confirm__label">Please confirm the spelling</p>
+              <p class="add-priest-confirm__name" id="add-priest-confirm-name" aria-live="polite"></p>
+              <p class="muted add-priest-confirm__hint">This is how the name will appear on your Mass presentation.</p>
+            </div>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row" id="add-priest-footer-enter">
+            <button type="button" class="secondary" id="add-priest-cancel">Cancel</button>
+            <button type="button" class="primary" id="add-priest-continue">Continue</button>
+          </footer>
+          <footer class="ui-card__footer ui-card__footer--row" id="add-priest-footer-confirm" hidden>
+            <button type="button" class="secondary" id="add-priest-back">Edit name</button>
+            <button type="button" class="primary" id="add-priest-confirm">Confirm spelling</button>
           </footer>
         </article>
       </div>
@@ -1589,6 +1661,47 @@
                   <button type="button" class="primary" id="membership-welcome-guide">Guide me</button>
                 </footer>
               </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="ui-overlay membership-welcome-overlay trial-offer-overlay" id="trial-offer-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="trial-offer-backdrop"></div>
+        <article class="ui-card membership-welcome-card trial-offer-card" role="dialog" aria-labelledby="trial-offer-title" aria-describedby="trial-offer-desc" aria-modal="true">
+          <div class="membership-welcome-layout membership-welcome-layout--wait trial-offer-layout">
+            <div class="membership-welcome-copy">
+              <header class="ui-card__header membership-welcome-header">
+                <div class="ui-card__header-text">
+                  <p class="membership-welcome-eyebrow">14-day free trial</p>
+                  <h3 class="ui-card__title" id="trial-offer-title">Start your 14-day free trial</h3>
+                  <p class="ui-card__description" id="trial-offer-desc">New accounts get 4 premium Masses with curated divider posters, plus 4 basic free Masses each month. Start a 14-day trial for unlimited decks — add billing now and you won’t be charged until the trial ends.</p>
+                </div>
+              </header>
+              <div class="ui-card__content membership-welcome-body">
+                <ul class="membership-welcome-features trial-offer-features">
+                  <li>
+                    <strong>Full Mass builder</strong>
+                    <span>Readings, music, and slides ready for Sunday.</span>
+                  </li>
+                  <li>
+                    <strong>No charge for 14 days</strong>
+                    <span>Cancel anytime before the trial ends.</span>
+                  </li>
+                  <li>
+                    <strong>Parish branding</strong>
+                    <span>Your logo and community name on every deck.</span>
+                  </li>
+                  <li>
+                    <strong>Song library</strong>
+                    <span>Browse and save hymns for rehearsal.</span>
+                  </li>
+                </ul>
+              </div>
+              <footer class="ui-card__footer ui-card__footer--row membership-welcome-footer trial-offer-footer">
+                <button type="button" class="secondary" id="trial-offer-skip">Skip for now</button>
+                <button type="button" class="primary" id="trial-offer-start">Start free trial</button>
+              </footer>
             </div>
           </div>
         </article>
@@ -2428,7 +2541,7 @@
                           </button>
                           <div class="celebrant-picker__panel vb-dropdown-panel" id="celebrant-picker-panel" role="listbox" aria-labelledby="celebrant-label" hidden>
                             <ul class="vb-dropdown-list celebrant-picker__list" id="celebrant-list"></ul>
-                            <p class="vb-dropdown-empty celebrant-picker__empty" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Parish.</p>
+                            <p class="vb-dropdown-empty celebrant-picker__empty" id="celebrant-picker-empty" hidden>No celebrants yet — choose Add a priest below.</p>
                           </div>
                           <input type="hidden" id="celebrant" value="" aria-describedby="celebrant-hint" />
                         </div>
@@ -2884,51 +2997,9 @@
                             <label for="flow-ai-poster-style">Weekly Gospel posters — pick a style</label>
                             <p class="muted flow-setup-field-hint" id="mw-weekly-posters-hint">Your pick becomes the Mass divider background.</p>
                             <p class="mw-weekly-posters__date" id="mw-weekly-posters-date" hidden></p>
-                          </div>
-                        </div>
-                        <div class="mw-weekly-posters__toolbar" data-superadmin-only>
-                          <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-sunday-field" hidden>
-                            <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-sunday">Sunday</label>
-                            <select id="mw-weekly-posters-sunday" class="mw-weekly-posters__select" aria-label="Poster Mass Sunday"></select>
-                          </div>
-                          <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-version-field" hidden>
-                            <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-version">Version</label>
-                            <select id="mw-weekly-posters-version" class="mw-weekly-posters__select" aria-label="Poster version"></select>
-                          </div>
-                          <fieldset class="mw-weekly-posters__style-checks" id="mw-weekly-posters-style-checks" data-superadmin-only hidden>
-                            <legend class="mw-weekly-posters__version-label">Styles to generate</legend>
-                            <div class="mw-weekly-posters__style-check-list">
-                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="cinematic" checked /><span>Cinematic</span></label>
-                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="realistic" checked /><span>Realistic</span></label>
-                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="renaissance" checked /><span>Renaissance</span></label>
-                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="stained_glass" checked /><span>Stained Glass</span></label>
-                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="modern" checked /><span>Modern</span></label>
-                            </div>
-                          </fieldset>
-                          <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate" hidden>
-                            Generate this week’s styles
-                          </button>
-                          <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regenerate" hidden title="Create a new version (v2, v3…) without deleting older ones">
-                            Generate new version
-                          </button>
-                          <span class="muted" id="mw-weekly-posters-gen-status" aria-live="polite"></span>
-                        </div>
-                        <div class="mw-weekly-posters__progress" id="mw-weekly-posters-progress" hidden>
-                          <div class="mw-weekly-posters__progress-top">
-                            <span class="mw-weekly-posters__spinner" aria-hidden="true"></span>
-                            <span class="mw-weekly-posters__progress-label" id="mw-weekly-posters-progress-label">Generating…</span>
-                            <span class="mw-weekly-posters__progress-pct" id="mw-weekly-posters-progress-pct">0%</span>
-                          </div>
-                          <div
-                            class="mw-weekly-posters__progress-track"
-                            id="mw-weekly-posters-progress-track"
-                            role="progressbar"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                            aria-valuenow="0"
-                            aria-labelledby="mw-weekly-posters-progress-label"
-                          >
-                            <div class="mw-weekly-posters__progress-fill" id="mw-weekly-posters-progress-fill"></div>
+                            <p class="muted flow-setup-field-hint" id="mw-weekly-posters-sa-hint" data-superadmin-only hidden>
+                              <a href="/superadmin" data-route="/superadmin" id="mw-weekly-posters-open-sa">Manage catalog in Superadmin</a>
+                            </p>
                           </div>
                         </div>
                         <div class="mw-ai-poster-body" id="mw-ai-poster-body">
@@ -2942,6 +3013,9 @@
                               <div class="mw-weekly-posters__track" id="mw-weekly-posters-track" role="listbox" aria-label="Weekly poster styles"></div>
                             </div>
                             <button type="button" class="mw-weekly-posters__nav" data-weekly-nav="1" aria-label="Next styles">›</button>
+                            <button type="button" class="mw-weekly-posters__expand" id="mw-weekly-posters-expand" aria-label="View poster larger" title="View poster larger" hidden>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
                           </div>
                         </div>
                         <div class="mw-poster-transparency" id="mw-poster-transparency">
@@ -3609,6 +3683,110 @@
         </div>
       </section>
 
+      <section class="page" id="themes-marketplace-page" data-route="/themes">
+        <div class="tm-page">
+          <div class="tm-toolbar" id="tm-buyer-toolbar">
+            <nav class="tm-topics" id="tm-topics" aria-label="Theme topics">
+              <button type="button" class="tm-topic is-active" data-tm-topic="all">All</button>
+              <button type="button" class="tm-topic" data-tm-topic="ordinary">Ordinary</button>
+              <button type="button" class="tm-topic" data-tm-topic="advent">Advent</button>
+              <button type="button" class="tm-topic" data-tm-topic="christmas">Christmas</button>
+              <button type="button" class="tm-topic" data-tm-topic="lent">Lent</button>
+              <button type="button" class="tm-topic" data-tm-topic="easter">Easter</button>
+              <button type="button" class="tm-topic" data-tm-topic="free">Free</button>
+            </nav>
+          </div>
+
+          <div class="tm-grid" id="tm-pack-grid" aria-live="polite"></div>
+          <p class="status" id="tm-status" aria-live="polite"></p>
+
+          <p class="tm-designer-shortcut" id="tm-designer-shortcut">
+            <a href="/sign-in?intent=designer" id="tm-designer-link">Are you a designer?</a>
+          </p>
+
+          <section class="tm-studio" id="tm-studio-panel" hidden aria-labelledby="tm-studio-heading">
+            <div class="tm-section-head">
+              <h3 id="tm-studio-heading">Seller studio</h3>
+              <p id="tm-studio-lead">Create packs, upload DNA-compatible masters, submit for review.</p>
+            </div>
+            <div id="tm-studio-pending" hidden>
+              <p class="status" id="tm-studio-pending-text">Your designer application is pending review.</p>
+            </div>
+            <div id="tm-studio-body" hidden>
+              <form id="tm-studio-create" class="tm-seller-form">
+                <div class="field">
+                  <label for="tm-studio-title">New pack title</label>
+                  <input type="text" id="tm-studio-title" maxlength="120" required placeholder="Advent Glow" />
+                </div>
+                <div class="field">
+                  <label for="tm-studio-subtitle">Subtitle</label>
+                  <input type="text" id="tm-studio-subtitle" maxlength="200" placeholder="Optional" />
+                </div>
+                <div class="field">
+                  <label for="tm-studio-description">Description</label>
+                  <textarea id="tm-studio-description" rows="2" maxlength="4000" placeholder="What parishes get with this look…"></textarea>
+                </div>
+                <button type="submit" class="primary" id="tm-studio-create-btn">Create draft pack</button>
+              </form>
+              <ul class="tm-studio-list" id="tm-studio-pack-list" aria-live="polite"></ul>
+              <p class="status" id="tm-studio-status" aria-live="polite"></p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <div class="ui-overlay" id="tm-preview-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="tm-preview-modal-backdrop"></div>
+        <article class="ui-card tm-preview-card" role="dialog" aria-labelledby="tm-preview-modal-title" aria-describedby="tm-preview-modal-inspiration" aria-modal="true">
+          <header class="ui-card__header tm-preview-header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="tm-preview-modal-title">Theme preview</h3>
+              <p class="ui-card__description" id="tm-preview-modal-by"></p>
+            </div>
+            <button type="button" class="tm-preview-close" id="tm-preview-modal-close" aria-label="Close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </header>
+          <div class="ui-card__content tm-preview-content">
+            <div class="tm-preview-rail" id="tm-preview-rail" tabindex="0" aria-label="Slide previews"></div>
+            <section class="tm-preview-inspiration" aria-labelledby="tm-preview-inspiration-label">
+              <p class="tm-preview-inspiration__label" id="tm-preview-inspiration-label">Inspiration</p>
+              <blockquote class="tm-preview-inspiration__quote" id="tm-preview-modal-inspiration"></blockquote>
+              <p class="tm-preview-inspiration__attrib" id="tm-preview-modal-inspiration-by"></p>
+            </section>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row" id="tm-preview-modal-footer">
+            <div class="tm-preview-footer-cta" id="tm-preview-modal-cta"></div>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="tm-buy-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="tm-buy-modal-backdrop"></div>
+        <article class="ui-card tm-buy-card" role="dialog" aria-labelledby="tm-buy-modal-title" aria-describedby="tm-buy-modal-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="tm-buy-modal-title">License this theme</h3>
+              <p class="ui-card__description" id="tm-buy-modal-desc">Choose how many months you want.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="tm-buy-modal-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <p class="tm-buy-pack-name" id="tm-buy-pack-name"></p>
+            <div class="tm-term-bar tm-term-bar--modal" role="group" aria-label="Theme license length">
+              <span class="tm-term-label" id="tm-term-label">License</span>
+              <div class="tm-term-segments" id="tm-term-segments"></div>
+              <select id="tm-term-select" class="tm-term-select" aria-labelledby="tm-term-label" hidden></select>
+            </div>
+            <p class="tm-term-hint" id="tm-term-hint"></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="tm-buy-modal-cancel">Cancel</button>
+            <button type="button" class="primary" id="tm-buy-modal-confirm">Continue</button>
+          </footer>
+        </article>
+      </div>
+
       <section class="page" id="templates-page" data-route="/design/templates">
         <div class="admin-card" style="max-width:640px;">
           <h3 style="margin-top:0;">Import slide theme from .pptx</h3>
@@ -3664,7 +3842,8 @@
                   <a class="primary" href="/admin/distribution" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Distribution CRM</a>
                   <button type="button" class="secondary" id="sa-btn-goto-membership">Approvals</button>
                   <button type="button" class="secondary" data-sa-panel-jump="analytics">Analytics</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">Posters &amp; quota</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">AI &amp; quota</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="system-gospel-posters">Gospel posters</button>
                   <button type="button" class="secondary" data-sa-panel-jump="content-songs">Song catalog</button>
                 </div>
               </div>
@@ -4039,6 +4218,76 @@
               <p class="status" id="sa-gemini-status" aria-live="polite"></p>
             </article>
 
+            <article class="sa-panel flow-bento-cell" id="sa-panel-system-gospel-posters" data-sa-panel="system-gospel-posters" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Weekly Gospel posters</h3>
+                  <p>Generate and activate the shared Sunday poster catalog. Parishes pick a style in Mass Builder → Extras.</p>
+                </div>
+              </header>
+              <p class="muted" style="margin:0 0 12px;">Browse a Mass Sunday, generate styles, then set the active version. That set becomes what churches see in Extras and on the home CTA.</p>
+              <div class="sa-weekly-posters" id="sa-weekly-posters-host">
+                <div class="mw-weekly-posters__toolbar" id="mw-weekly-posters-toolbar">
+                  <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-sunday-field">
+                    <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-sunday">Sunday</label>
+                    <select id="mw-weekly-posters-sunday" class="mw-weekly-posters__select" aria-label="Poster Mass Sunday"></select>
+                  </div>
+                  <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-version-field">
+                    <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-version">Version</label>
+                    <select id="mw-weekly-posters-version" class="mw-weekly-posters__select" aria-label="Poster version"></select>
+                  </div>
+                  <fieldset class="mw-weekly-posters__style-checks" id="mw-weekly-posters-style-checks">
+                    <legend class="mw-weekly-posters__version-label">Styles to generate</legend>
+                    <div class="mw-weekly-posters__style-check-list">
+                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="cinematic" checked /><span>Cinematic</span></label>
+                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="realistic" checked /><span>Realistic</span></label>
+                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="renaissance" checked /><span>Renaissance</span></label>
+                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="stained_glass" checked /><span>Stained Glass</span></label>
+                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="modern" checked /><span>Modern</span></label>
+                    </div>
+                  </fieldset>
+                  <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate">
+                    Generate this week’s styles
+                  </button>
+                  <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regen-inplace" title="Remake checked styles inside the current version (no new version)">
+                    Regenerate selected in this version
+                  </button>
+                  <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regenerate" title="Create a new version (v2, v3…) without deleting older ones">
+                    Generate new version
+                  </button>
+                  <span class="muted" id="mw-weekly-posters-gen-status" aria-live="polite"></span>
+                </div>
+                <div class="mw-weekly-posters__progress" id="mw-weekly-posters-progress" hidden>
+                  <div class="mw-weekly-posters__progress-top">
+                    <span class="mw-weekly-posters__spinner" aria-hidden="true"></span>
+                    <span class="mw-weekly-posters__progress-label" id="mw-weekly-posters-progress-label">Generating…</span>
+                    <span class="mw-weekly-posters__progress-pct" id="mw-weekly-posters-progress-pct">0%</span>
+                  </div>
+                  <div
+                    class="mw-weekly-posters__progress-track"
+                    id="mw-weekly-posters-progress-track"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
+                    aria-labelledby="mw-weekly-posters-progress-label"
+                  >
+                    <div class="mw-weekly-posters__progress-fill" id="mw-weekly-posters-progress-fill"></div>
+                  </div>
+                </div>
+                <p class="mw-weekly-posters__date" id="sa-weekly-posters-date" hidden></p>
+                <div class="mw-weekly-posters" id="sa-weekly-posters" data-weekly-posters-sa>
+                  <div class="mw-weekly-posters__stage">
+                    <button type="button" class="mw-weekly-posters__nav" data-sa-weekly-nav="-1" aria-label="Previous styles">‹</button>
+                    <div class="mw-weekly-posters__viewport" id="sa-weekly-posters-viewport">
+                      <div class="mw-weekly-posters__track" id="sa-weekly-posters-track" role="listbox" aria-label="Weekly poster styles preview"></div>
+                    </div>
+                    <button type="button" class="mw-weekly-posters__nav" data-sa-weekly-nav="1" aria-label="Next styles">›</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+
             <article class="sa-panel flow-bento-cell" id="sa-panel-system-maintenance" data-sa-panel="system-maintenance" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
@@ -4060,6 +4309,72 @@
                 <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins-2">Bootstrap superadmins</button>
               </div>
               <p class="status" id="sa-health-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-outreach" data-sa-panel="outreach" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Outreach</h3>
+                  <p>Save registered emails and send promo push notifications or emails.</p>
+                </div>
+              </header>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Registered emails</h4></div>
+                <div class="sa-toolbar">
+                  <input type="search" id="sa-outreach-search" placeholder="Search email or name…" maxlength="120" autocomplete="off" />
+                  <label class="sa-check-label" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="sa-outreach-subscribed-only" />
+                    Subscribed only
+                  </label>
+                  <button type="button" class="secondary" id="sa-outreach-refresh">Refresh</button>
+                  <button type="button" class="secondary" id="sa-outreach-sync">Sync from profiles</button>
+                  <button type="button" class="primary" id="sa-outreach-export">Download CSV</button>
+                </div>
+                <div class="sa-table-wrap" id="sa-outreach-contacts-wrap"></div>
+                <div id="sa-outreach-contacts-pager" hidden></div>
+                <p class="status" id="sa-outreach-contacts-status" aria-live="polite"></p>
+              </div>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Send promo / push</h4></div>
+                <div class="field">
+                  <label for="sa-outreach-title">Title</label>
+                  <input type="text" id="sa-outreach-title" maxlength="160" placeholder="Easter week special" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="sa-outreach-message">Message</label>
+                  <textarea id="sa-outreach-message" rows="3" maxlength="500" placeholder="Short promo copy shown in the app notification (and email if selected)."></textarea>
+                </div>
+                <div class="field">
+                  <label for="sa-outreach-link">Link URL (optional)</label>
+                  <input type="url" id="sa-outreach-link" maxlength="500" placeholder="https://…" autocomplete="off" />
+                </div>
+                <div class="sa-toolbar">
+                  <label class="sa-check-label" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="sa-outreach-chan-inapp" checked />
+                    In-app push
+                  </label>
+                  <label class="sa-check-label" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="sa-outreach-chan-email" />
+                    Email
+                  </label>
+                  <div class="field" style="margin:0;min-width:160px;">
+                    <label for="sa-outreach-audience">Audience</label>
+                    <select id="sa-outreach-audience" class="sa-filter-select" style="max-width:100%;">
+                      <option value="subscribed">Subscribed</option>
+                      <option value="all">All contacts</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="sa-quick-actions">
+                  <button type="button" class="primary" id="sa-outreach-send">Send campaign</button>
+                </div>
+                <p class="status" id="sa-outreach-send-status" aria-live="polite"></p>
+              </div>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Recent campaigns</h4></div>
+                <div class="sa-table-wrap" id="sa-outreach-campaigns-wrap"></div>
+                <p class="status" id="sa-outreach-campaigns-status" aria-live="polite"></p>
+              </div>
             </article>
 
             <article class="sa-panel flow-bento-cell" id="sa-panel-system-announcement" data-sa-panel="system-announcement" hidden>
@@ -4552,7 +4867,7 @@
               </header>
               <section class="settings-section">
                 <h4 class="settings-section__title">Navigation tabs</h4>
-                <p class="muted settings-section__lead">Home, Mass, Lyrics Library, and Media are always visible. Turn on optional tabs below — your choices are remembered.</p>
+                <p class="muted settings-section__lead">Home, Mass, Lyrics Library, and Themes stay on. Media, Posters, Calendar, and Design can be turned off — your choices are remembered.</p>
                 <div class="settings-nav-tabs-list" id="settings-nav-tabs-list" role="group" aria-label="Visible navigation tabs"></div>
               </section>
               <section class="settings-section">
@@ -4783,6 +5098,10 @@
             <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Liturgical Calendar</span>
           </a>
+          <a class="app-more-sheet__link nav-link" data-nav-tab="themes" data-route="/themes" href="/themes">
+            <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>Themes</span>
+          </a>
           <a class="app-more-sheet__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
             <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Theme Lab</span>
@@ -4843,6 +5162,7 @@
         <option value="/media/posters" data-nav-tab="media">Posters</option>
         <option value="/media/history" data-nav-tab="media">History</option>
         <option value="/mass/calendar" data-nav-tab="calendar">Liturgical Calendar</option>
+        <option value="/themes" data-nav-tab="themes">Themes</option>
         <option value="/design/theme-lab" data-nav-tab="design">Theme Lab</option>
         <option value="/design/templates" data-nav-tab="design">Templates</option>
         <option value="/settings/account">Account</option>
@@ -5007,7 +5327,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261005-partial-style-pick"></script>
+  <script src="/static/js/app.js?v=20261010-cta-no-white"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

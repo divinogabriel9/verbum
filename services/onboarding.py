@@ -165,6 +165,20 @@ def maybe_alert_new_signup(
         )
     except Exception as exc:
         logger.warning("New signup alert failed for %s: %s", uid, exc)
+
+    try:
+        from services.marketing_outreach import upsert_contact_from_signup
+
+        upsert_contact_from_signup(
+            user_id=uid,
+            email=mail,
+            first_name=(row.get("first_name") or "").strip(),
+            last_name=(row.get("last_name") or "").strip(),
+            parish_name=parish,
+        )
+    except Exception as exc:
+        logger.warning("Marketing contact save failed for %s: %s", uid, exc)
+
     return True
 
 
@@ -227,10 +241,18 @@ def get_onboarding_status(
     primary_use = ((profile or {}).get("primary_use") or "").strip()
     community_name = ((church or {}).get("community_name") or "").strip()
 
+    from services.membership_config import (
+        ACCOUNT_KIND_THEME_DESIGNER,
+        profile_account_kind,
+    )
+
+    account_kind = profile_account_kind(profile)
     return {
         "ok": True,
         "needs_onboarding": not completed,
         "onboarding_completed": completed,
+        "account_kind": account_kind,
+        "is_theme_designer": account_kind == ACCOUNT_KIND_THEME_DESIGNER,
         "profile": {
             "first_name": first_name,
             "middle_name": middle_name,
@@ -241,6 +263,7 @@ def get_onboarding_status(
             "preferred_language": preferred_language,
             "primary_use": primary_use,
             "email": ((profile or {}).get("email") or "").strip(),
+            "account_kind": account_kind,
         },
         "church_profile": {
             "community_name": community_name,
@@ -601,4 +624,111 @@ def complete_onboarding(
         "church_profile": church_ctx,
         "join_request": (join_payload or {}).get("join_request") if join_payload else None,
         "survey": survey_row,
+    }
+
+
+def complete_designer_onboarding(
+    user_id: str,
+    *,
+    access_token: str,
+    first_name: str,
+    last_name: str,
+    display_name: str,
+    bio: str = "",
+    payout_email: str = "",
+    middle_name: str = "",
+    phone: str = "",
+) -> dict[str, Any]:
+    """Finish signup for a theme-designer-only account (no parish membership)."""
+    from services.membership_config import ACCOUNT_KIND_THEME_DESIGNER
+    from services.theme_marketplace import get_or_create_seller_application
+
+    uid = (user_id or "").strip()
+    if not uid or not access_token:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Supabase is not configured.")
+
+    first = (first_name or "").strip()
+    middle = (middle_name or "").strip()
+    last = (last_name or "").strip()
+    designer_name = (display_name or "").strip()
+    phone_clean = (phone or "").strip()
+    if len(first) < 1 or not _is_letters_name(first):
+        raise HTTPException(status_code=400, detail="Enter a valid first name.")
+    if len(last) < 1 or not _is_letters_name(last):
+        raise HTTPException(status_code=400, detail="Enter a valid last name.")
+    if len(designer_name) < 2:
+        raise HTTPException(status_code=400, detail="Enter a designer display name.")
+    if phone_clean and not phone_clean.startswith("+"):
+        phone_clean = "+" + phone_clean.lstrip("+")
+    if phone_clean and len(phone_clean) > 32:
+        phone_clean = phone_clean[:32]
+
+    status = get_onboarding_status(uid, access_token=access_token)
+    if status.get("onboarding_completed"):
+        return {"ok": True, "already_complete": True, **status}
+
+    now = _now_iso()
+    profile_patch: dict[str, Any] = {
+        "first_name": first[:80],
+        "middle_name": middle[:80] if middle else None,
+        "last_name": last[:80],
+        "account_kind": ACCOUNT_KIND_THEME_DESIGNER,
+        "ministry_role": "other",
+        "ministry_role_other": "theme_designer",
+        "onboarding_completed_at": now,
+        "updated_at": now,
+    }
+    if phone_clean:
+        profile_patch["phone"] = phone_clean
+
+    try:
+        client = get_user_client(access_token)
+        result = client.table("profiles").update(profile_patch).eq("id", uid).execute()
+        rows = result.data or []
+        if not rows:
+            svc = get_service_client()
+            result = svc.table("profiles").update(profile_patch).eq("id", uid).execute()
+            rows = result.data or []
+        if not rows:
+            raise HTTPException(status_code=404, detail="Profile not found.")
+        profile_row = rows[0]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("designer profile update failed")
+        raise HTTPException(status_code=500, detail="Could not save designer profile.") from exc
+
+    seller = get_or_create_seller_application(
+        user_id=uid,
+        display_name=designer_name,
+        bio=bio,
+        payout_email=payout_email
+        or str((profile_row or {}).get("email") or ""),
+    )
+
+    try:
+        from services.admin_alerts import alert_registration
+
+        alert_registration(
+            name=" ".join(p for p in (first, last) if p).strip(),
+            email=str((profile_row or {}).get("email") or "").strip(),
+            parish=f"Theme designer · {designer_name}",
+            role="theme_designer · pending seller review",
+        )
+    except Exception as exc:
+        logger.warning("Designer registration alert failed: %s", exc)
+
+    return {
+        "ok": True,
+        "already_complete": False,
+        "needs_onboarding": False,
+        "onboarding_completed": True,
+        "account_kind": ACCOUNT_KIND_THEME_DESIGNER,
+        "is_theme_designer": True,
+        "default_route": "/themes",
+        "profile": profile_row,
+        "seller": seller,
+        "church_profile": None,
     }

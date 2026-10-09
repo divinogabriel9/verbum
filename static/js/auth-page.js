@@ -8,6 +8,35 @@
   const inviteEmail = window.__VERBUM_INVITE_EMAIL__ || "";
   let inviteCommunityName = window.__VERBUM_INVITE_COMMUNITY_NAME__ || "";
 
+  function designerIntentKey() {
+    return "verbum:designer-intent";
+  }
+
+  function stashDesignerIntent() {
+    try {
+      sessionStorage.setItem(designerIntentKey(), "1");
+    } catch (_e) { /* ignore */ }
+  }
+
+  function clearDesignerIntent() {
+    try {
+      sessionStorage.removeItem(designerIntentKey());
+    } catch (_e) { /* ignore */ }
+  }
+
+  function hasDesignerIntent() {
+    if (window.__VERBUM_DESIGNER_INTENT__) return true;
+    try {
+      const q = new URLSearchParams(window.location.search).get("intent") || "";
+      if (q.trim().toLowerCase() === "designer") return true;
+      return sessionStorage.getItem(designerIntentKey()) === "1";
+    } catch (_e) {
+      return !!window.__VERBUM_DESIGNER_INTENT__;
+    }
+  }
+
+  if (hasDesignerIntent()) stashDesignerIntent();
+
   function $(id) {
     return document.getElementById(id);
   }
@@ -166,7 +195,10 @@
       }
 
       const inviteSignupBlocked =
-        mode === "sign-up" && cfg.invite_only_signup && !inviteValid;
+        mode === "sign-up" &&
+        cfg.invite_only_signup &&
+        !inviteValid &&
+        !hasDesignerIntent();
 
       if (mode === "sign-up" && inviteToken) {
         try {
@@ -524,6 +556,10 @@
 
       function resolvePostAuthUrl() {
         const params = new URLSearchParams(window.location.search);
+        if (hasDesignerIntent()) {
+          clearDesignerIntent();
+          return "/themes";
+        }
         let target = params.get("redirect_url") || cfg.after_sign_in_url || "/home";
         const siblingIntent = (params.get("intent") || "").trim().toLowerCase();
         const siblingDate = (params.get("date") || "").trim();
@@ -585,6 +621,7 @@
         params.delete("error_description");
         params.delete("error_code");
         params.delete("switch");
+        if (hasDesignerIntent()) params.set("intent", "designer");
         const qs = params.toString();
         return "/sign-up" + (qs ? "?" + qs : "");
       }
@@ -1958,6 +1995,9 @@
         }
         const status = await fetchOnboardingStatus(session.access_token);
         if (status && status.needs_onboarding) {
+          if (status.is_theme_designer || status.account_kind === "theme_designer") {
+            stashDesignerIntent();
+          }
           if (isCaptchaLoggingIn()) {
             await navigateKeepingCaptcha(onboardingUrl());
           } else {
@@ -1965,7 +2005,49 @@
           }
           return;
         }
+        if (status && (status.is_theme_designer || status.account_kind === "theme_designer")) {
+          stashDesignerIntent();
+        }
         redirectAfterAuth();
+      }
+
+      async function submitDesignerOnboarding(accessToken) {
+        const first = (($("auth-designer-first-name") || {}).value || "").trim();
+        const last = (($("auth-designer-last-name") || {}).value || "").trim();
+        const display = (($("auth-designer-display-name") || {}).value || "").trim();
+        const bio = (($("auth-designer-bio") || {}).value || "").trim();
+        const payout = (($("auth-designer-payout-email") || {}).value || "").trim();
+        if (!first || !last) {
+          throw new Error("Enter your first and last name.");
+        }
+        if (display.length < 2) {
+          throw new Error("Enter a designer display name.");
+        }
+        const res = await fetch("/api/auth/onboarding/complete-designer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + accessToken,
+          },
+          body: JSON.stringify({
+            first_name: first,
+            last_name: last,
+            display_name: display,
+            bio: bio,
+            payout_email: payout,
+          }),
+        });
+        const data = await res.json().catch(function () { return {}; });
+        if (!res.ok) {
+          let detail = (data && data.detail) || "Could not finish designer signup.";
+          if (Array.isArray(detail)) {
+            detail = detail.map(function (row) {
+              return (row && row.msg) || String(row);
+            }).filter(Boolean).join(" ") || "Could not finish designer signup.";
+          }
+          throw new Error(typeof detail === "string" ? detail : "Could not finish designer signup.");
+        }
+        return data;
       }
 
       function showOnboardingForm(session, status) {
@@ -1973,7 +2055,6 @@
         if (blocked) blocked.hidden = true;
         if (sessionPanel) sessionPanel.hidden = true;
         if (form) form.hidden = false;
-        if (signupFields) signupFields.hidden = false;
         if (footer) footer.hidden = false;
         const oauth = $("auth-oauth");
         const oauthDivider = $("auth-oauth-divider");
@@ -1991,6 +2072,44 @@
         }
         form.dataset.onboardingMode = "1";
         form.dataset.accessToken = session.access_token || "";
+
+        const designerFields = $("auth-designer-fields");
+        const wantDesigner =
+          hasDesignerIntent() ||
+          !!(status && (status.is_theme_designer || status.account_kind === "theme_designer"));
+
+        if (wantDesigner) {
+          stashDesignerIntent();
+          if (signupFields) signupFields.hidden = true;
+          if (designerFields) designerFields.hidden = false;
+          const profile = (status && status.profile) || {};
+          const firstEl = $("auth-designer-first-name");
+          const lastEl = $("auth-designer-last-name");
+          if (firstEl && !firstEl.value) firstEl.value = profile.first_name || "";
+          if (lastEl && !lastEl.value) lastEl.value = profile.last_name || "";
+          const payoutEl = $("auth-designer-payout-email");
+          if (payoutEl && !payoutEl.value) payoutEl.value = profile.email || "";
+          const submitBtn = $("auth-designer-submit");
+          if (submitBtn && !submitBtn.dataset.bound) {
+            submitBtn.dataset.bound = "1";
+            submitBtn.addEventListener("click", async function () {
+              showError("");
+              setAuthSubmitting(true);
+              try {
+                await submitDesignerOnboarding(form.dataset.accessToken || "");
+                redirectAfterAuth();
+              } catch (err) {
+                showError((err && err.message) || "Could not finish designer signup.");
+              } finally {
+                setAuthSubmitting(false);
+              }
+            });
+          }
+          return;
+        }
+
+        if (designerFields) designerFields.hidden = true;
+        if (signupFields) signupFields.hidden = false;
         bindPhoneCountryInput();
         applyDefaultPhoneCountry();
         prefillOnboardingForm(status);
@@ -2139,7 +2258,12 @@
         if (blocked) blocked.hidden = true;
         if (sessionPanel) sessionPanel.hidden = true;
         if (form) form.hidden = false;
-        if (signupFields) signupFields.hidden = mode !== "sign-up";
+        const designerFields = $("auth-designer-fields");
+        if (designerFields) designerFields.hidden = true;
+        // Designer signup: credentials + OAuth first; profile form after Auth session.
+        if (signupFields) {
+          signupFields.hidden = mode !== "sign-up" || hasDesignerIntent();
+        }
         if (footer) footer.hidden = false;
         const emailInput = $("auth-email");
         const passwordInput = $("auth-password");
@@ -2426,7 +2550,7 @@
           const password = ($("auth-password") && $("auth-password").value) || "";
           const onboardingMode = form.dataset.onboardingMode === "1";
 
-          if (onboardingMode || mode === "sign-up") {
+          if ((onboardingMode || mode === "sign-up") && !hasDesignerIntent()) {
             if (signupStep === 1) {
               const err = validateStep1();
               if (err) return;
@@ -2447,6 +2571,18 @@
             const token = form.dataset.accessToken || (existingSession && existingSession.access_token) || "";
             if (!token) {
               showError("Your session expired. Please sign in again.");
+              return;
+            }
+            if (hasDesignerIntent()) {
+              setAuthSubmitting(true);
+              try {
+                await submitDesignerOnboarding(token);
+                redirectAfterAuth();
+              } catch (err) {
+                showError((err && err.message) || "Could not finish designer signup.");
+              } finally {
+                setAuthSubmitting(false);
+              }
               return;
             }
             setAuthSubmitting(true);
@@ -2478,11 +2614,11 @@
               return;
             }
           }
-          if (mode === "sign-up" && inviteOnly && !inviteToken) {
+          if (mode === "sign-up" && inviteOnly && !inviteToken && !hasDesignerIntent()) {
             showError("A valid invitation link is required to create an account.");
             return;
           }
-          if (mode === "sign-up" && inviteOnly && !details.churchName) {
+          if (mode === "sign-up" && inviteOnly && !details.churchName && !hasDesignerIntent()) {
             showError("This invite is missing a parish name. Ask your administrator for a new link.");
             return;
           }

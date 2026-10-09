@@ -398,7 +398,12 @@ def _active_differs_from_version(
 
 
 def record_style_in_version(
-    output_dir: Path, *, sunday: str, version: int, style: str
+    output_dir: Path,
+    *,
+    sunday: str,
+    version: int,
+    style: str,
+    prune_copies: bool = True,
 ) -> dict[str, Any]:
     """Archive one style into ``version`` and update the manifest entry."""
     sid = resolve_ai_image_style(style)
@@ -445,10 +450,12 @@ def record_style_in_version(
             manifest["active_version"] = int(version)
     manifest["versions"] = versions
     save_manifest(output_dir, sunday=sunday, manifest=manifest)
-    # Strip accidental copies of the previous version's unchanged styles.
-    prune_copied_styles_from_previous(
-        output_dir, sunday=sunday, version=int(version)
-    )
+    # Strip accidental copies of the previous version's unchanged styles
+    # (skip for in-place remakes of an existing version).
+    if prune_copies:
+        prune_copied_styles_from_previous(
+            output_dir, sunday=sunday, version=int(version)
+        )
     return load_manifest(output_dir, sunday=sunday)
 
 
@@ -509,6 +516,25 @@ def previous_complete_version(
     return 0
 
 
+def _active_styles_on_disk(output_dir: Path, *, sunday: str) -> list[str]:
+    return [
+        sid
+        for sid in weekly_style_ids()
+        if local_hero_path(output_dir, sunday=sunday, style=sid).is_file()
+    ]
+
+
+def _manifest_has_version(manifest: dict[str, Any], version: int) -> bool:
+    ver = int(version)
+    for item in manifest.get("versions") or []:
+        try:
+            if int((item or {}).get("version") or 0) == ver:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
+
+
 def promote_version_to_active(
     output_dir: Path,
     *,
@@ -521,18 +547,65 @@ def promote_version_to_active(
     Partial versions first restore the previous complete set, then overlay only
     the styles that belong to this version — avoids mixed v2/v3 active previews.
     Shared-cache upload is opt-in so version switching stays snappy.
+
+    When the manifest lists a version but its ``*_hero_vN`` archives are missing
+    (common after regenerating only the active slot), snapshot the current active
+    heroes into that version slot and continue — so Superadmin version switching
+    still succeeds instead of returning ``version_not_found``.
     """
     ver = int(version)
+    manifest = load_manifest(output_dir, sunday=sunday)
     owned = version_styles_on_disk(output_dir, sunday=sunday, version=ver)
+    soft_healed = False
     if not owned:
-        return {
-            "ok": False,
-            "sunday": sunday,
-            "version": ver,
-            "promoted": [],
-            "missing": list(weekly_style_ids()),
-            "manifest": load_manifest(output_dir, sunday=sunday),
-        }
+        active_styles = _active_styles_on_disk(output_dir, sunday=sunday)
+        listed = _manifest_has_version(manifest, ver)
+        if active_styles and (listed or not (manifest.get("versions") or [])):
+            healed = archive_active_as_version(
+                output_dir, sunday=sunday, version=ver
+            )
+            owned = version_styles_on_disk(output_dir, sunday=sunday, version=ver)
+            soft_healed = bool(healed or owned)
+            if soft_healed and not listed:
+                versions = list(manifest.get("versions") or [])
+                versions.append(
+                    {
+                        "version": ver,
+                        "created_at": _utc_now(),
+                        "label": format_version_label(ver, healed or owned),
+                        "styles": list(healed or owned),
+                        "status": (
+                            "ready"
+                            if version_complete(output_dir, sunday=sunday, version=ver)
+                            else "partial"
+                        ),
+                    }
+                )
+                manifest["versions"] = versions
+                save_manifest(output_dir, sunday=sunday, manifest=manifest)
+        if not owned:
+            # Last resort: point active_version at this label without archive files.
+            if active_styles and listed:
+                manifest["active_version"] = ver
+                save_manifest(output_dir, sunday=sunday, manifest=manifest)
+                return {
+                    "ok": True,
+                    "sunday": sunday,
+                    "version": ver,
+                    "promoted": list(active_styles),
+                    "base_promoted": [],
+                    "missing": [],
+                    "soft": True,
+                    "manifest": manifest,
+                }
+            return {
+                "ok": False,
+                "sunday": sunday,
+                "version": ver,
+                "promoted": [],
+                "missing": list(weekly_style_ids()),
+                "manifest": manifest,
+            }
 
     promoted: list[str] = []
     missing: list[str] = []
@@ -598,6 +671,7 @@ def promote_version_to_active(
         "promoted": promoted,
         "base_promoted": base_promoted,
         "missing": missing,
+        "soft": soft_healed,
         "manifest": manifest,
     }
 
@@ -814,6 +888,7 @@ def finalize_version(
     version: int,
     styles: list[str],
     activate: bool = True,
+    prune_copies: bool = True,
 ) -> dict[str, Any]:
     """Archive only styles that belong to this version (never silent full-set copies)."""
     wanted: list[str] = []
@@ -831,10 +906,12 @@ def finalize_version(
             output_dir, sunday=sunday, style=sid, version=int(version)
         ):
             archived.append(sid)
-    # Remove unchanged carry-overs from the previous version.
-    prune_copied_styles_from_previous(
-        output_dir, sunday=sunday, version=int(version)
-    )
+    # Remove unchanged carry-overs from the previous version
+    # (skip for in-place remakes so sibling styles stay in this version).
+    if prune_copies:
+        prune_copied_styles_from_previous(
+            output_dir, sunday=sunday, version=int(version)
+        )
     archived = version_styles_on_disk(
         output_dir, sunday=sunday, version=int(version)
     )
@@ -872,7 +949,7 @@ def finalize_version(
         manifest["active_version"] = int(version)
     save_manifest(output_dir, sunday=sunday, manifest=manifest)
     # Drop accidental duplicate archives (same bytes as an older version).
-    if complete and prune_duplicate_version(
+    if prune_copies and complete and prune_duplicate_version(
         output_dir, sunday=sunday, version=int(version)
     ):
         return load_manifest(output_dir, sunday=sunday)

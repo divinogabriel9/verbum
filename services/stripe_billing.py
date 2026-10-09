@@ -466,6 +466,20 @@ def handle_checkout_session_completed(session: Any) -> Optional[str]:
     meta = getattr(session, "metadata", None) or {}
     if not parish_id and isinstance(meta, dict):
         parish_id = _clean(meta.get("parish_id"))
+
+    # Theme marketplace one-time payments (not parish subscriptions).
+    purchase_kind = ""
+    if isinstance(meta, dict):
+        purchase_kind = _clean(meta.get("purchase_kind")).lower()
+    if purchase_kind == "theme_pack":
+        try:
+            from services.theme_billing import fulfill_theme_checkout_session
+
+            return fulfill_theme_checkout_session(session) or parish_id or None
+        except Exception:
+            logger.exception("Theme pack checkout fulfillment failed")
+            return parish_id or None
+
     customer = getattr(session, "customer", None)
     if hasattr(customer, "id"):
         customer = customer.id

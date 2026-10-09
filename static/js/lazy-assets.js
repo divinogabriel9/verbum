@@ -26,6 +26,7 @@
     "/static/js/app/app-07-posters-slideshow.js",
     "/static/js/app/app-08-calendar-catalog.js",
     "/static/js/app/app-09-boot.js",
+    "/static/js/app/app-10-themes.js",
   ];
 
   function loadScript(src) {

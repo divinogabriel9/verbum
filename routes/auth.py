@@ -62,6 +62,16 @@ class OnboardingCompleteBody(BaseModel):
     join_parish_id: str = Field("", max_length=64)
 
 
+class DesignerOnboardingCompleteBody(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=80)
+    middle_name: str = Field("", max_length=80)
+    last_name: str = Field(..., min_length=1, max_length=80)
+    display_name: str = Field(..., min_length=2, max_length=120)
+    bio: str = Field("", max_length=2000)
+    payout_email: str = Field("", max_length=200)
+    phone: str = Field("", max_length=32)
+
+
 def _auth_page_context(
     *,
     mode: str,
@@ -71,6 +81,7 @@ def _auth_page_context(
     invite_valid: bool = False,
     invite_email: Optional[str] = None,
     invite_community_name: Optional[str] = None,
+    designer_intent: bool = False,
 ) -> dict[str, Any]:
     from services.app_version import get_version_info
 
@@ -87,6 +98,7 @@ def _auth_page_context(
         "invite_community_name": invite_community_name or "",
         "invite_contact_email": contact,
         "hcaptcha_site_key": hcaptcha_site_key(),
+        "designer_intent": designer_intent,
         "app_version": str(version.get("version") or "dev"),
         "git_commit": str(version.get("git_commit") or ""),
         "git_commit_short": str(version.get("git_commit_short") or ""),
@@ -170,7 +182,10 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 elif church is not None:
                     _store_auth_context(session.token, session, church)
                 payload["membership"] = membership_payload(
-                    church, user=user, profile_role=profile_role
+                    church,
+                    user=user,
+                    profile_role=profile_role,
+                    profile=profile_row if isinstance(profile_row, dict) else None,
                 )
 
                 # Prefer stored avatar (apostle cartoon / static / signed) over OAuth image.
@@ -299,6 +314,25 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
         _ = session  # auth required
         query = (q or "").strip()
         return {"ok": True, "query": query, "results": search_parishes(query)}
+
+    @app.post("/api/auth/onboarding/complete-designer")
+    def api_auth_onboarding_complete_designer(
+        body: DesignerOnboardingCompleteBody,
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        from services.onboarding import complete_designer_onboarding
+
+        return complete_designer_onboarding(
+            session.user.user_id,
+            access_token=session.token,
+            first_name=body.first_name,
+            middle_name=body.middle_name,
+            last_name=body.last_name,
+            display_name=body.display_name,
+            bio=body.bio,
+            payout_email=body.payout_email,
+            phone=body.phone,
+        )
 
     @app.post("/api/auth/onboarding/complete")
     def api_auth_onboarding_complete(
@@ -431,6 +465,9 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 detail="Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (or SUPABASE_ANON_KEY), and SUPABASE_JWT_SECRET to enable sign-up.",
             )
         token = (request.query_params.get("invite") or "").strip()
+        designer_intent = (
+            (request.query_params.get("intent") or "").strip().lower() == "designer"
+        )
         invite_valid = not invite_only_signup()
         invite_email: Optional[str] = None
         invite_community_name: Optional[str] = None
@@ -450,11 +487,20 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
             "auth.html",
             _auth_page_context(
                 mode="sign-up",
-                title="Create account · LiturgyFlow",
-                subtitle="Complete your LiturgyFlow account",
+                title=(
+                    "Theme designer · LiturgyFlow"
+                    if designer_intent
+                    else "Create account · LiturgyFlow"
+                ),
+                subtitle=(
+                    "Create a designer account to sell Mass deck themes"
+                    if designer_intent
+                    else "Complete your LiturgyFlow account"
+                ),
                 invite_token=invite_token_out,
                 invite_valid=invite_valid,
                 invite_email=invite_email,
                 invite_community_name=invite_community_name,
+                designer_intent=designer_intent,
             ),
         )

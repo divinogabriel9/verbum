@@ -1596,7 +1596,16 @@
         statusEl.textContent = "Saving…";
         statusEl.className = "status";
       }
-      const ok = await addSettingsCelebrantName(inp.value);
+      let ok = false;
+      try {
+        ok = await addSettingsCelebrantName(inp.value);
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not add celebrant.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
       if (!ok) {
         if (statusEl) {
           statusEl.textContent = "Enter a new name, or check that the server is running.";
@@ -1608,7 +1617,7 @@
       if (statusEl) {
         statusEl.textContent = ok.pending
           ? (ok.message || "Priest submitted for superadmin approval.")
-          : "Celebrant saved to database.";
+          : (ok.exists ? "That priest is already on your list." : "Celebrant saved to database.");
         statusEl.className = "status ok";
       }
     });
@@ -2495,6 +2504,7 @@
     renderHistoryList();
     bindHomeNewsSettings();
     bindNavTabSettings();
+    if (typeof bindThemeMarketplace === "function") bindThemeMarketplace();
     applyNavTabVisibility();
     initMobileChromeLayout();
     initMobileNavDragDrop();
@@ -2507,6 +2517,7 @@
     initAccountMenu();
     initMobileWelcomeModal();
     initMembershipWelcomeModal();
+    initTrialOfferModal();
     initSongsWhatsNewModal();
     initCreateMenu();
     initVerbumSelects();

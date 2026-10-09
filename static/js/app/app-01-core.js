@@ -1229,11 +1229,14 @@
     var HOME_NEWS_CNA_KEY = "verbumHomeNewsCna";
     var NAV_TABS_ENABLED_KEY = "verbumNavTabsEnabled";
     var NAV_TABS_HIDDEN_KEY = "verbumNavTabsHidden"; // legacy — migrated on read
+    var NAV_TABS_MEDIA_OPTIONAL_KEY = "verbumNavTabsMediaOptionalV1";
     var NAV_TAB_DEFS = [
       { id: "home", label: "Home", required: true },
       { id: "mass", label: "Mass", required: true },
       { id: "library", label: "Lyrics Library", required: true },
-      { id: "radio", label: "Media", required: true },
+      { id: "themes", label: "Themes", required: true },
+      // Media (Live Radio) + Posters can be hidden from the nav.
+      { id: "radio", label: "Media", defaultOn: true },
       { id: "media", label: "Posters" },
       { id: "calendar", label: "Calendar" },
       { id: "design", label: "Design" },
@@ -1243,26 +1246,51 @@
       return NAV_TAB_DEFS.filter((def) => !def.required).map((def) => def.id);
     }
 
+    function getDefaultOnOptionalNavTabIds() {
+      return NAV_TAB_DEFS.filter((def) => !def.required && def.defaultOn).map((def) => def.id);
+    }
+
     function migrateNavTabPrefs() {
       try {
-        if (localStorage.getItem(NAV_TABS_ENABLED_KEY) !== null) return;
-        const optional = getOptionalNavTabIds();
-        const raw = localStorage.getItem(NAV_TABS_HIDDEN_KEY);
-        if (raw === null) {
-          localStorage.setItem(NAV_TABS_ENABLED_KEY, "[]");
-          return;
+        if (localStorage.getItem(NAV_TABS_ENABLED_KEY) === null) {
+          const optional = getOptionalNavTabIds();
+          const raw = localStorage.getItem(NAV_TABS_HIDDEN_KEY);
+          if (raw === null) {
+            // Fresh prefs: keep defaultOn optional tabs visible (e.g. Media).
+            localStorage.setItem(
+              NAV_TABS_ENABLED_KEY,
+              JSON.stringify(getDefaultOnOptionalNavTabIds())
+            );
+          } else {
+            const hidden = JSON.parse(raw);
+            if (!Array.isArray(hidden)) {
+              localStorage.setItem(
+                NAV_TABS_ENABLED_KEY,
+                JSON.stringify(getDefaultOnOptionalNavTabIds())
+              );
+            } else {
+              const hiddenSet = new Set(hidden.filter((id) => optional.includes(id)));
+              localStorage.setItem(
+                NAV_TABS_ENABLED_KEY,
+                JSON.stringify(optional.filter((id) => !hiddenSet.has(id)))
+              );
+            }
+          }
         }
-        const hidden = JSON.parse(raw);
-        if (!Array.isArray(hidden)) {
-          localStorage.setItem(NAV_TABS_ENABLED_KEY, "[]");
-          return;
-        }
-        const hiddenSet = new Set(hidden.filter((id) => optional.includes(id)));
-        localStorage.setItem(
-          NAV_TABS_ENABLED_KEY,
-          JSON.stringify(optional.filter((id) => !hiddenSet.has(id)))
-        );
       } catch (_e) { /* ignore */ }
+      // One-time: Media was previously required — keep it on for existing accounts
+      // until the user turns it off in Settings → Preferences.
+      try {
+        if (localStorage.getItem(NAV_TABS_MEDIA_OPTIONAL_KEY) === "1") return;
+        localStorage.setItem(NAV_TABS_MEDIA_OPTIONAL_KEY, "1");
+        const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) return;
+        if (!parsed.includes("radio")) {
+          parsed.push("radio");
+          localStorage.setItem(NAV_TABS_ENABLED_KEY, JSON.stringify(parsed));
+        }
+      } catch (_e2) { /* ignore */ }
     }
 
     function getHomeNewsPrefs() {
@@ -1309,14 +1337,15 @@
     function getEnabledOptionalNavTabIds() {
       migrateNavTabPrefs();
       const optional = new Set(getOptionalNavTabIds());
+      const defaults = () => new Set(getDefaultOnOptionalNavTabIds().filter((id) => optional.has(id)));
       try {
         const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
-        if (!raw) return new Set();
+        if (!raw) return defaults();
         const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return new Set();
+        if (!Array.isArray(parsed)) return defaults();
         return new Set(parsed.filter((id) => optional.has(id)));
       } catch (_e) {
-        return new Set();
+        return defaults();
       }
     }
 
@@ -1349,6 +1378,7 @@
       if (r === "/library/practice") return null;
       if (r.startsWith("/library/")) return "library";
       if (r.startsWith("/media/")) return "media";
+      if (r === "/themes" || r.startsWith("/themes/")) return "themes";
       if (r.startsWith("/design/")) return "design";
       if (r.startsWith("/settings/")) return null;
       return null;

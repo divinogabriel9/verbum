@@ -458,7 +458,7 @@ def ensure_weekly_heroes(
     queue = wanted or weekly_style_ids()
     overwrite_only = bool(overwrite_only)
     regenerate = bool(force or new_version or overwrite_only)
-    # Prompt-test path: rewrite active heroes only — do not allocate vN.
+    # Prompt-test / in-place path: rewrite active heroes — do not allocate a new vN.
     allocate_version = bool(new_version) or (bool(force) and not overwrite_only)
     version_no: Optional[int] = None
     try:
@@ -471,6 +471,7 @@ def ensure_weekly_heroes(
     from services.weekly_poster_versions import (
         begin_new_version,
         ensure_baseline_version_from_active,
+        load_manifest,
         record_style_in_version,
         versions_payload,
     )
@@ -479,6 +480,12 @@ def ensure_weekly_heroes(
     ensure_baseline_version_from_active(
         output_dir, sunday=sunday, allow_download=bool(regenerate)
     )
+    # In-place regenerate: default to the active version so archives stay in sync.
+    if overwrite_only and version_no is None:
+        try:
+            version_no = int(load_manifest(output_dir, sunday=sunday).get("active_version") or 0) or None
+        except Exception:
+            version_no = None
     # Allocate a version only once per batch — client must reuse ``version`` on later styles.
     if allocate_version and version_no is None:
         begun = begin_new_version(output_dir, sunday=sunday)
@@ -545,9 +552,14 @@ def ensure_weekly_heroes(
                 image_backend=image_backend,
             )
             generated.append(sid)
-            if version_no and allocate_version:
+            # New-version batches and in-place overwrites both update the version archive.
+            if version_no and (allocate_version or overwrite_only):
                 record_style_in_version(
-                    output_dir, sunday=sunday, version=int(version_no), style=sid
+                    output_dir,
+                    sunday=sunday,
+                    version=int(version_no),
+                    style=sid,
+                    prune_copies=not overwrite_only,
                 )
         except Exception as exc:
             logger.warning("weekly hero ensure failed %s %s: %s", sunday, sid, exc)
@@ -608,6 +620,19 @@ def ensure_weekly_heroes(
                     version_no,
                     exc_info=True,
                 )
+    elif overwrite_only and version_no and generated:
+        from services.weekly_poster_versions import finalize_version
+
+        # Keep the same version row; refresh its style list / label after in-place remakes.
+        # Do not prune sibling styles that still match the previous version.
+        finalize_version(
+            output_dir,
+            sunday=sunday,
+            version=int(version_no),
+            styles=list(generated),
+            activate=True,
+            prune_copies=False,
+        )
 
     catalog = catalog_for_date(mass, output_dir=output_dir)
     if generated:
@@ -639,7 +664,7 @@ def ensure_weekly_heroes(
         "force": bool(force),
         "new_version": bool(new_version),
         "overwrite_only": bool(overwrite_only),
-        "version": version_no if allocate_version else None,
+        "version": version_no if (allocate_version or overwrite_only) else None,
         "styles": list(queue),
         "catalog": catalog,
         "versions": versions,

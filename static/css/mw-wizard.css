@@ -4067,20 +4067,22 @@
           overflow: hidden;
           background: color-mix(in srgb, var(--ink) 8%, transparent);
         }
-        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::after {
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::after,
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-pending .mw-weekly-posters__frame::after {
           content: "";
           position: absolute;
           inset: 0;
           z-index: 1;
           border-radius: 14px;
           background:
-            linear-gradient(110deg, transparent 30%, color-mix(in srgb, #fff 28%, transparent) 48%, transparent 66%),
-            color-mix(in srgb, #000 28%, transparent);
-          background-size: 180% 100%, auto;
-          animation: mw-weekly-shimmer 1.1s ease-in-out infinite;
+            linear-gradient(110deg, transparent 28%, color-mix(in srgb, #fff 14%, transparent) 48%, transparent 68%),
+            linear-gradient(160deg, #1a1d26 0%, #12141b 48%, #1e1620 100%);
+          background-size: 220% 100%, auto;
+          animation: mw-weekly-shimmer-sweep 1.35s ease-in-out infinite;
           pointer-events: none;
         }
-        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading.is-selected .mw-weekly-posters__frame::after {
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading.is-selected .mw-weekly-posters__frame::after,
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-pending.is-selected .mw-weekly-posters__frame::after {
           box-shadow: inset 0 0 0 3px var(--accent);
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::before {
@@ -4092,15 +4094,18 @@
           height: 22px;
           margin: -11px 0 0 -11px;
           border-radius: 999px;
-          border: 2px solid color-mix(in srgb, #fff 35%, transparent);
+          border: 2px solid color-mix(in srgb, #fff 28%, transparent);
           border-top-color: #fff;
           z-index: 2;
           animation: mw-weekly-spin 0.7s linear infinite;
           pointer-events: none;
         }
-        @keyframes mw-weekly-shimmer {
-          0% { background-position: 120% 0, 0 0; }
-          100% { background-position: -60% 0, 0 0; }
+        @keyframes mw-weekly-shimmer-sweep {
+          0% { background-position: 130% 0, 0 0; }
+          100% { background-position: -50% 0, 0 0; }
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading .mw-weekly-posters__img {
+          opacity: 0;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__label {
           position: absolute;
@@ -4142,16 +4147,16 @@
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__placeholder {
           width: 100%;
           height: 100%;
-          background:
-            linear-gradient(135deg,
-              color-mix(in srgb, var(--accent) 22%, transparent),
-              color-mix(in srgb, var(--ink) 12%, transparent) 55%,
-              color-mix(in srgb, var(--accent) 10%, transparent));
-          animation: mw-weekly-shimmer 1.6s ease-in-out infinite;
+          background: linear-gradient(160deg, #1a1d26 0%, #12141b 50%, #1e1620 100%);
         }
-        @keyframes mw-weekly-shimmer {
-          0%, 100% { opacity: .72; }
-          50% { opacity: 1; }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__skel {
+          display: block;
+          width: 100%;
+          height: 100%;
+          background:
+            linear-gradient(110deg, transparent 30%, color-mix(in srgb, #fff 12%, transparent) 48%, transparent 66%);
+          background-size: 220% 100%;
+          animation: mw-weekly-shimmer-sweep 1.45s ease-in-out infinite;
         }
         body.mw-on .mw-poster-transparency {
           margin-top: 14px;
@@ -4968,4 +4973,280 @@
           }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main { order: 1; }
 
+        }
+
+        /* Superadmin Gospel posters panel extras */
+        #sa-panel-system-gospel-posters .mw-weekly-posters__toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-end;
+          gap: 10px;
+          margin: 0 0 12px;
+        }
+        #sa-panel-system-gospel-posters .mw-weekly-posters__toolbar .mw-btn {
+          font-size: 0.8rem;
+          padding: 7px 12px;
+        }
+        #sa-panel-system-gospel-posters .sa-weekly-posters {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        body:not(.is-superadmin) #mw-weekly-posters-sa-hint {
+          display: none !important;
+        }
+
+        /*
+         * Shared weekly poster carousel — Extras (#mw-weekly-posters) and
+         * Superadmin Gospel posters (#sa-weekly-posters). Keep selectors explicit
+         * (no comma-truncation) so both surfaces always get stage/card layout.
+         */
+        #mw-weekly-posters,
+        #sa-weekly-posters {
+          display: block;
+          margin-top: 12px;
+          width: 100%;
+          --mw-ai-poster-opacity: 1;
+        }
+        #mw-weekly-posters .mw-weekly-posters__stage,
+        #sa-weekly-posters .mw-weekly-posters__stage {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          border-radius: 14px;
+          overflow: hidden;
+          background: color-mix(in srgb, var(--ink) 8%, transparent);
+        }
+        #mw-weekly-posters .mw-weekly-posters__viewport,
+        #sa-weekly-posters .mw-weekly-posters__viewport {
+          position: absolute;
+          inset: 0;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-behavior: smooth;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          padding: 0;
+          scrollbar-width: none;
+          width: 100%;
+          height: 100%;
+        }
+        #mw-weekly-posters .mw-weekly-posters__viewport::-webkit-scrollbar,
+        #sa-weekly-posters .mw-weekly-posters__viewport::-webkit-scrollbar {
+          display: none;
+        }
+        #mw-weekly-posters .mw-weekly-posters__track,
+        #sa-weekly-posters .mw-weekly-posters__track {
+          display: flex;
+          gap: 0;
+          width: 100%;
+          height: 100%;
+          padding: 0;
+        }
+        #mw-weekly-posters .mw-weekly-posters__card,
+        #sa-weekly-posters .mw-weekly-posters__card {
+          appearance: none;
+          border: 0;
+          background: transparent;
+          border-radius: 0;
+          padding: 0;
+          flex: 0 0 100%;
+          width: 100%;
+          height: 100%;
+          max-width: none;
+          cursor: pointer;
+          text-align: left;
+          scroll-snap-align: start;
+          scroll-snap-stop: always;
+          display: grid;
+          grid-template-rows: 1fr;
+          gap: 0;
+          color: inherit;
+          font: inherit;
+          box-shadow: none;
+          position: relative;
+        }
+        #mw-weekly-posters .mw-weekly-posters__card.is-selected .mw-weekly-posters__frame::after,
+        #sa-weekly-posters .mw-weekly-posters__card.is-selected .mw-weekly-posters__frame::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          box-shadow: inset 0 0 0 3px var(--accent);
+          pointer-events: none;
+          border-radius: 14px;
+        }
+        #mw-weekly-posters .mw-weekly-posters__frame,
+        #sa-weekly-posters .mw-weekly-posters__frame {
+          display: block;
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 14px;
+          overflow: hidden;
+          background: color-mix(in srgb, var(--ink) 8%, transparent);
+        }
+        #mw-weekly-posters .mw-weekly-posters__img,
+        #sa-weekly-posters .mw-weekly-posters__img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+          opacity: var(--mw-ai-poster-opacity, 1);
+        }
+        #mw-weekly-posters .mw-weekly-posters__placeholder,
+        #sa-weekly-posters .mw-weekly-posters__placeholder {
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(160deg, #1a1d26 0%, #12141b 50%, #1e1620 100%);
+        }
+        #mw-weekly-posters .mw-weekly-posters__skel,
+        #sa-weekly-posters .mw-weekly-posters__skel {
+          display: block;
+          width: 100%;
+          height: 100%;
+          background:
+            linear-gradient(110deg, transparent 30%, color-mix(in srgb, #fff 12%, transparent) 48%, transparent 66%);
+          background-size: 220% 100%;
+          animation: mw-weekly-shimmer-sweep 1.45s ease-in-out infinite;
+        }
+        #mw-weekly-posters .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::after,
+        #mw-weekly-posters .mw-weekly-posters__card.is-pending .mw-weekly-posters__frame::after,
+        #sa-weekly-posters .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::after,
+        #sa-weekly-posters .mw-weekly-posters__card.is-pending .mw-weekly-posters__frame::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          border-radius: 14px;
+          background:
+            linear-gradient(110deg, transparent 28%, color-mix(in srgb, #fff 14%, transparent) 48%, transparent 68%),
+            linear-gradient(160deg, #1a1d26 0%, #12141b 48%, #1e1620 100%);
+          background-size: 220% 100%, auto;
+          animation: mw-weekly-shimmer-sweep 1.35s ease-in-out infinite;
+          pointer-events: none;
+        }
+        #mw-weekly-posters .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::before,
+        #sa-weekly-posters .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 22px;
+          height: 22px;
+          margin: -11px 0 0 -11px;
+          border-radius: 999px;
+          border: 2px solid color-mix(in srgb, #fff 28%, transparent);
+          border-top-color: #fff;
+          z-index: 2;
+          animation: mw-weekly-spin 0.7s linear infinite;
+          pointer-events: none;
+        }
+        #mw-weekly-posters .mw-weekly-posters__card.is-loading .mw-weekly-posters__img,
+        #sa-weekly-posters .mw-weekly-posters__card.is-loading .mw-weekly-posters__img {
+          opacity: 0;
+        }
+        #mw-weekly-posters .mw-weekly-posters__label,
+        #sa-weekly-posters .mw-weekly-posters__label {
+          position: absolute;
+          left: 14px;
+          bottom: 14px;
+          z-index: 2;
+          margin: 0;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: color-mix(in srgb, #000 45%, transparent);
+          color: #fff;
+          font-size: 0.85rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          backdrop-filter: blur(3px);
+        }
+        #mw-weekly-posters .mw-weekly-posters__badge,
+        #sa-weekly-posters .mw-weekly-posters__badge {
+          position: absolute;
+          left: 14px;
+          top: 14px;
+          z-index: 2;
+          margin: 0;
+          padding: 5px 9px;
+          border-radius: 999px;
+          background: color-mix(in srgb, #000 45%, transparent);
+          color: #fff;
+          font-size: 0.68rem;
+          font-weight: 650;
+          backdrop-filter: blur(3px);
+        }
+        #mw-weekly-posters .mw-weekly-posters__nav,
+        #sa-weekly-posters .mw-weekly-posters__nav {
+          position: absolute;
+          top: 50%;
+          z-index: 3;
+          transform: translateY(-50%);
+          width: 40px;
+          height: 40px;
+          border: 0;
+          border-radius: 999px;
+          background: color-mix(in srgb, #000 38%, transparent);
+          color: #fff;
+          font-size: 1.35rem;
+          line-height: 1;
+          cursor: pointer;
+          display: grid;
+          place-items: center;
+          backdrop-filter: blur(2px);
+        }
+        #mw-weekly-posters .mw-weekly-posters__nav[data-weekly-nav="-1"],
+        #sa-weekly-posters .mw-weekly-posters__nav[data-sa-weekly-nav="-1"] {
+          left: 12px;
+        }
+        #mw-weekly-posters .mw-weekly-posters__nav[data-weekly-nav="1"],
+        #sa-weekly-posters .mw-weekly-posters__nav[data-sa-weekly-nav="1"] {
+          right: 12px;
+        }
+        #mw-weekly-posters .mw-weekly-posters__expand {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 4;
+          width: 40px;
+          height: 40px;
+          border: 0;
+          border-radius: 999px;
+          background: color-mix(in srgb, #000 42%, transparent);
+          color: #fff;
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+          backdrop-filter: blur(3px);
+          transition: background 0.15s ease, transform 0.15s ease;
+        }
+        #mw-weekly-posters .mw-weekly-posters__expand[hidden] {
+          display: none !important;
+        }
+        #mw-weekly-posters .mw-weekly-posters__expand:hover {
+          background: color-mix(in srgb, #000 58%, transparent);
+          transform: scale(1.04);
+        }
+        #mw-weekly-posters .mw-weekly-posters__expand svg {
+          width: 18px;
+          height: 18px;
+        }
+        .mw-weekly-poster-expand-card {
+          width: min(920px, 94vw);
+          max-height: min(90dvh, 920px);
+          display: flex;
+          flex-direction: column;
+        }
+        .mw-weekly-poster-expand-card__body {
+          padding: 0 16px 16px;
+          overflow: auto;
+        }
+        .mw-weekly-poster-expand-card__img {
+          display: block;
+          width: 100%;
+          height: auto;
+          max-height: min(78dvh, 820px);
+          object-fit: contain;
+          border-radius: 12px;
+          background: color-mix(in srgb, var(--ink) 8%, transparent);
         }

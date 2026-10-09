@@ -426,6 +426,7 @@
       { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
       { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
       { id: "page-calendar", label: "Liturgical Calendar", hint: "Page", group: "Pages", route: "/mass/calendar", keywords: ["calendar", "liturgical", "readings"] },
+      { id: "page-themes", label: "Themes", hint: "Page", group: "Pages", route: "/themes", keywords: ["theme", "marketplace", "design", "pack"] },
       { id: "page-theme", label: "Theme Lab", hint: "Page", group: "Pages", route: "/design/theme-lab", keywords: ["design", "theme", "style", "color"] },
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
       { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
@@ -902,15 +903,34 @@
       return objectUrl;
     }
 
+    function setWeeklyPosterCardHydrateLoading(card, on) {
+      if (!card) return;
+      card.classList.toggle("is-loading", !!on);
+      const badge = card.querySelector(".mw-weekly-posters__badge");
+      if (!badge) return;
+      if (on) {
+        if (!badge.dataset.idleText) badge.dataset.idleText = String(badge.textContent || "").trim();
+        badge.textContent = "Loading…";
+        badge.hidden = false;
+      } else if (!card.classList.contains("is-pending")) {
+        badge.hidden = true;
+      } else if (badge.dataset.idleText) {
+        badge.textContent = badge.dataset.idleText;
+        badge.hidden = false;
+      }
+    }
+
     async function hydrateWeeklyPosterCardImages(root) {
       const host = root || $("mw-weekly-posters-track");
       if (!host) return;
       const imgs = host.querySelectorAll("img[data-weekly-src]:not([data-weekly-hydrated='1'])");
       await Promise.all(Array.prototype.map.call(imgs, async (img) => {
+        const card = img.closest(".mw-weekly-posters__card");
         const src = img.getAttribute("data-weekly-src") || "";
         const full = img.getAttribute("data-weekly-full") || "";
         const proxy = img.getAttribute("data-weekly-proxy") || "";
         const tryUrls = [src, proxy, full].filter((u, i, arr) => u && arr.indexOf(u) === i);
+        setWeeklyPosterCardHydrateLoading(card, true);
         let ok = false;
         for (let i = 0; i < tryUrls.length; i += 1) {
           const candidate = tryUrls[i];
@@ -940,8 +960,19 @@
             if (resolvedProxy) {
               img.src = resolvedProxy;
               img.setAttribute("data-weekly-hydrated", "1");
+              ok = true;
             }
           } catch (_e3) { /* keep placeholder */ }
+        }
+        setWeeklyPosterCardHydrateLoading(card, false);
+        if (!ok && card && !card.classList.contains("is-pending")) {
+          // Ready in catalog but image failed — keep a soft loading shell, not white.
+          card.classList.add("is-pending");
+          const badge = card.querySelector(".mw-weekly-posters__badge");
+          if (badge) {
+            badge.hidden = false;
+            badge.textContent = "Retrying…";
+          }
         }
       }));
       if (typeof syncAiPosterOpacityPreview === "function") syncAiPosterOpacityPreview();
@@ -1182,10 +1213,14 @@
     }
 
     var HOME_CTA_POSTER_STYLE_KEY = "home_cta_weekly_poster_style";
-    var HOME_CTA_POSTER_FADE_MS = 900;
+    var HOME_CTA_POSTER_SLIDE_MS = 720;
     var HOME_CTA_POSTER_AUTO_MS = 9000;
     var homeCtaPosterBgInflight = null;
     var homeCtaPosterSyncingFromHome = false;
+    var homeCtaPosterAwaitRetryTimer = null;
+    var homeCtaPosterAwaitRetries = 0;
+    var HOME_CTA_POSTER_AWAIT_MAX = 8;
+    var HOME_CTA_POSTER_AWAIT_MS = 8000;
     var homeCtaPosterState = {
       sunday: "",
       items: [],
@@ -1201,6 +1236,62 @@
       const card = $("home-mass-card");
       if (!card) return [];
       return Array.prototype.slice.call(card.querySelectorAll(".redesign-mass-bg--layer"));
+    }
+
+    function clearHomeCtaPosterMotionClasses(bg) {
+      if (!bg) return;
+      bg.classList.remove(
+        "is-enter-next",
+        "is-enter-prev",
+        "is-exit-next",
+        "is-exit-prev",
+        "is-sliding",
+        "is-animating"
+      );
+    }
+
+    function settleHomeCtaPosterLayers(activeLayer) {
+      const layers = homeCtaPosterLayers();
+      if (!layers.length) return;
+      const active = activeLayer && layers.indexOf(activeLayer) >= 0
+        ? activeLayer
+        : (layers.find((bg) => bg.classList.contains("is-visible")) || layers[0]);
+      layers.forEach((bg) => {
+        clearHomeCtaPosterMotionClasses(bg);
+        bg.classList.toggle("is-visible", bg === active);
+      });
+      // Recovery: never leave has-poster-bg without a painted visible layer.
+      const card = $("home-mass-card");
+      if (card && card.classList.contains("has-poster-bg")) {
+        const painted = !!(active && String(active.style.backgroundImage || "").trim());
+        if (!painted) {
+          card.classList.remove("has-poster-bg");
+          // Keep loading chrome — don't flash the empty white card.
+          setHomeCtaPosterLoading(true);
+        }
+      }
+    }
+
+    function stopHomeCtaPosterAwaitRetry() {
+      if (homeCtaPosterAwaitRetryTimer) {
+        clearTimeout(homeCtaPosterAwaitRetryTimer);
+        homeCtaPosterAwaitRetryTimer = null;
+      }
+    }
+
+    function keepHomeCtaPosterAwaiting(styleLabel) {
+      const card = $("home-mass-card");
+      if (!card) return;
+      if (!card.classList.contains("has-poster-bg")) {
+        setHomeCtaPosterLoading(true, styleLabel || "");
+      }
+      stopHomeCtaPosterAwaitRetry();
+      if (homeCtaPosterAwaitRetries >= HOME_CTA_POSTER_AWAIT_MAX) return;
+      homeCtaPosterAwaitRetries += 1;
+      homeCtaPosterAwaitRetryTimer = setTimeout(() => {
+        homeCtaPosterAwaitRetryTimer = null;
+        void refreshHomeMassCtaPosterBg({ forceReload: true });
+      }, HOME_CTA_POSTER_AWAIT_MS);
     }
 
     function activeExtrasPosterStyleId() {
@@ -1252,12 +1343,20 @@
       prev.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        void showHomeCtaPosterAt(homeCtaPosterState.index - 1, { animate: true, source: "manual" });
+        void showHomeCtaPosterAt(homeCtaPosterState.index - 1, {
+          animate: true,
+          source: "manual",
+          dir: -1,
+        });
       });
       next.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, { animate: true, source: "manual" });
+        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, {
+          animate: true,
+          source: "manual",
+          dir: 1,
+        });
       });
     }
 
@@ -1286,42 +1385,49 @@
     }
     window.syncHomeCtaPosterToExtrasStyle = syncHomeCtaPosterToExtrasStyle;
 
-    function setHomeCtaPosterLoading(on) {
+    function setHomeCtaPosterLoading(on, styleLabel) {
       const card = $("home-mass-card");
       if (!card) return;
-      card.classList.toggle("is-poster-loading", !!on);
+      // Never drop loading chrome unless a poster is actually painted.
+      const painted = card.classList.contains("has-poster-bg");
+      const show = !!on || !painted;
+      card.classList.toggle("is-poster-loading", show);
       const el = $("home-mass-poster-loading");
       if (el) {
-        el.hidden = !on;
-        el.setAttribute("aria-busy", on ? "true" : "false");
+        el.hidden = !show;
+        el.setAttribute("aria-busy", show ? "true" : "false");
+        const labelEl = el.querySelector(".home-mass-poster-loading__label");
+        if (labelEl) {
+          const name = String(styleLabel || "").trim();
+          labelEl.textContent = show
+            ? (name ? ("Loading " + name + "…") : "Loading this week poster…")
+            : "Loading this week poster…";
+        }
       }
       const veil = $("home-mass-poster-loading-veil");
-      if (veil) veil.hidden = !on;
+      if (veil) veil.hidden = !show;
     }
 
-    function clearHomeMassCtaPosterBg() {
+    function clearHomeMassCtaPosterBg(opts) {
       stopHomeCtaPosterAutoplay();
+      stopHomeCtaPosterAwaitRetry();
+      homeCtaPosterAwaitRetries = 0;
       const card = $("home-mass-card");
       const layers = homeCtaPosterLayers();
       const nav = $("home-mass-poster-nav");
       if (card) {
         card.classList.remove("has-poster-bg");
-        card.classList.remove("is-poster-loading");
         card.removeAttribute("data-home-poster-style");
       }
       layers.forEach((bg, i) => {
         bg.style.backgroundImage = "";
         bg.removeAttribute("data-poster-url");
+        clearHomeCtaPosterMotionClasses(bg);
         bg.classList.toggle("is-visible", i === 0);
       });
       if (nav) nav.hidden = true;
-      const loading = $("home-mass-poster-loading");
-      if (loading) {
-        loading.hidden = true;
-        loading.setAttribute("aria-busy", "false");
-      }
-      const veil = $("home-mass-poster-loading-veil");
-      if (veil) veil.hidden = true;
+      // After clear there is no painted poster — always keep loading chrome.
+      setHomeCtaPosterLoading(true, (opts && opts.styleLabel) || "");
       homeCtaPosterState = Object.assign(homeCtaPosterState, {
         sunday: "",
         items: [],
@@ -1345,17 +1451,26 @@
     async function resolveHomeCtaPosterItem(item) {
       if (!item) return null;
       if (item._resolvedUrl) return item;
+      const sunday = String(
+        homeCtaPosterState.sunday ||
+        (typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "") ||
+        ""
+      ).trim();
+      const styleId = String(item.id || "").trim();
       const full = String(item.full_url || "").trim();
       const card = String(item.card_url || "").trim();
-      const cardProxy = card || (item.id
-        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(homeCtaPosterState.sunday || "") + "&style=" + encodeURIComponent(item.id) + "&variant=card")
-        : "");
+      // Always keep an active (non-versioned) card proxy as a last-resort paint path.
+      const activeCard = styleId && sunday
+        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(sunday) + "&style=" + encodeURIComponent(styleId) + "&variant=card")
+        : "";
+      const cardProxy = card || activeCard;
       // Prefer HTTPS signed assets in CSS directly (no JS blob hydrate) — sharp + fast CDN load.
       // Fall back to sharp 1600px card WebP, never the tiny 720 picker thumb.
       const candidates = [];
       if (/^https?:\/\//i.test(full)) candidates.push(full);
       if (/^https?:\/\//i.test(card)) candidates.push(card);
       if (cardProxy) candidates.push(cardProxy);
+      if (activeCard && activeCard !== cardProxy) candidates.push(activeCard);
       if (full) candidates.push(full);
       const seen = {};
       const urls = [];
@@ -1375,6 +1490,9 @@
             continue;
           }
           if (!resolved) continue;
+          // Confirm the asset actually decodes before accepting it as the CTA bg.
+          const ok = await preloadHomeCtaPosterUrl(resolved);
+          if (!ok) continue;
           item._resolvedUrl = resolved;
           item._rawUrl = raw;
           return item;
@@ -1397,24 +1515,75 @@
       if (index === homeCtaPosterState.index && card.classList.contains("has-poster-bg") && animate) {
         return true;
       }
-      const item = await resolveHomeCtaPosterItem(items[index]);
-      if (!item || !item._resolvedUrl) return false;
+      const pendingItem = items[index];
+      const needsResolve = !(pendingItem && pendingItem._resolvedUrl);
+      if (needsResolve) {
+        setHomeCtaPosterLoading(true, (pendingItem && (pendingItem.label || pendingItem.id)) || "");
+      }
+      const item = await resolveHomeCtaPosterItem(pendingItem);
+      if (!item || !item._resolvedUrl) {
+        // Still waiting on decode/hydrate — keep loading, never flash white.
+        if (needsResolve && !card.classList.contains("has-poster-bg")) {
+          setHomeCtaPosterLoading(true, (pendingItem && (pendingItem.label || pendingItem.id)) || "");
+        } else if (needsResolve && card.classList.contains("has-poster-bg")) {
+          setHomeCtaPosterLoading(false);
+        }
+        return false;
+      }
 
       const incoming = layers[homeCtaPosterState.layer === 0 ? 1 % layers.length : 0];
       const outgoing = layers[homeCtaPosterState.layer] || layers[0];
       const targetLayer = layers.length > 1 ? incoming : outgoing;
+      // dir > 0 = forever-next (enter from right); dir < 0 = previous (enter from left).
+      // Infer neighbor direction when callers omit dir so wrap-around still feels forward/back.
+      let dir = Number(opts && opts.dir);
+      if (!dir || !Number.isFinite(dir)) {
+        const from = Number(homeCtaPosterState.index) || 0;
+        if ((from + 1) % total === index) dir = 1;
+        else if ((from - 1 + total) % total === index) dir = -1;
+        else dir = index >= from ? 1 : -1;
+      }
+      dir = dir < 0 ? -1 : 1;
+      const reduceMotion = !!(window.matchMedia
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
       targetLayer.style.backgroundImage = 'url("' + item._resolvedUrl.replace(/"/g, '\\"') + '")';
       targetLayer.setAttribute("data-poster-url", item._rawUrl || "");
 
+      layers.forEach((bg) => clearHomeCtaPosterMotionClasses(bg));
+
       if (animate && layers.length > 1 && outgoing !== targetLayer) {
         homeCtaPosterState.fading = true;
-        targetLayer.classList.add("is-visible");
-        outgoing.classList.remove("is-visible");
+        if (!reduceMotion) {
+          // 1) Park incoming off-screen with transitions off (paint "from" frame).
+          targetLayer.classList.remove("is-visible");
+          targetLayer.classList.add(
+            "is-sliding",
+            dir > 0 ? "is-enter-next" : "is-enter-prev"
+          );
+          outgoing.classList.add("is-sliding", "is-visible");
+          void targetLayer.offsetWidth;
+          // 2) Next frames: enable transition, then push both panels together.
+          requestAnimationFrame(() => {
+            targetLayer.classList.add("is-animating");
+            outgoing.classList.add("is-animating");
+            requestAnimationFrame(() => {
+              targetLayer.classList.remove("is-enter-next", "is-enter-prev");
+              targetLayer.classList.add("is-visible");
+              outgoing.classList.remove("is-visible");
+              outgoing.classList.add(dir > 0 ? "is-exit-next" : "is-exit-prev");
+            });
+          });
+        } else {
+          settleHomeCtaPosterLayers(targetLayer);
+        }
         homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
-        window.setTimeout(() => { homeCtaPosterState.fading = false; }, HOME_CTA_POSTER_FADE_MS);
+        window.setTimeout(() => {
+          settleHomeCtaPosterLayers(targetLayer);
+          homeCtaPosterState.fading = false;
+        }, HOME_CTA_POSTER_SLIDE_MS + 40);
       } else {
-        layers.forEach((bg) => bg.classList.toggle("is-visible", bg === targetLayer));
+        settleHomeCtaPosterLayers(targetLayer);
         homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
       }
 
@@ -1430,12 +1599,17 @@
         try { setWeeklyPosterStyle(item.id); } finally { homeCtaPosterSyncingFromHome = false; }
       }
 
-      // Wait for the image to decode before dropping the loading veil.
-      if (!(opts && opts.animate)) {
-        await preloadHomeCtaPosterUrl(item._resolvedUrl);
-        setHomeCtaPosterLoading(false);
+      stopHomeCtaPosterAwaitRetry();
+      homeCtaPosterAwaitRetries = 0;
+      setHomeCtaPosterLoading(false);
+      // Final guard: visible layer must have paint (CSS !important + settle).
+      if (!String(targetLayer.style.backgroundImage || "").trim()) {
+        settleHomeCtaPosterLayers(targetLayer);
+        if (!card.classList.contains("has-poster-bg")) {
+          keepHomeCtaPosterAwaiting((item && (item.label || item.id)) || "");
+        }
+        return false;
       }
-
       if (opts && opts.source === "manual") startHomeCtaPosterAutoplay();
       return true;
     }
@@ -1455,25 +1629,52 @@
       return 0;
     }
 
+    function homeCtaPosterSundayKey(iso) {
+      const raw = String(iso || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
+      // Normalize any mass date to that week's Sunday (local noon).
+      try {
+        const d = new Date(raw + "T12:00:00");
+        if (Number.isNaN(d.getTime())) return raw;
+        const add = d.getDay() === 0 ? 0 : -d.getDay();
+        d.setDate(d.getDate() + add);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return y + "-" + m + "-" + day;
+      } catch (_e) {
+        return raw;
+      }
+    }
+
     async function refreshHomeMassCtaPosterBg(opts) {
       const card = $("home-mass-card");
       if (!card) return;
       bindHomeCtaPosterNav();
       let forceReload = !!(opts && opts.forceReload);
       const preferStyle = String((opts && opts.preferStyle) || activeExtrasPosterStyleId() || "").trim();
-      const sunday = typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "";
+      const sunday = homeCtaPosterSundayKey(
+        (typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "") || ""
+      );
       const activeVer = Number(
         (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
           ? (weeklyPosterVersionState.active || 0)
           : 0
       );
+      const extrasSunday = homeCtaPosterSundayKey(
+        (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState && weeklyPosterVersionState.sunday)
+          || (typeof weeklyPosterCatalogState !== "undefined" && weeklyPosterCatalogState && weeklyPosterCatalogState.sunday)
+          || ""
+      );
       if (!sunday) {
-        clearHomeMassCtaPosterBg();
+        // Sunday not known yet — keep loading chrome, never flash white mesh.
+        keepHomeCtaPosterAwaiting();
         return;
       }
       if (
         !forceReload &&
         activeVer &&
+        extrasSunday === sunday &&
         homeCtaPosterState.activeVersion &&
         homeCtaPosterState.activeVersion !== activeVer
       ) {
@@ -1488,52 +1689,63 @@
         if (preferStyle) {
           const idx = homeCtaPosterState.items.findIndex((it) => String(it.id) === preferStyle);
           if (idx >= 0 && idx !== homeCtaPosterState.index) {
-            await showHomeCtaPosterAt(idx, { animate: false, source: "extras" });
+            const shown = await showHomeCtaPosterAt(idx, { animate: false, source: "extras" });
+            if (!shown) forceReload = true;
           }
         }
-        setHomeCtaPosterLoading(false);
-        startHomeCtaPosterAutoplay();
-        syncHomeCtaPosterNav();
-        return;
+        if (!forceReload) {
+          stopHomeCtaPosterAwaitRetry();
+          homeCtaPosterAwaitRetries = 0;
+          setHomeCtaPosterLoading(false);
+          startHomeCtaPosterAutoplay();
+          syncHomeCtaPosterNav();
+          return;
+        }
       }
       if (homeCtaPosterBgInflight) return homeCtaPosterBgInflight;
       if (!card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(true);
       homeCtaPosterBgInflight = (async () => {
+        let data = null;
+        let painted = false;
         try {
           if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
             await window.VerbumAuth.waitUntilReady(4000);
           }
-          // Prefer the Extras active version archive when known (matches what Step 6 shows).
           let ready = [];
+          // Only reuse the Extras version catalog when it is for THIS upcoming Sunday.
           try {
-            if (typeof weeklyPosterViewCatalogForActiveVersion === "function") {
+            if (typeof weeklyPosterViewCatalogForActiveVersion === "function" && extrasSunday === sunday) {
               const view = weeklyPosterViewCatalogForActiveVersion();
-              if (view && Array.isArray(view.items)) {
+              const viewSunday = homeCtaPosterSundayKey((view && view.sunday) || extrasSunday);
+              if (view && viewSunday === sunday && Array.isArray(view.items)) {
                 ready = view.items.filter((it) => it && it.id && it.ready);
               }
             }
           } catch (_eView) { /* fall through to API catalog */ }
 
-          if (!ready.length) {
-            const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
-              ? await window.VerbumAuth.getAuthHeaders()
-              : {};
-            const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
-              headers: headers,
-              credentials: "same-origin",
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || !data.ok) {
-              if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
-              return;
-            }
+          // Authoritative source: active disk heroes for the upcoming Sunday.
+          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+            ? await window.VerbumAuth.getAuthHeaders()
+            : {};
+          const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
+            headers: headers,
+            credentials: "same-origin",
+          });
+          data = await res.json().catch(() => ({}));
+          if (res.ok && data && data.ok) {
             if (data.versions && typeof syncWeeklyPosterVersionUi === "function") {
               try { syncWeeklyPosterVersionUi(data.versions); } catch (_eVer) { /* ignore */ }
             }
-            ready = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
+            const apiReady = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
+            // Prefer API active heroes (what parishioners get). Keep versioned
+            // preview only when API has nothing yet for this Sunday.
+            if (apiReady.length) ready = apiReady;
+          } else if (!ready.length) {
+            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
+            return;
           }
           if (!ready.length) {
-            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
             return;
           }
 
@@ -1543,47 +1755,57 @@
           homeCtaPosterState.sunday = sunday;
           homeCtaPosterState.items = ready;
           homeCtaPosterState.activeVersion = Number(
-            (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
+            (data && data.versions && data.versions.active_version)
+            || ((typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
               ? (weeklyPosterVersionState.active || activeVer || 0)
-              : activeVer
+              : activeVer)
+            || 0
           );
 
           const startIndex = pickInitialHomeCtaPosterIndex(homeCtaPosterState.items, preferStyle);
-          // Resolve preferred first, but race the rest so a faster asset can still paint quickly.
           const preferred = resolveHomeCtaPosterItem(homeCtaPosterState.items[startIndex]);
           homeCtaPosterState.items.forEach((it, i) => {
             if (i === startIndex) return;
             void resolveHomeCtaPosterItem(it);
           });
           let first = await preferred;
-          if (!first) {
+          let shown = false;
+          if (first) {
+            shown = await showHomeCtaPosterAt(startIndex, { animate: false, source: "boot" });
+          }
+          if (!shown) {
             for (let i = 0; i < homeCtaPosterState.items.length; i++) {
               if (i === startIndex) continue;
               first = await resolveHomeCtaPosterItem(homeCtaPosterState.items[i]);
-              if (first) {
-                await showHomeCtaPosterAt(i, { animate: false, source: "boot" });
-                startHomeCtaPosterAutoplay();
-                return;
-              }
+              if (!first) continue;
+              shown = await showHomeCtaPosterAt(i, { animate: false, source: "boot" });
+              if (shown) break;
             }
-            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+          }
+          if (!shown) {
+            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
             return;
           }
-          await showHomeCtaPosterAt(startIndex, { animate: false, source: "boot" });
-          // Decode remaining assets in the background for smooth fades.
+          painted = true;
           homeCtaPosterState.items.forEach((it) => {
             if (it && it._resolvedUrl) void preloadHomeCtaPosterUrl(it._resolvedUrl);
           });
           startHomeCtaPosterAutoplay();
         } catch (_e) {
-          if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+          if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
         } finally {
           homeCtaPosterBgInflight = null;
-          if (card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(false);
+          // Only drop the veil once a poster is actually painted.
+          if (painted || card.classList.contains("has-poster-bg")) {
+            setHomeCtaPosterLoading(false);
+          } else if (!card.classList.contains("is-poster-loading")) {
+            setHomeCtaPosterLoading(true);
+          }
         }
       })();
       return homeCtaPosterBgInflight;
     }
+
     window.refreshHomeMassCtaPosterBg = refreshHomeMassCtaPosterBg;
     if (!window.__homeCtaPosterAuthHook) {
       window.__homeCtaPosterAuthHook = true;
@@ -2823,9 +3045,9 @@
         ? '<span class="mass-gen-loader__step-icon" aria-hidden="true">✕</span>'
         : '<span class="mass-gen-loader__step-icon" aria-hidden="true"><span class="mass-gen-loader__step-spinner"></span></span>';
       list.innerHTML =
-        '<li class="mass-gen-loader__step ' + state + '" role="listitem">' +
-          icon +
-          '<span class="mass-gen-loader__step-label">' + escapeHtml(label) + "</span>" +
+          '<li class="mass-gen-loader__step ' + state + '" role="listitem">' +
+            icon +
+            '<span class="mass-gen-loader__step-label">' + escapeHtml(label) + "</span>" +
         "</li>";
     }
 
@@ -2861,7 +3083,7 @@
       massGenProgressState.steps = steps;
       massGenProgressState.current = idx;
       renderMassGenSteps(steps, idx, o.failedIndex);
-      const msgEl = $("mass-gen-loader-msg");
+        const msgEl = $("mass-gen-loader-msg");
       let statusText = "This may take a moment…";
       if (msgEl) {
         const beat = steps[idx] || "";
@@ -3028,10 +3250,10 @@
       const retryBtn = $("mass-gen-loader-retry");
       if (retryBtn) {
         retryBtn.addEventListener("click", () => {
-          const retry = massGenProgressState.onRetry;
-          setMassGenLoading(false);
-          if (retry) retry();
-        });
+        const retry = massGenProgressState.onRetry;
+        setMassGenLoading(false);
+        if (retry) retry();
+      });
       }
     })();
 
@@ -3215,6 +3437,7 @@
     var weeklyPosterAutoTimer = 0;
     var weeklyPosterEnsureInflight = false;
     var weeklyPosterForceInflight = false;
+    var weeklyPosterOverwriteInflight = false;
     var weeklyPosterUnlockReadyChecks = false;
     var weeklyPosterRefreshToken = 0;
     var weeklyPosterRefreshDate = "";
@@ -3222,11 +3445,24 @@
     var weeklyPosterVersionState = { sunday: "", active: 0, versions: [], sundays: [] };
     var weeklyPosterCatalogState = { ready: false, sunday: "", date: "", readyCount: 0, total: 0 };
 
+    function weeklyPosterSaPanelOpen() {
+      const page = $("superadmin-page");
+      if (!page || page.hidden || !page.classList.contains("active")) return false;
+      const panel = document.querySelector('.sa-panel[data-sa-panel="system-gospel-posters"]');
+      return !!(panel && !panel.hidden);
+    }
+
     function weeklyPosterMassDate() {
+      // Superadmin Gospel posters panel: Sunday picker is the catalog date.
+      if (weeklyPosterSaPanelOpen()) {
+        const sunSel = $("mw-weekly-posters-sunday");
+        const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
+        if (fromSun) return fromSun;
+      }
       const el = $("mass-date") || $("flow-mass-date");
       const fromMass = el && el.value ? String(el.value).trim() : "";
       if (fromMass) return fromMass;
-      // Fallback: Sunday dropdown (SA browsing) — never invent today's date.
+      // Fallback: Sunday dropdown when set (SA) — never invent today's date.
       const sunSel = $("mw-weekly-posters-sunday");
       const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
       return fromSun;
@@ -3255,7 +3491,7 @@
 
     /** First carousel card that is ready (not pending), or "". */
     function firstReadyWeeklyPosterStyleId() {
-      const track = $("mw-weekly-posters-track");
+      const track = $("mw-weekly-posters-track") || $("sa-weekly-posters-track");
       if (!track) return "";
       const btn = track.querySelector(".mw-weekly-posters__card:not(.is-pending)");
       return btn ? String(btn.getAttribute("data-weekly-style") || "").trim() : "";
@@ -3281,8 +3517,6 @@
     }
 
     function syncWeeklyPosterDateIndicator(catalog) {
-      const el = $("mw-weekly-posters-date");
-      if (!el) return;
       const sunday = String(
         (catalog && catalog.sunday) ||
         weeklyPosterCatalogState.sunday ||
@@ -3290,13 +3524,24 @@
         weeklyPosterMassDate() ||
         ""
       ).trim();
-      if (!sunday) {
-        el.hidden = true;
-        el.textContent = "";
-        return;
+      const label = sunday ? ("Mass Sunday · " + formatWeeklyPosterSundayLabel(sunday)) : "";
+      ["mw-weekly-posters-date", "sa-weekly-posters-date"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        if (!sunday) {
+          el.hidden = true;
+          el.textContent = "";
+          return;
+        }
+        el.hidden = false;
+        el.textContent = label;
+      });
+      const saHint = $("mw-weekly-posters-sa-hint");
+      if (saHint) {
+        const sa = isWeeklyPosterSuperadmin();
+        saHint.hidden = !sa;
+        if (sa) saHint.removeAttribute("hidden");
       }
-      el.hidden = false;
-      el.textContent = "Mass Sunday · " + formatWeeklyPosterSundayLabel(sunday);
     }
 
     function setWeeklyPosterProgress(state) {
@@ -3305,12 +3550,12 @@
       const pctEl = $("mw-weekly-posters-progress-pct");
       const fill = $("mw-weekly-posters-progress-fill");
       const track = $("mw-weekly-posters-progress-track");
-      const host = $("mw-weekly-posters");
+      const hosts = [$("mw-weekly-posters"), $("sa-weekly-posters")].filter(Boolean);
       if (!wrap) return;
       if (!state || !state.active) {
         wrap.hidden = true;
         wrap.classList.remove("is-active");
-        if (host) host.classList.remove("is-generating");
+        hosts.forEach((host) => host.classList.remove("is-generating"));
         if (fill) fill.style.width = "0%";
         if (track) track.setAttribute("aria-valuenow", "0");
         if (pctEl) pctEl.textContent = "0%";
@@ -3324,7 +3569,7 @@
       const dateLabel = String(state.dateLabel || "").trim();
       wrap.hidden = false;
       wrap.classList.add("is-active");
-      if (host) host.classList.add("is-generating");
+      hosts.forEach((host) => host.classList.add("is-generating"));
       if (fill) fill.style.width = pct + "%";
       if (track) track.setAttribute("aria-valuenow", String(pct));
       if (pctEl) pctEl.textContent = pct + "%";
@@ -3337,12 +3582,32 @@
     }
 
     function markWeeklyPosterCardLoading(styleId, on) {
-      const track = $("mw-weekly-posters-track");
-      if (!track) return;
-      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
-        const match = btn.getAttribute("data-weekly-style") === styleId;
-        btn.classList.toggle("is-loading", !!(on && match));
-        if (!on) btn.classList.remove("is-loading");
+      ["mw-weekly-posters-track", "sa-weekly-posters-track"].forEach((id) => {
+        const track = $(id);
+        if (!track) return;
+        track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+          const match = btn.getAttribute("data-weekly-style") === styleId;
+          if (on && match) {
+            btn.classList.add("is-loading");
+            const badge = btn.querySelector(".mw-weekly-posters__badge");
+            if (badge) {
+              if (!badge.dataset.idleText) {
+                badge.dataset.idleText = String(badge.textContent || "").trim() || "Not generated yet";
+              }
+              badge.hidden = false;
+              badge.textContent = "Generating…";
+            }
+          } else if (!on) {
+            btn.classList.remove("is-loading");
+            const badge = btn.querySelector(".mw-weekly-posters__badge");
+            if (badge && btn.classList.contains("is-pending")) {
+              badge.hidden = false;
+              badge.textContent = badge.dataset.idleText || "Not generated yet";
+            } else if (badge && !btn.classList.contains("is-pending")) {
+              badge.hidden = true;
+            }
+          }
+        });
       });
     }
 
@@ -3397,17 +3662,16 @@
       } else {
         stopWeeklyPosterAutoScroll();
       }
+      syncWeeklyPosterExpandUi();
       window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
     }
 
     function syncWeeklyPosterSelectionUi() {
       const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
-      const track = $("mw-weekly-posters-track");
-      const viewport = $("mw-weekly-posters-viewport");
-      if (!track) return;
       let val = sel ? String(sel.value || "cinematic") : "cinematic";
       let pick = val === "auto" ? "cinematic" : val;
-      let pickBtn = track.querySelector('[data-weekly-style="' + pick + '"]');
+      const extrasTrack = $("mw-weekly-posters-track");
+      let pickBtn = extrasTrack && extrasTrack.querySelector('[data-weekly-style="' + pick + '"]');
       // Never leave a pending (not-yet-generated) style selected.
       if (!pickBtn || pickBtn.classList.contains("is-pending")) {
         const readyId = firstReadyWeeklyPosterStyleId();
@@ -3420,22 +3684,28 @@
               if (el && el.value !== readyId) el.value = readyId;
             });
           }
-          pickBtn = track.querySelector('[data-weekly-style="' + pick + '"]');
         }
       }
-      let selectedBtn = null;
-      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
-        const on = btn.getAttribute("data-weekly-style") === pick;
-        btn.classList.toggle("is-selected", on);
-        btn.setAttribute("aria-selected", on ? "true" : "false");
-        if (on) selectedBtn = btn;
+      [
+        { track: $("mw-weekly-posters-track"), viewport: $("mw-weekly-posters-viewport") },
+        { track: $("sa-weekly-posters-track"), viewport: $("sa-weekly-posters-viewport") },
+      ].forEach((pair) => {
+        const track = pair.track;
+        if (!track) return;
+        let selectedBtn = null;
+        track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+          const on = btn.getAttribute("data-weekly-style") === pick;
+          btn.classList.toggle("is-selected", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+          if (on) selectedBtn = btn;
+        });
+        if (selectedBtn && pair.viewport && !selectedBtn.classList.contains("is-pending")) {
+          const left = selectedBtn.offsetLeft;
+          if (Math.abs(pair.viewport.scrollLeft - left) > 4) {
+            pair.viewport.scrollTo({ left: left, behavior: "smooth" });
+          }
+        }
       });
-      if (selectedBtn && viewport && !selectedBtn.classList.contains("is-pending")) {
-        const left = selectedBtn.offsetLeft;
-        if (Math.abs(viewport.scrollLeft - left) > 4) {
-          viewport.scrollTo({ left: left, behavior: "smooth" });
-        }
-      }
       syncAiPosterOpacityPreview();
     }
 
@@ -3456,17 +3726,222 @@
       });
       syncAiPosterToggleState();
       syncWeeklyPosterSelectionUi();
+      syncWeeklyPosterExpandUi();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
       if (!homeCtaPosterSyncingFromHome && typeof syncHomeCtaPosterToExtrasStyle === "function") {
         void syncHomeCtaPosterToExtrasStyle(sid);
       }
     }
 
-    function scrollWeeklyPostersBy(dir) {
-      const viewport = $("mw-weekly-posters-viewport");
-      if (!viewport) return;
-      const delta = Math.max(1, viewport.clientWidth) * (dir < 0 ? -1 : 1);
-      viewport.scrollBy({ left: delta, behavior: "smooth" });
+    function currentWeeklyPosterExpandTarget() {
+      const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
+      let styleId = sel ? String(sel.value || "").trim() : "";
+      if (!styleId || styleId === "auto") styleId = firstReadyWeeklyPosterStyleId() || "cinematic";
+      const tracks = [$("mw-weekly-posters-track"), $("sa-weekly-posters-track")].filter(Boolean);
+      let btn = null;
+      for (let i = 0; i < tracks.length; i++) {
+        btn = tracks[i].querySelector('[data-weekly-style="' + styleId + '"]');
+        if (btn) break;
+      }
+      if (!btn || btn.classList.contains("is-pending")) {
+        for (let i = 0; i < tracks.length; i++) {
+          const ready = tracks[i].querySelector(".mw-weekly-posters__card:not(.is-pending)");
+          if (ready) {
+            btn = ready;
+            styleId = String(ready.getAttribute("data-weekly-style") || styleId);
+            break;
+          }
+        }
+      }
+      if (!btn) return null;
+      const img = btn.querySelector("img.mw-weekly-posters__img");
+      const full = img && (img.getAttribute("data-weekly-full") || img.getAttribute("data-weekly-src") || img.currentSrc || img.src);
+      const label = String(btn.getAttribute("title") || styleId || "Poster").trim();
+      return {
+        styleId: styleId,
+        label: label,
+        fullUrl: String(full || "").trim(),
+        ready: !btn.classList.contains("is-pending"),
+      };
+    }
+
+    function syncWeeklyPosterExpandUi() {
+      const btn = $("mw-weekly-posters-expand");
+      if (!btn) return;
+      const target = currentWeeklyPosterExpandTarget();
+      const canView = !!(target && target.ready && target.fullUrl);
+      btn.hidden = !canView;
+      btn.disabled = !canView;
+      if (canView) {
+        btn.setAttribute("aria-label", "View " + target.label + " poster larger");
+        btn.title = "View " + target.label + " larger";
+      } else {
+        btn.setAttribute("aria-label", "View poster larger");
+        btn.title = "View poster larger";
+      }
+    }
+
+    function closeWeeklyPosterExpandModal() {
+      const modal = $("mw-weekly-poster-expand-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      const img = $("mw-weekly-poster-expand-img");
+      if (img) {
+        img.removeAttribute("src");
+        img.alt = "";
+      }
+    }
+
+    async function openWeeklyPosterExpandModal() {
+      const target = currentWeeklyPosterExpandTarget();
+      if (!target || !target.ready || !target.fullUrl) return;
+      const modal = $("mw-weekly-poster-expand-modal");
+      const img = $("mw-weekly-poster-expand-img");
+      const title = $("mw-weekly-poster-expand-title");
+      if (!modal || !img) return;
+      if (title) title.textContent = target.label || "Poster";
+      img.alt = (target.label || "Poster") + " preview";
+      let src = target.fullUrl;
+      try {
+        if (typeof hydrateWeeklyPosterUrl === "function") {
+          src = (await hydrateWeeklyPosterUrl(src)) || src;
+        }
+      } catch (_e) { /* keep original */ }
+      img.src = src;
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      const closeBtn = $("mw-weekly-poster-expand-close");
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function bindWeeklyPosterExpandUi() {
+      const expandBtn = $("mw-weekly-posters-expand");
+      const modal = $("mw-weekly-poster-expand-modal");
+      if (expandBtn && expandBtn.dataset.bound !== "1") {
+        expandBtn.dataset.bound = "1";
+        expandBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void openWeeklyPosterExpandModal();
+        });
+      }
+      if (!modal || modal.dataset.bound === "1") {
+        syncWeeklyPosterExpandUi();
+        return;
+      }
+      modal.dataset.bound = "1";
+      const backdrop = $("mw-weekly-poster-expand-backdrop");
+      const closeBtn = $("mw-weekly-poster-expand-close");
+      [backdrop, closeBtn].forEach((el) => {
+        if (el) el.addEventListener("click", () => closeWeeklyPosterExpandModal());
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (!modal.classList.contains("is-open")) return;
+        e.preventDefault();
+        closeWeeklyPosterExpandModal();
+      });
+      syncWeeklyPosterExpandUi();
+    }
+
+    var weeklyPosterScrollLockUntil = Object.create(null);
+
+    function weeklyPosterCardStep(viewport) {
+      if (!viewport) return 1;
+      const track = viewport.querySelector(".mw-weekly-posters__track");
+      const card = track && track.querySelector(".mw-weekly-posters__card");
+      const w = card ? card.getBoundingClientRect().width : 0;
+      return Math.max(1, Math.round(w) || viewport.clientWidth || 1);
+    }
+
+    function weeklyPosterViewportReady(viewport) {
+      if (!viewport) return false;
+      // Hidden / not laid out viewports report 0 width — never reorder then.
+      return viewport.clientWidth >= 48 && viewport.scrollWidth > viewport.clientWidth + 8;
+    }
+
+    function snapWeeklyPosterViewport(viewport, preferredBtn) {
+      if (!viewport || !weeklyPosterViewportReady(viewport)) return;
+      const track = viewport.querySelector(".mw-weekly-posters__track");
+      if (!track) return;
+      const cards = Array.prototype.slice.call(track.querySelectorAll(".mw-weekly-posters__card"));
+      if (!cards.length) return;
+      let target = preferredBtn && cards.indexOf(preferredBtn) >= 0 ? preferredBtn : null;
+      if (!target) {
+        let best = Infinity;
+        cards.forEach((card) => {
+          const d = Math.abs(card.offsetLeft - viewport.scrollLeft);
+          if (d < best) {
+            best = d;
+            target = card;
+          }
+        });
+      }
+      if (!target) return;
+      const prevBehavior = viewport.style.scrollBehavior;
+      viewport.style.scrollBehavior = "auto";
+      viewport.scrollLeft = target.offsetLeft;
+      viewport.style.scrollBehavior = prevBehavior || "";
+    }
+
+    function scrollWeeklyPostersBy(dir, viewportId) {
+      const id = viewportId || "mw-weekly-posters-viewport";
+      const viewport = $(id)
+        || $("mw-weekly-posters-viewport")
+        || $("sa-weekly-posters-viewport");
+      if (!viewport || !weeklyPosterViewportReady(viewport)) return;
+      const lockKey = viewport.id || id;
+      if (Date.now() < (weeklyPosterScrollLockUntil[lockKey] || 0)) return;
+      const track = viewport.querySelector(".mw-weekly-posters__track");
+      if (!track) return;
+      const cards = Array.prototype.slice.call(track.querySelectorAll(".mw-weekly-posters__card"));
+      if (cards.length < 2) return;
+      const step = weeklyPosterCardStep(viewport);
+      const direction = dir < 0 ? -1 : 1;
+      const max = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      const atStart = viewport.scrollLeft <= 4;
+      const atEnd = viewport.scrollLeft >= max - 4;
+
+      const jumpThenAnimate = (prepare) => {
+        weeklyPosterScrollLockUntil[lockKey] = Date.now() + 520;
+        const prevSnap = viewport.style.scrollSnapType;
+        const prevBehavior = viewport.style.scrollBehavior;
+        viewport.style.scrollSnapType = "none";
+        viewport.style.scrollBehavior = "auto";
+        prepare();
+        void viewport.offsetWidth;
+        requestAnimationFrame(() => {
+          viewport.style.scrollBehavior = prevBehavior || "";
+          viewport.scrollBy({ left: step * direction, behavior: "smooth" });
+          window.setTimeout(() => {
+            viewport.style.scrollSnapType = prevSnap || "";
+            snapWeeklyPosterViewport(viewport);
+            recoverWeeklyPosterCardImages();
+          }, 420);
+        });
+      };
+
+      // Endless loop: rotate DOM so wrap-around always animates in the click direction
+      // (5 → 1 feels like next, not a rewind to the start).
+      if (direction > 0 && atEnd) {
+        const keepCard = cards[cards.length - 1];
+        jumpThenAnimate(() => {
+          track.appendChild(cards[0]);
+          viewport.scrollLeft = keepCard.offsetLeft;
+        });
+        return;
+      }
+      if (direction < 0 && atStart) {
+        const keepCard = cards[0];
+        jumpThenAnimate(() => {
+          track.insertBefore(cards[cards.length - 1], cards[0]);
+          viewport.scrollLeft = keepCard.offsetLeft;
+        });
+        return;
+      }
+      weeklyPosterScrollLockUntil[lockKey] = Date.now() + 420;
+      viewport.scrollBy({ left: step * direction, behavior: "smooth" });
     }
 
     function stopWeeklyPosterAutoScroll() {
@@ -3489,82 +3964,117 @@
           return;
         }
         if (host.matches(":hover") || host.classList.contains("is-paused")) return;
-        const max = viewport.scrollWidth - viewport.clientWidth;
-        if (max <= 8) return;
-        if (viewport.scrollLeft >= max - 4) {
-          viewport.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          scrollWeeklyPostersBy(1);
-        }
+        if (!weeklyPosterViewportReady(viewport)) return;
+        // Always advance forward — wrap uses endless-next reorder, never rewind.
+        scrollWeeklyPostersBy(1, "mw-weekly-posters-viewport");
       }, 4200);
     }
 
-    function renderWeeklyStylePosterCards(items) {
-      const track = $("mw-weekly-posters-track");
-      if (!track) return;
-      const list = Array.isArray(items) ? items : [];
-      const fp = list.map((it) => [
-        String((it && it.id) || ""),
-        (it && it.ready) ? "1" : "0",
-        String((it && (it.thumb_url || it.proxy_url)) || ""),
-      ].join("|")).join(";");
-      if (fp && fp === weeklyPosterItemsFp && track.querySelector(".mw-weekly-posters__card")) {
-        syncWeeklyPosterSelectionUi();
-        syncWeeklyPosterGenerateUi();
-        return;
-      }
-      weeklyPosterItemsFp = fp;
-      track.innerHTML = list.map((item) => {
-        const id = escapeHtml(item.id || "");
-        const label = escapeHtml(item.label || item.id || "Style");
-        const ready = !!item.ready;
-        const rawProxy = String(item.proxy_url || "").trim();
-        // Prefer same-origin proxy after generate (fresh + auth-hydrated). Signed URLs
-        // are fine for first paint when they work, but must not skip hydrate forever.
-        const rawSrc = String(item.thumb_url || item.proxy_url || "").trim();
-        const rawFull = String(item.full_url || "").trim();
-        const src = escapeHtml(rawSrc);
-        const full = escapeHtml(rawFull);
-        const proxy = escapeHtml(rawProxy || (rawSrc.startsWith("/api/") ? rawSrc : ""));
-        const needsAuthHydrate = rawSrc.startsWith("/api/");
-        const cached = needsAuthHydrate ? weeklyThumbBlobCache[rawSrc] : "";
-        // Never put bare /api/ in src — browser can't send Bearer and it 401-loops.
-        // Do not mark signed HTTPS as hydrated until hydrateWeeklyPosterCardImages confirms load.
-        const initialSrc = ready ? (cached || "") : "";
-        const img = ready && src
-          ? (
-            '<img class="mw-weekly-posters__img" alt="" decoding="async" loading="eager" ' +
-            'data-weekly-src="' + src + '" data-weekly-full="' + full + '" data-weekly-proxy="' + proxy + '"' +
-            (cached ? ' data-weekly-hydrated="1"' : "") +
-            (initialSrc ? (' src="' + escapeHtml(initialSrc) + '"') : "") +
-            " />"
-          )
-          : '<div class="mw-weekly-posters__placeholder" aria-hidden="true"></div>';
-        return (
-          '<button type="button" class="mw-weekly-posters__card' + (ready ? "" : " is-pending") + '" ' +
-            'role="option" data-weekly-style="' + id + '" aria-selected="false" title="' + label + '">' +
-            '<span class="mw-weekly-posters__frame">' + img + "</span>" +
-            '<span class="mw-weekly-posters__label">' + label + "</span>" +
-            (ready ? "" : '<span class="mw-weekly-posters__badge">Not generated yet</span>') +
-          "</button>"
+    function weeklyPosterCardHtml(item) {
+      const id = escapeHtml(item.id || "");
+      const label = escapeHtml(item.label || item.id || "Style");
+      const ready = !!item.ready;
+      const rawProxy = String(item.proxy_url || "").trim();
+      const rawSrc = String(item.thumb_url || item.proxy_url || "").trim();
+      const rawFull = String(item.full_url || "").trim();
+      const src = escapeHtml(rawSrc);
+      const full = escapeHtml(rawFull);
+      const proxy = escapeHtml(rawProxy || (rawSrc.startsWith("/api/") ? rawSrc : ""));
+      const needsAuthHydrate = rawSrc.startsWith("/api/");
+      const cached = needsAuthHydrate ? weeklyThumbBlobCache[rawSrc] : "";
+      const initialSrc = ready ? (cached || "") : "";
+      const awaitingPaint = !!(ready && src && !initialSrc);
+      const img = ready && src
+        ? (
+          '<img class="mw-weekly-posters__img" alt="" decoding="async" loading="eager" ' +
+          'data-weekly-src="' + src + '" data-weekly-full="' + full + '" data-weekly-proxy="' + proxy + '"' +
+          (cached ? ' data-weekly-hydrated="1"' : "") +
+          (initialSrc ? (' src="' + escapeHtml(initialSrc) + '"') : "") +
+          " />"
+        )
+        : (
+          '<div class="mw-weekly-posters__placeholder" aria-hidden="true">' +
+            '<span class="mw-weekly-posters__skel"></span>' +
+          "</div>"
         );
-      }).join("");
+      const badgeText = ready
+        ? (awaitingPaint ? "Loading…" : "")
+        : "Not generated yet";
+      const cardCls = "mw-weekly-posters__card"
+        + (ready ? "" : " is-pending")
+        + (awaitingPaint ? " is-loading" : "");
+      return (
+        '<button type="button" class="' + cardCls + '" ' +
+          'role="option" data-weekly-style="' + id + '" aria-selected="false" title="' + label + '">' +
+          '<span class="mw-weekly-posters__frame">' + img + "</span>" +
+          '<span class="mw-weekly-posters__label">' + label + "</span>" +
+          (badgeText
+            ? ('<span class="mw-weekly-posters__badge"' + (ready && !awaitingPaint ? " hidden" : "") + ">" + badgeText + "</span>")
+            : '<span class="mw-weekly-posters__badge" hidden></span>') +
+        "</button>"
+      );
+    }
+
+    function bindWeeklyPosterTrackClicks(track, hostId) {
+      if (!track) return;
       track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
         btn.addEventListener("click", () => {
           if (btn.classList.contains("is-pending")) return;
           if (!areWeeklyAiPostersReady() && !isWeeklyPosterSuperadmin()) return;
           setWeeklyPosterStyle(btn.getAttribute("data-weekly-style"));
-          const host = $("mw-weekly-posters");
+          const host = $(hostId);
           if (host) {
             host.classList.add("is-paused");
             setTimeout(() => host.classList.remove("is-paused"), 8000);
           }
         });
       });
-      void hydrateWeeklyPosterCardImages(track);
+    }
+
+    function renderWeeklyStylePosterCards(items) {
+      const tracks = [
+        { el: $("mw-weekly-posters-track"), hostId: "mw-weekly-posters" },
+        { el: $("sa-weekly-posters-track"), hostId: "sa-weekly-posters" },
+      ].filter((t) => t.el);
+      if (!tracks.length) return;
+      const list = Array.isArray(items) ? items : [];
+      const fp = list.map((it) => [
+        String((it && it.id) || ""),
+        (it && it.ready) ? "1" : "0",
+        String((it && (it.thumb_url || it.proxy_url)) || ""),
+      ].join("|")).join(";");
+      // Require every track (Extras + Superadmin) to be populated — otherwise SA
+      // preview stays empty after Extras already rendered the same fingerprint.
+      const allPopulated = tracks.every((t) => t.el.querySelector(".mw-weekly-posters__card"));
+      if (fp && fp === weeklyPosterItemsFp && allPopulated) {
+        syncWeeklyPosterSelectionUi();
+        syncWeeklyPosterGenerateUi();
+        syncWeeklyPosterExpandUi();
+        return;
+      }
+      weeklyPosterItemsFp = fp;
+      const html = list.map(weeklyPosterCardHtml).join("");
+      tracks.forEach((t) => {
+        t.el.innerHTML = html;
+        bindWeeklyPosterTrackClicks(t.el, t.hostId);
+        void hydrateWeeklyPosterCardImages(t.el);
+      });
       preloadWeeklyPosterThumbs(list);
       syncWeeklyPosterSelectionUi();
       syncWeeklyPosterGenerateUi();
+      syncWeeklyPosterExpandUi();
+      // After rebuild, snap viewports so endless-loop scrollLeft can't leave a blank gap.
+      requestAnimationFrame(() => {
+        [
+          { track: $("mw-weekly-posters-track"), viewport: $("mw-weekly-posters-viewport") },
+          { track: $("sa-weekly-posters-track"), viewport: $("sa-weekly-posters-viewport") },
+        ].forEach((pair) => {
+          if (!pair.track || !pair.viewport) return;
+          const selected = pair.track.querySelector(".mw-weekly-posters__card.is-selected")
+            || pair.track.querySelector(".mw-weekly-posters__card:not(.is-pending)");
+          snapWeeklyPosterViewport(pair.viewport, selected);
+        });
+      });
     }
 
     function isWeeklyPosterSuperadmin() {
@@ -3878,6 +4388,7 @@
       const optimistic = weeklyPosterVersionCatalogItems(ver);
       weeklyPosterItemsFp = "";
       renderWeeklyStylePosterCards(optimistic);
+      recoverWeeklyPosterCardImages();
       const optimisticReady = optimistic.filter((it) => it && it.ready).length;
       syncWeeklyPosterGenerateUi({
         items: optimistic,
@@ -4055,8 +4566,10 @@
       if (!host) return;
       const readyMap = weeklyPosterReadyStyleMap(catalog);
       const inflight = !!weeklyPosterEnsureInflight;
-      // New-version flow unlocks already-generated styles so they can be remade.
-      const unlockReady = !!weeklyPosterUnlockReadyChecks || !!weeklyPosterForceInflight;
+      // New-version / in-place remake unlocks already-generated styles so they can be remade.
+      const unlockReady = !!weeklyPosterUnlockReadyChecks
+        || !!weeklyPosterForceInflight
+        || !!weeklyPosterOverwriteInflight;
       host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
         const id = String(box.value || "").trim();
         const isReady = !!readyMap[id];
@@ -4081,15 +4594,56 @@
       });
     }
 
+    function weeklyPosterSelectedCarouselStyleId() {
+      const track = $("sa-weekly-posters-track") || $("mw-weekly-posters-track");
+      if (!track) return "";
+      const active = track.querySelector("[data-weekly-style].is-active, [data-weekly-style].is-selected, [data-weekly-style][aria-pressed='true']");
+      if (active) return String(active.getAttribute("data-weekly-style") || "").trim();
+      const first = track.querySelector("[data-weekly-style]");
+      return first ? String(first.getAttribute("data-weekly-style") || "").trim() : "";
+    }
+
+    function unlockWeeklyPosterReadyChecks(opts) {
+      const options = opts && typeof opts === "object" ? opts : {};
+      weeklyPosterUnlockReadyChecks = true;
+      const host = $("mw-weekly-posters-style-checks");
+      if (!host) return;
+      host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+        box.disabled = false;
+        const label = box.closest(".mw-weekly-posters__style-check");
+        if (label) label.classList.remove("is-ready");
+      });
+      if (weeklyPosterCheckedStyleIds().length) return;
+      const prefer = String(options.preferStyle || weeklyPosterSelectedCarouselStyleId() || "").trim();
+      if (prefer) {
+        const box = host.querySelector('input[name="mw-weekly-gen-style"][value="' + prefer + '"]');
+        if (box) {
+          box.checked = true;
+          return;
+        }
+      }
+      if (options.checkAll) {
+        host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+          box.checked = true;
+        });
+      }
+    }
+
     function syncWeeklyPosterGenerateUi(catalog) {
       const btn = $("mw-weekly-posters-generate");
       const regenBtn = $("mw-weekly-posters-regenerate");
+      const regenInPlaceBtn = $("mw-weekly-posters-regen-inplace");
       const status = $("mw-weekly-posters-gen-status");
       const checks = $("mw-weekly-posters-style-checks");
-      const toolbar = (btn || regenBtn) && (btn || regenBtn).closest("[data-superadmin-only]");
+      const toolbar = $("mw-weekly-posters-toolbar")
+        || ((btn || regenBtn || regenInPlaceBtn) && (btn || regenBtn || regenInPlaceBtn).closest(".mw-weekly-posters__toolbar"));
       const sa = isWeeklyPosterSuperadmin();
       bindWeeklyPosterStyleChecks();
-      if (toolbar) toolbar.hidden = !sa;
+      if (toolbar) {
+        // Controls live on Superadmin Gospel posters panel only.
+        toolbar.hidden = !sa;
+        if (sa) toolbar.removeAttribute("hidden");
+      }
       if (checks) {
         checks.hidden = !sa;
         if (sa) checks.removeAttribute("hidden");
@@ -4097,6 +4651,7 @@
       if (!sa) {
         if (btn) btn.hidden = true;
         if (regenBtn) regenBtn.hidden = true;
+        if (regenInPlaceBtn) regenInPlaceBtn.hidden = true;
         if (status) status.textContent = "";
         syncWeeklyPosterVersionUi();
         return;
@@ -4110,10 +4665,12 @@
       const picked = weeklyPosterCheckedStyleIds();
       const pickCount = picked.length;
       const inflight = !!weeklyPosterEnsureInflight;
+      const activeVer = Number(weeklyPosterVersionState.active || 0);
+      const hasVersions = (weeklyPosterVersionState.versions || []).length > 0 || ready > 0;
       if (btn) {
         btn.hidden = false;
         btn.disabled = inflight || pickCount <= 0 || missing <= 0;
-        if (inflight && !weeklyPosterForceInflight) {
+        if (inflight && !weeklyPosterForceInflight && !weeklyPosterOverwriteInflight) {
           btn.textContent = "Generating…";
         } else if (missing <= 0) {
           btn.textContent = "Styles ready";
@@ -4123,9 +4680,19 @@
           btn.textContent = "Generate " + pickCount + " style" + (pickCount === 1 ? "" : "s");
         }
       }
+      if (regenInPlaceBtn) {
+        regenInPlaceBtn.hidden = !hasVersions;
+        regenInPlaceBtn.disabled = inflight || !activeVer;
+        if (weeklyPosterOverwriteInflight) {
+          regenInPlaceBtn.textContent = "Regenerating in v" + activeVer + "…";
+        } else if (activeVer) {
+          regenInPlaceBtn.textContent = "Regenerate selected in v" + activeVer;
+        } else {
+          regenInPlaceBtn.textContent = "Regenerate selected in this version";
+        }
+      }
       if (regenBtn) {
         // New version is available once a baseline exists (or while generating).
-        const hasVersions = (weeklyPosterVersionState.versions || []).length > 0 || ready > 0;
         regenBtn.hidden = !hasVersions && missing > 0;
         regenBtn.disabled = inflight;
         if (weeklyPosterForceInflight) {
@@ -4141,7 +4708,7 @@
       if (status && !inflight && missing <= 0) {
         const active = Number(weeklyPosterVersionState.active || 0);
         status.textContent = active
-          ? ("Poster styles ready · active v" + active + ". Use New version to regenerate.")
+          ? ("Poster styles ready · active v" + active + ". Remake checked styles in this version, or create a new version.")
           : "Poster styles are ready. Use New version to regenerate.";
       } else if (status && !inflight && weeklyPosterVersionIsPartial(weeklyPosterActiveVersionMeta())) {
         const active = Number(weeklyPosterVersionState.active || 0);
@@ -4164,7 +4731,7 @@
         { id: "stained_glass", label: "Stained Glass" },
         { id: "modern", label: "Modern" },
       ];
-      const track = $("mw-weekly-posters-track");
+      const track = $("sa-weekly-posters-track") || $("mw-weekly-posters-track");
       const fromDom = [];
       if (track) {
         track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
@@ -4205,10 +4772,36 @@
         } catch (_e) {}
         delete weeklyThumbBlobCache[k];
       });
-      if (!unversionedOnly) {
-        weeklyPosterCatalogFp = "";
-        weeklyPosterItemsFp = "";
-      }
+      // Always bust render fingerprints — otherwise early-return skips rehydrate
+      // and cards keep revoked blob: URLs (blank posters).
+      weeklyPosterCatalogFp = "";
+      weeklyPosterItemsFp = "";
+      // Mark matching live imgs dirty so hydrate can repaint without a full rebuild.
+      document.querySelectorAll("img.mw-weekly-posters__img[data-weekly-src]").forEach((img) => {
+        const src = String(img.getAttribute("data-weekly-src") || "");
+        if (!src) return;
+        if (sunday && src.indexOf(sunday) < 0 && src.indexOf(encodeURIComponent(sunday)) < 0) return;
+        if (unversionedOnly && /[?&]version=\d+/.test(src)) return;
+        img.removeAttribute("data-weekly-hydrated");
+        try { img.removeAttribute("src"); } catch (_e2) { /* ignore */ }
+      });
+    }
+
+    function recoverWeeklyPosterCardImages() {
+      ["mw-weekly-posters-track", "sa-weekly-posters-track"].forEach((id) => {
+        const track = $(id);
+        if (!track || !track.querySelector(".mw-weekly-posters__card")) return;
+        track.querySelectorAll("img.mw-weekly-posters__img[data-weekly-src]").forEach((img) => {
+          const painted = String(img.getAttribute("src") || "");
+          if (!painted || painted.indexOf("blob:") === 0) {
+            img.removeAttribute("data-weekly-hydrated");
+            if (painted.indexOf("blob:") === 0) {
+              try { img.removeAttribute("src"); } catch (_e) { /* ignore */ }
+            }
+          }
+        });
+        void hydrateWeeklyPosterCardImages(track);
+      });
     }
 
     function weeklyPosterViewCatalogForActiveVersion() {
@@ -4229,10 +4822,12 @@
     async function generateWeeklyStylePosters(opts) {
       const options = opts && typeof opts === "object" ? opts : {};
       const force = !!options.force;
-      const newVersion = !!(options.newVersion || force);
+      const overwriteInPlace = !!options.overwriteInPlace;
+      const newVersion = !overwriteInPlace && !!(options.newVersion || force);
       const date = weeklyPosterMassDate();
       const btn = $("mw-weekly-posters-generate");
       const regenBtn = $("mw-weekly-posters-regenerate");
+      const regenInPlaceBtn = $("mw-weekly-posters-regen-inplace");
       const status = $("mw-weekly-posters-gen-status");
       const hint = $("mw-weekly-posters-hint");
       if (!isWeeklyPosterSuperadmin()) return;
@@ -4245,35 +4840,46 @@
       const sundayLabel = formatWeeklyPosterSundayLabel(
         weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || date
       );
-      if (newVersion) {
-        // Unlock greyed (already generated) styles so the user can choose what to remake.
-        weeklyPosterUnlockReadyChecks = true;
-        const host = $("mw-weekly-posters-style-checks");
-        if (host) {
-          host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
-            box.disabled = false;
-            const label = box.closest(".mw-weekly-posters__style-check");
-            if (label) label.classList.remove("is-ready");
-          });
-          if (!weeklyPosterCheckedStyleIds().length) {
-            host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
-              box.checked = true;
-            });
-          }
+      const activeMeta = weeklyPosterActiveVersionMeta();
+      const activeVer = Number((activeMeta && activeMeta.version) || weeklyPosterVersionState.active || 0);
+      if (overwriteInPlace) {
+        if (!activeVer) {
+          if (status) status.textContent = "Activate a version first, then remake selected styles.";
+          syncWeeklyPosterGenerateUi();
+          return;
         }
+        unlockWeeklyPosterReadyChecks({ preferStyle: weeklyPosterSelectedCarouselStyleId() });
+        syncWeeklyPosterGenerateUi();
+      } else if (newVersion) {
+        unlockWeeklyPosterReadyChecks({ checkAll: true });
         syncWeeklyPosterGenerateUi();
       }
       const picked = weeklyPosterCheckedStyleIds();
       if (!picked.length) {
         weeklyPosterUnlockReadyChecks = false;
-        if (status) status.textContent = "Check one or more styles to generate.";
+        if (status) {
+          status.textContent = overwriteInPlace
+            ? "Check the style(s) to remake in v" + activeVer + "."
+            : "Check one or more styles to generate.";
+        }
         syncWeeklyPosterGenerateUi();
         return;
       }
       const partial = picked.length < 5;
-      const activeMeta = weeklyPosterActiveVersionMeta();
-      const continuingPartial = !newVersion && weeklyPosterVersionIsPartial(activeMeta);
-      if (newVersion) {
+      const continuingPartial = !newVersion && !overwriteInPlace && weeklyPosterVersionIsPartial(activeMeta);
+      if (overwriteInPlace) {
+        const ok = window.confirm(
+          "Remake " + picked.length + " style" + (picked.length === 1 ? "" : "s")
+          + " inside v" + activeVer + " for " + sundayLabel + "?\n\n"
+          + picked.join(", ").replace(/_/g, " ")
+          + "\n\nThis replaces those posters in the current version (no new version tab)."
+        );
+        if (!ok) {
+          weeklyPosterUnlockReadyChecks = false;
+          syncWeeklyPosterGenerateUi();
+          return;
+        }
+      } else if (newVersion) {
         const nextHint = (weeklyPosterVersionState.versions || []).length
           ? ("v" + ((Number(weeklyPosterVersionState.active) || (weeklyPosterVersionState.versions || []).length) + 1))
           : "v1";
@@ -4291,8 +4897,8 @@
           return;
         }
       }
-      // Partial selection / continue-partial always regenerates checked styles.
-      const queue = weeklyPosterStyleQueue(newVersion || partial || continuingPartial);
+      // Partial / continue-partial / in-place remake always regenerates checked styles.
+      const queue = weeklyPosterStyleQueue(newVersion || overwriteInPlace || partial || continuingPartial);
       if (!queue.length) {
         if (status) status.textContent = "Poster styles are already ready for " + sundayLabel + ".";
         setWeeklyPosterProgress(null);
@@ -4300,17 +4906,22 @@
       }
       weeklyPosterEnsureInflight = true;
       weeklyPosterForceInflight = newVersion;
+      weeklyPosterOverwriteInflight = overwriteInPlace;
       if (btn) {
         btn.disabled = true;
-        if (!newVersion) btn.textContent = "Generating…";
+        if (!newVersion && !overwriteInPlace) btn.textContent = "Generating…";
       }
       if (regenBtn) {
         regenBtn.disabled = true;
         if (newVersion) regenBtn.textContent = "Generating new version…";
       }
+      if (regenInPlaceBtn) {
+        regenInPlaceBtn.disabled = true;
+        if (overwriteInPlace) regenInPlaceBtn.textContent = "Regenerating in v" + activeVer + "…";
+      }
       let genCount = 0;
       let lastCatalog = null;
-      let batchVersion = null;
+      let batchVersion = overwriteInPlace ? activeVer : null;
       const total = queue.length;
       try {
         if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
@@ -4335,12 +4946,19 @@
             dateLabel: sundayLabel,
           });
           if (status) {
-            status.textContent = (newVersion ? "New version" : "Generating")
+            const phaseLabel = newVersion
+              ? "New version"
+              : (overwriteInPlace ? ("v" + activeVer) : "Generating");
+            status.textContent = phaseLabel
               + " " + step + "/" + total + " · " + item.label
               + " · " + sundayLabel;
           }
           const body = { date: date, style: item.id };
-          if (newVersion) {
+          if (overwriteInPlace) {
+            body.force = true;
+            body.overwrite_only = true;
+            body.version = batchVersion || activeVer;
+          } else if (newVersion) {
             body.force = true;
             body.new_version = true;
             if (batchVersion) body.version = batchVersion;
@@ -4353,6 +4971,7 @@
             // Prompt test: overwrite the checked styles without allocating a full new version.
             body.force = true;
             body.overwrite_only = true;
+            if (activeVer) body.version = activeVer;
           }
           const res = await fetch("/api/weekly-style-posters/ensure", {
             method: "POST",
@@ -4414,30 +5033,44 @@
         else await loadWeeklyPosterVersions(date);
         const verLabel = batchVersion ? ("v" + batchVersion) : "";
         if (status) {
-          status.textContent = newVersion
-            ? (genCount
+          if (overwriteInPlace) {
+            status.textContent = genCount
+              ? ("Updated " + (verLabel || ("v" + activeVer)) + " (" + genCount + " remade) for " + sundayLabel + ".")
+              : ("No styles remade for " + sundayLabel + ".");
+          } else if (newVersion) {
+            status.textContent = genCount
               ? ("Created " + (verLabel || "new version") + " (" + genCount + " styles) for " + sundayLabel + ".")
-              : ("New version finished for " + sundayLabel + "."))
-            : (genCount
+              : ("New version finished for " + sundayLabel + ".");
+          } else {
+            status.textContent = genCount
               ? ("Generated " + genCount + " style" + (genCount === 1 ? "" : "s") + " for " + sundayLabel + ".")
-              : ("No new styles needed for " + sundayLabel + "."));
+              : ("No new styles needed for " + sundayLabel + ".");
+          }
         }
         if (typeof notify === "function") {
           notify(
-            newVersion
-              ? (genCount ? ("Poster " + (verLabel || "version") + " ready for " + sundayLabel + ".") : "New version finished.")
-              : (genCount ? ("Weekly posters updated (" + genCount + " new) for " + sundayLabel + ".") : "Weekly posters already ready."),
+            overwriteInPlace
+              ? (genCount
+                ? ("Remade " + genCount + " style" + (genCount === 1 ? "" : "s") + " in " + (verLabel || ("v" + activeVer)) + ".")
+                : "No styles remade.")
+              : (newVersion
+                ? (genCount ? ("Poster " + (verLabel || "version") + " ready for " + sundayLabel + ".") : "New version finished.")
+                : (genCount ? ("Weekly posters updated (" + genCount + " new) for " + sundayLabel + ".") : "Weekly posters already ready.")),
             "ok"
           );
         }
       } catch (err) {
         markWeeklyPosterCardLoading("", false);
-        if (status) status.textContent = (err && err.message) || (newVersion ? "New version failed" : "Generate failed");
-        if (typeof notify === "function") notify((err && err.message) || (newVersion ? "New version failed" : "Generate failed"), "error");
+        const failLabel = overwriteInPlace
+          ? "Regenerate failed"
+          : (newVersion ? "New version failed" : "Generate failed");
+        if (status) status.textContent = (err && err.message) || failLabel;
+        if (typeof notify === "function") notify((err && err.message) || failLabel, "error");
         syncWeeklyPosterGenerateUi();
       } finally {
         weeklyPosterEnsureInflight = false;
         weeklyPosterForceInflight = false;
+        weeklyPosterOverwriteInflight = false;
         weeklyPosterUnlockReadyChecks = false;
         markWeeklyPosterCardLoading("", false);
         setTimeout(() => setWeeklyPosterProgress(null), 900);
@@ -4507,11 +5140,27 @@
         if (token !== weeklyPosterRefreshToken || weeklyPosterMassDate() !== dateNow) return;
         if (data.versions) syncWeeklyPosterVersionUi(data.versions);
         else await loadWeeklyPosterVersions(dateNow);
-        // Prefer pure versioned archive previews when a version is selected —
-        // never show hybrid active files (partial v3 over leftover v2).
-        const view = weeklyPosterViewCatalogForActiveVersion()
-          || applyWeeklyPosterVersionReadyOverlay(data)
-          || data;
+        // When browsing an older archive version in Superadmin, use versioned URLs.
+        // When viewing the active set (Extras / default), use the API catalog's
+        // unversioned active heroes — archives are often missing after regenerating
+        // only the active ``*_hero.png`` slot (which caused grey empty carousels).
+        const selectedVer = Number(weeklyPosterVersionState.active || 0);
+        const catalogActiveVer = Number(
+          (data.versions && data.versions.active_version) || 0
+        );
+        const viewingArchive = !!(
+          weeklyPosterSaPanelOpen() &&
+          selectedVer > 0 &&
+          catalogActiveVer > 0 &&
+          selectedVer !== catalogActiveVer
+        );
+        const versionView = weeklyPosterViewCatalogForActiveVersion()
+          || applyWeeklyPosterVersionReadyOverlay(data);
+        const apiHasReady = Array.isArray(data.items)
+          && data.items.some((it) => it && it.ready && (it.thumb_url || it.proxy_url || it.full_url));
+        const view = viewingArchive
+          ? (versionView || data)
+          : (apiHasReady ? data : (versionView || data));
         const sundayKey = String(view.sunday || dateNow);
         const activeVer = Number(weeklyPosterVersionState.active || (view.versions && view.versions.active_version) || 0);
         const ready = Number(view.ready_count || 0);
@@ -4535,6 +5184,18 @@
         syncWeeklyPosterGenerateUi(view);
         syncWeeklyAiPosterGate(view);
         syncWeeklyPosterDateIndicator(view);
+        // Keep the home CTA on the same active Sunday posters / selected style.
+        try {
+          const homeSun = typeof homeCtaPosterSundayKey === "function"
+            ? homeCtaPosterSundayKey(typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "")
+            : "";
+          const viewSun = typeof homeCtaPosterSundayKey === "function"
+            ? homeCtaPosterSundayKey(sundayKey)
+            : sundayKey;
+          if (homeSun && viewSun && homeSun === viewSun && typeof refreshHomeMassCtaPosterBg === "function") {
+            void refreshHomeMassCtaPosterBg({ forceReload: !!force });
+          }
+        } catch (_eHome) { /* ignore */ }
       } catch (_e) {
         if (token !== weeklyPosterRefreshToken || weeklyPosterMassDate() !== dateNow) return;
         if (hint) hint.textContent = "Could not load weekly posters for " + formatWeeklyPosterSundayLabel(dateNow) + ".";
@@ -4555,15 +5216,43 @@
       return weeklyPosterRefreshInflight;
     }
 
+    function bindWeeklyPosterCarouselHost(hostId, viewportId, navAttr) {
+      const host = $(hostId);
+      if (!host || host.dataset.bound === "1") return;
+      host.dataset.bound = "1";
+      host.querySelectorAll("[" + navAttr + "]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const dir = parseInt(btn.getAttribute(navAttr) || "1", 10) || 1;
+          scrollWeeklyPostersBy(dir, viewportId);
+          host.classList.add("is-paused");
+          setTimeout(() => host.classList.remove("is-paused"), 8000);
+        });
+      });
+      const viewport = $(viewportId);
+      if (viewport) {
+        viewport.addEventListener("pointerdown", () => {
+          host.classList.add("is-paused");
+          setTimeout(() => host.classList.remove("is-paused"), 8000);
+        });
+      }
+    }
+
     function initWeeklyStylePosters() {
-      const host = $("mw-weekly-posters");
       const genBtn = $("mw-weekly-posters-generate");
       const regenBtn = $("mw-weekly-posters-regenerate");
+      const regenInPlaceBtn = $("mw-weekly-posters-regen-inplace");
       const verSel = $("mw-weekly-posters-version");
       const sunSel = $("mw-weekly-posters-sunday");
+      const openSa = $("mw-weekly-posters-open-sa");
       if (genBtn && genBtn.dataset.bound !== "1") {
         genBtn.dataset.bound = "1";
         genBtn.addEventListener("click", () => { void generateWeeklyStylePosters(); });
+      }
+      if (regenInPlaceBtn && regenInPlaceBtn.dataset.bound !== "1") {
+        regenInPlaceBtn.dataset.bound = "1";
+        regenInPlaceBtn.addEventListener("click", () => {
+          void generateWeeklyStylePosters({ overwriteInPlace: true });
+        });
       }
       if (regenBtn && regenBtn.dataset.bound !== "1") {
         regenBtn.dataset.bound = "1";
@@ -4578,45 +5267,57 @@
       if (sunSel && sunSel.dataset.bound !== "1") {
         sunSel.dataset.bound = "1";
         sunSel.addEventListener("change", () => {
-          const iso = String(sunSel.value || "").trim();
-          const massEl = $("mass-date");
-          if (iso && massEl && massEl.value !== iso) {
-            massEl.value = iso;
-            massEl.dispatchEvent(new Event("change", { bubbles: true }));
-            if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
-          }
+          // Browse catalog for this Sunday without rewriting the Mass builder date.
           scheduleWeeklyStylePosterRefresh({ force: true });
+        });
+      }
+      if (openSa && openSa.dataset.bound !== "1") {
+        openSa.dataset.bound = "1";
+        openSa.addEventListener("click", () => {
+          try {
+            if (typeof saState !== "undefined" && saState) {
+              saState.panel = "system-gospel-posters";
+              saState.hub = "platform";
+              if (!saState.hubPanel) saState.hubPanel = {};
+              saState.hubPanel.platform = "system-gospel-posters";
+            }
+          } catch (_e) { /* ignore */ }
         });
       }
       window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
       window.scheduleWeeklyStylePosterRefresh = scheduleWeeklyStylePosterRefresh;
-      if (!host || host.dataset.bound === "1") {
-        scheduleWeeklyStylePosterRefresh({ force: true });
-        return;
-      }
-      host.dataset.bound = "1";
-      host.querySelectorAll("[data-weekly-nav]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const dir = parseInt(btn.getAttribute("data-weekly-nav") || "1", 10) || 1;
-          scrollWeeklyPostersBy(dir);
-          host.classList.add("is-paused");
-          setTimeout(() => host.classList.remove("is-paused"), 8000);
-        });
-      });
-      const viewport = $("mw-weekly-posters-viewport");
-      if (viewport) {
-        viewport.addEventListener("pointerdown", () => {
-          host.classList.add("is-paused");
-          setTimeout(() => host.classList.remove("is-paused"), 8000);
-        });
-      }
-      scheduleWeeklyStylePosterRefresh();
       window.setWeeklyPosterStyle = setWeeklyPosterStyle;
       window.preloadExtrasPosterAssets = function preloadExtrasPosterAssets() {
-        // Liturgy thumbs only — do not re-fetch weekly catalog here.
-        // Aside refresh / autosave used to loop refreshWeeklyStylePosters and restart images.
         preloadLiturgyPosterThumbs();
       };
+      bindWeeklyPosterCarouselHost("mw-weekly-posters", "mw-weekly-posters-viewport", "data-weekly-nav");
+      bindWeeklyPosterCarouselHost("sa-weekly-posters", "sa-weekly-posters-viewport", "data-sa-weekly-nav");
+      bindWeeklyPosterExpandUi();
+      scheduleWeeklyStylePosterRefresh({ force: weeklyPosterSaPanelOpen() });
+      // Recover blank carousels after cache/blob races (page restore, bfcache, tab focus).
+      if (!window.__weeklyPosterRecoverBound) {
+        window.__weeklyPosterRecoverBound = true;
+        const recover = () => {
+          recoverWeeklyPosterCardImages();
+          const card = $("home-mass-card");
+          if (card && card.classList.contains("has-poster-bg")) {
+            const layers = homeCtaPosterLayers();
+            const visible = layers.find((bg) => bg.classList.contains("is-visible")) || layers[0];
+            if (!visible || !String(visible.style.backgroundImage || "").trim()) {
+              if (typeof refreshHomeMassCtaPosterBg === "function") {
+                void refreshHomeMassCtaPosterBg({ forceReload: true });
+              }
+            } else {
+              settleHomeCtaPosterLayers(visible);
+            }
+          }
+        };
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") recover();
+        });
+        window.addEventListener("pageshow", recover);
+        window.setTimeout(recover, 1200);
+      }
     }
 
     function bindOpenAiPosterControls() {
@@ -4747,7 +5448,7 @@
         "</div>" +
         "<div class=\"mass-gen-receipt__block\">" +
           "<p class=\"mass-gen-receipt__block-label\">Music · " + model.selectedSongCount + "</p>" +
-          songLines +
+        songLines +
         "</div>" +
         (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "")
       );

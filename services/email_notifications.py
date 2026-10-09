@@ -538,6 +538,45 @@ def notify_readings_critical_sundays(
     }
 
 
+def notify_promo_campaign(
+    *,
+    to_addr: str,
+    title: str,
+    message: str,
+    link_url: str = "",
+    recipient_name: str = "",
+) -> EmailResult:
+    """Promotional / ad email from superadmin outreach."""
+    subject = (title or "LiturgyFlow").strip()[:160] or "LiturgyFlow"
+    body = (message or "").strip()
+    link = (link_url or "").strip()
+    greet = (recipient_name or "").strip()
+    hello = f"Hi {greet}," if greet else "Hello,"
+    cta = link or home_cta_url()
+    text = (
+        f"{hello}\n\n"
+        f"{body}\n\n"
+        f"{'Open: ' + cta if cta else ''}\n"
+        f"— LiturgyFlow\n"
+    ).strip()
+    rows = [("Message", _esc(body))]
+    if link:
+        rows.append(("Link", _esc(link)))
+    return send_email(
+        to=to_addr,
+        subject=subject,
+        text=text,
+        html=wrap_html(
+            title=_esc(subject),
+            subtitle="A note from LiturgyFlow",
+            body_html=detail_rows(rows),
+            cta_label="Open LiturgyFlow" if not link else "Learn more",
+            cta_url=cta,
+            preheader=body[:120],
+        ),
+    )
+
+
 def safe_send(label: str, fn, **kwargs: Any) -> EmailResult:
     """Call a notify_* helper; never raise to callers."""
     if not email_enabled():

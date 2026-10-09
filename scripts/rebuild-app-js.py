@@ -25,9 +25,10 @@ def strip_header(text: str) -> str:
 
 
 def main() -> None:
-    parts = sorted(APP_DIR.glob("app-0[1-9]*.js"))
-    if len(parts) != 9:
-        raise SystemExit(f"expected 9 part files, found {len(parts)}: {parts}")
+    parts = sorted(APP_DIR.glob("app-*.js"), key=lambda p: p.name)
+    # Expect app-01 … app-10 (two-digit padded names).
+    if len(parts) < 9:
+        raise SystemExit(f"expected at least 9 part files, found {len(parts)}: {parts}")
     chunks = [
         "/* Verbum SPA — generated from static/js/app/app-0N-*.js\n"
         " * Prefer loading parts via lazy-assets.js; this file is the fallback bundle.\n"

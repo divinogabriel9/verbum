@@ -303,8 +303,14 @@
           return null;
         }
       }
-      if (!churchMembershipState.can_use_full_app) {
-        statusFn("Mass generation requires approved parish membership.", "error");
+      const canGen = typeof canGenerateMass === "function"
+        ? canGenerateMass(churchMembershipState)
+        : !!(churchMembershipState.can_use_full_app
+          || churchMembershipState.can_generate_mass
+          || Number(churchMembershipState.premium_mass_remaining || churchMembershipState.free_mass_remaining || 0) > 0
+          || Number(churchMembershipState.free_tier_mass_remaining || 0) > 0);
+      if (!canGen) {
+        statusFn("You've used this month's free Masses. Start a 14-day trial under Settings → Billing.", "error");
         return null;
       }
       let date = o.date || $("mass-date").value;
@@ -318,7 +324,19 @@
       const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
         ? window.areWeeklyAiPostersReady()
         : !!posterOpts.useAi;
-      const useAiPoster = (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi) && weeklyReady;
+      const allowPremiumPosters = !!(
+        churchMembershipState.can_use_full_app
+        || churchMembershipState.can_use_premium_posters
+        || churchMembershipState.next_generation_tier === "premium"
+        || churchMembershipState.next_generation_tier === "paid"
+        || (
+          Number(churchMembershipState.premium_mass_remaining || churchMembershipState.free_mass_remaining || 0) > 0
+          && churchMembershipState.next_generation_tier !== "free"
+        )
+      );
+      const useAiPoster = allowPremiumPosters
+        && (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi)
+        && weeklyReady;
       const body = {
         date,
         celebrant: celebrantMain,
@@ -736,6 +754,9 @@
         }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();
+        if (typeof window.applyFreeMassFromGenerate === "function") {
+          window.applyFreeMassFromGenerate(data);
+        }
         await successUi;
         if (wantSlideshow) {
           try {
