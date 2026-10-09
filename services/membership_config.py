@@ -112,8 +112,6 @@ def membership_payload(
     is_designer = account_kind == ACCOUNT_KIND_THEME_DESIGNER and not superadmin
     full_access = membership_allows_full_access(row, user=user, profile_role=profile_role)
     can_use_full_app = (full_access or not auth_on) and not is_designer
-    # Songs/priests for the global catalog: approved parish members only (not pending/draft).
-    can_submit = signed_in and auth_on and not superadmin and full_access and not is_designer
     can_request_parish_rename = (
         signed_in
         and auth_on
@@ -132,6 +130,11 @@ def membership_payload(
         billing = {"billing_enabled": False}
 
     from services.free_mass_credit import free_mass_status_for_user
+    from services.free_tier import (
+        content_submit_quota_payload,
+        is_free_tier_account,
+        practice_share_quota_payload,
+    )
 
     free_mass = free_mass_status_for_user(
         user.user_id if user else None,
@@ -142,6 +145,41 @@ def membership_payload(
     can_generate_mass = bool(
         (not is_designer)
         and (can_use_full_app or superadmin or free_mass.get("can_generate_mass"))
+    )
+    free_tier = (not is_designer) and is_free_tier_account(
+        row, user=user, profile_role=profile_role
+    )
+
+    # Songs/priests for the global catalog: paid/trial unlimited; free tier capped.
+    can_submit_base = (
+        signed_in and auth_on and not superadmin and not is_designer and (full_access or free_tier)
+    )
+    submit_quota = content_submit_quota_payload(
+        is_free_tier=free_tier,
+        user_id=user.user_id if user else None,
+    )
+    can_submit_song = bool(
+        can_submit_base and (full_access or submit_quota.get("can_submit_song_quota_ok"))
+    )
+    can_submit_priest = bool(
+        can_submit_base and (full_access or submit_quota.get("can_submit_priest_quota_ok"))
+    )
+
+    practice_active = 0
+    if free_tier and user and user.user_id:
+        try:
+            from services.choir_practice_shares import count_active_practice_shares
+
+            parish_id = str(row.get("parish_id") or row.get("id") or "").strip() or None
+            practice_active = count_active_practice_shares(
+                parish_id=parish_id,
+                created_by_user_id=user.user_id,
+            )
+        except Exception:
+            practice_active = 0
+    practice_quota = practice_share_quota_payload(
+        is_free_tier=free_tier,
+        active_count=practice_active,
     )
 
     theme_seller_status: Optional[str] = None
@@ -169,9 +207,11 @@ def membership_payload(
         "can_edit_church_profile": can_use_full_app,
         "can_use_full_app": can_use_full_app,
         "can_generate_mass": can_generate_mass,
-        "can_submit_song": can_submit,
-        "can_submit_priest": can_submit,
+        "can_submit_song": can_submit_song,
+        "can_submit_priest": can_submit_priest,
         "is_superadmin": superadmin,
+        "is_free_tier": free_tier,
+        "plan_tier": "free" if free_tier else ("paid" if can_use_full_app or superadmin else "none"),
         "role": (role or "member").strip().lower(),
         "parish_role": parish_role,
         "parish_id": None if is_designer else (row.get("parish_id") or row.get("id")),
@@ -195,4 +235,6 @@ def membership_payload(
         "free_mass_limit": free_mass.get("free_mass_limit", 0),
         "free_mass_remaining": free_mass.get("free_mass_remaining", 0),
         "free_mass_used": bool(free_mass.get("free_mass_used")),
+        **practice_quota,
+        **submit_quota,
     }

@@ -92,6 +92,10 @@ def clear_local_weekly_style(*, sunday: str, style: str, output_dir: Path) -> No
         hero,
         ui_thumb_path(hero, max_w=720),
         ui_thumb_path(hero, max_w=1600),
+        ui_card_wm_path(hero),
+        # Legacy burns (pre-mark3 corner+edge).
+        hero.with_name(f"{hero.stem}_ui1600_wm.webp"),
+        hero.with_name(f"{hero.stem}_ui1600_mark.webp"),
     ):
         try:
             if path.is_file():
@@ -113,9 +117,18 @@ def shared_ui_thumb_relative_path(date: str, style: str) -> str:
 
 
 def shared_ui_card_relative_path(date: str, style: str) -> str:
+    """Clean ~1600 WebP (internal / picker). Prefer watermarked path for Home CTA."""
     iso = (date or "").strip()
     resolved = resolve_ai_image_style(style)
     return f"shared/ai-heroes/{iso}_{resolved}_hero_ui1600.webp"
+
+
+def shared_ui_card_wm_relative_path(date: str, style: str) -> str:
+    """Home-CTA watermarked card — never the clean master."""
+    iso = (date or "").strip()
+    resolved = resolve_ai_image_style(style)
+    # ``_mark3`` = corner chip + landing-style vertical edge credit.
+    return f"shared/ai-heroes/{iso}_{resolved}_hero_ui1600_mark3.webp"
 
 
 def try_upload_shared_ui_thumb(thumb_path: Path, *, date: str, style: str, max_w: int = 720) -> bool:
@@ -141,6 +154,27 @@ def try_upload_shared_ui_thumb(thumb_path: Path, *, date: str, style: str, max_w
         return True
     except Exception:
         logger.debug("weekly UI thumb upload failed", exc_info=True)
+        return False
+
+
+def try_upload_shared_ui_card_wm(wm_path: Path, *, date: str, style: str) -> bool:
+    if not wm_path.is_file():
+        return False
+    try:
+        from services.ai_hero_cache import shared_cache_ready
+        from services.storage_assets import upload_shared_asset
+
+        if not shared_cache_ready():
+            return False
+        upload_shared_asset(
+            relative_path=shared_ui_card_wm_relative_path(date, style),
+            raw=wm_path.read_bytes(),
+            content_type="image/webp",
+            upsert=True,
+        )
+        return True
+    except Exception:
+        logger.debug("weekly UI card watermark upload failed", exc_info=True)
         return False
 
 
@@ -173,6 +207,165 @@ def ui_thumb_path(hero_path: Path, *, max_w: int = 720) -> Path:
     return hero_path.with_name(f"{hero_path.stem}_ui{int(max_w)}.webp")
 
 
+def ui_card_wm_path(hero_path: Path) -> Path:
+    """Home CTA watermarked WebP path (burned-in brand mark)."""
+    return hero_path.with_name(f"{hero_path.stem}_ui1600_mark3.webp")
+
+
+_HOME_CTA_WM_TEXT = "LiturgyFlow.com"
+# Landing ``.lf-hero__copy`` — soft rose vertical credit on the right edge.
+_HOME_CTA_EDGE_COLOR = (227, 190, 185, 140)  # rgba(227, 190, 185, 0.55)
+
+
+def _cta_watermark_font(size: int):
+    from PIL import ImageFont
+
+    roots = [
+        Path(__file__).resolve().parents[1] / "data" / "reference" / "fonts",
+        Path("/usr/share/fonts/truetype/dejavu"),
+        Path("/System/Library/Fonts"),
+    ]
+    candidates = (
+        "Arimo-Regular.ttf",
+        "Arimo-Bold.ttf",
+        "Gelasio-Regular.ttf",
+        "DejaVuSans.ttf",
+        "DejaVuSans-Bold.ttf",
+        "Helvetica.ttc",
+        "Arial.ttf",
+    )
+    for root in roots:
+        for name in candidates:
+            path = root / name
+            if path.is_file():
+                try:
+                    return ImageFont.truetype(str(path), size=size)
+                except OSError:
+                    continue
+    return ImageFont.load_default()
+
+
+def _home_cta_edge_credit_text() -> str:
+    """Match landing ``© 2026 LiturgyFlow · v …`` copy."""
+    year = 2026
+    try:
+        from datetime import datetime
+
+        year = int(datetime.now().year) or year
+    except Exception:
+        pass
+    ver = "1.0"
+    try:
+        from services.app_version import get_app_version
+
+        ver = (get_app_version() or ver).strip() or ver
+    except Exception:
+        pass
+    return f"© {year} LiturgyFlow · v {ver}"
+
+
+def apply_home_cta_watermark(rgb_image):
+    """Burn top-right chip + landing-style vertical edge credit (center-right)."""
+    from PIL import Image, ImageDraw, ImageFilter
+
+    base = rgb_image.convert("RGBA")
+    w, h = base.size
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+
+    # Match the Home CTA nav cluster (top/right ~12px on the card).
+    pad = max(14, int(round(min(w, h) * 0.018)))
+    logo_side = max(22, min(36, int(round(min(w, h) * 0.028))))
+    font_size = max(11, min(15, int(round(min(w, h) * 0.012))))
+    gap = max(6, logo_side // 5)
+    text = _HOME_CTA_WM_TEXT
+    font = _cta_watermark_font(font_size)
+
+    # Measure text for a compact horizontal chip: [logo] LiturgyFlow.com
+    probe = ImageDraw.Draw(overlay)
+    try:
+        bbox = probe.textbbox((0, 0), text, font=font)
+        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    except Exception:
+        tw, th = font_size * len(text) // 2, font_size
+
+    chip_h = max(logo_side, th) + 10
+    chip_w = logo_side + gap + tw + 16
+    chip = Image.new("RGBA", (chip_w, chip_h), (0, 0, 0, 0))
+    chip_draw = ImageDraw.Draw(chip)
+
+    # Soft dark pill so the mark reads on light or busy art without a hard bar.
+    chip_draw.rounded_rectangle(
+        (0, 0, chip_w - 1, chip_h - 1),
+        radius=chip_h // 2,
+        fill=(0, 0, 0, 78),
+    )
+
+    logo_path = Path(__file__).resolve().parents[1] / "static" / "brand" / "app-icon.png"
+    x_cursor = 7
+    if logo_path.is_file():
+        try:
+            with Image.open(logo_path) as logo_im:
+                mark = logo_im.convert("RGBA")
+                mark = mark.resize((logo_side, logo_side), Image.Resampling.LANCZOS)
+                r, g, b, a = mark.split()
+                a = a.point(lambda p: int(p * 0.85))
+                mark = Image.merge("RGBA", (r, g, b, a))
+                ly = (chip_h - logo_side) // 2
+                chip.alpha_composite(mark, (x_cursor, ly))
+                x_cursor += logo_side + gap
+        except Exception:
+            logger.debug("home CTA logo watermark skipped", exc_info=True)
+
+    ty = max(1, (chip_h - th) // 2 - 1)
+    # Subtle shadow + clean white label.
+    chip_draw.text((x_cursor + 1, ty + 1), text, font=font, fill=(0, 0, 0, 90))
+    chip_draw.text((x_cursor, ty), text, font=font, fill=(255, 255, 255, 195))
+
+    # Slight blur on the pill edge so it feels embedded, not sticker-like.
+    try:
+        chip = chip.filter(ImageFilter.GaussianBlur(radius=0.4))
+    except Exception:
+        pass
+
+    ox = max(0, w - chip_w - pad)
+    oy = pad
+    overlay.alpha_composite(chip, (ox, oy))
+
+    # Landing ``.lf-hero__copy`` — vertical rose credit on the center-right edge.
+    edge_text = _home_cta_edge_credit_text()
+    edge_font_size = max(11, min(14, int(round(min(w, h) * 0.011))))
+    edge_font = _cta_watermark_font(edge_font_size)
+    # letter-spacing ≈ 0.06em
+    tracking = max(1, int(round(edge_font_size * 0.06)))
+    try:
+        eb = probe.textbbox((0, 0), edge_text, font=edge_font)
+        etw, eth = eb[2] - eb[0], eb[3] - eb[1]
+    except Exception:
+        etw, eth = edge_font_size * len(edge_text) // 2, edge_font_size
+    # Extra width for tracked glyphs.
+    strip_w = etw + tracking * max(0, len(edge_text) - 1) + 8
+    strip_h = eth + 8
+    strip = Image.new("RGBA", (strip_w, strip_h), (0, 0, 0, 0))
+    strip_draw = ImageDraw.Draw(strip)
+    cursor_x = 4
+    for ch in edge_text:
+        strip_draw.text((cursor_x, 2), ch, font=edge_font, fill=_HOME_CTA_EDGE_COLOR)
+        try:
+            cb = strip_draw.textbbox((0, 0), ch, font=edge_font)
+            cw = cb[2] - cb[0]
+        except Exception:
+            cw = edge_font_size // 2
+        cursor_x += cw + tracking
+    # writing-mode: vertical-rl → rotate so copy reads top→bottom on the right edge.
+    edge = strip.rotate(-90, expand=True, resample=Image.Resampling.BICUBIC)
+    ew, eh = edge.size
+    ex = max(0, w - ew - max(10, pad // 2))
+    ey = max(0, (h - eh) // 2)
+    overlay.alpha_composite(edge, (ex, ey))
+
+    return Image.alpha_composite(base, overlay).convert("RGB")
+
+
 def ensure_ui_thumb(
     hero_path: Path,
     *,
@@ -181,7 +374,7 @@ def ensure_ui_thumb(
     style: str = "",
     quality: int = 70,
 ) -> Path:
-    """Create/return a WebP beside the hero for UI use (picker or CTA card)."""
+    """Create/return a clean WebP beside the hero for UI use (picker / intermediates)."""
     thumb = ui_thumb_path(hero_path, max_w=max_w)
     created = False
     try:
@@ -206,6 +399,41 @@ def ensure_ui_thumb(
     if (created or thumb.is_file()) and sunday and style:
         try_upload_shared_ui_thumb(thumb, date=sunday, style=style, max_w=max_w)
     return thumb if thumb.is_file() else hero_path
+
+
+def ensure_ui_card_watermarked(
+    hero_path: Path,
+    *,
+    sunday: str = "",
+    style: str = "",
+    quality: int = 82,
+) -> Path:
+    """Create/return the Home-CTA watermarked 1600 WebP (burned-in brand)."""
+    wm = ui_card_wm_path(hero_path)
+    try:
+        if wm.is_file() and wm.stat().st_mtime >= hero_path.stat().st_mtime:
+            if sunday and style:
+                try_upload_shared_ui_card_wm(wm, date=sunday, style=style)
+            return wm
+        from PIL import Image
+
+        # Build from a sharp resized RGB, then burn watermark.
+        clean = ensure_ui_thumb(
+            hero_path, max_w=1600, sunday=sunday, style=style, quality=84
+        )
+        source = clean if clean.is_file() else hero_path
+        with Image.open(source) as im:
+            rgb = im.convert("RGB")
+            marked = apply_home_cta_watermark(rgb)
+            wm.parent.mkdir(parents=True, exist_ok=True)
+            marked.save(wm, "WEBP", quality=int(quality), method=2)
+    except Exception:
+        logger.debug("weekly UI card watermark failed for %s", hero_path, exc_info=True)
+        # Fall back to clean card rather than blocking Home.
+        return ensure_ui_thumb(hero_path, max_w=1600, sunday=sunday, style=style, quality=84)
+    if wm.is_file() and sunday and style:
+        try_upload_shared_ui_card_wm(wm, date=sunday, style=style)
+    return wm if wm.is_file() else hero_path
 
 
 def resolve_ui_thumb_file(
@@ -276,14 +504,54 @@ def resolve_ui_thumb_file(
 
 
 def resolve_ui_card_file(*, sunday: str, style: str, output_dir: Path) -> Optional[Path]:
-    """Sharp home-CTA WebP (~1600px) — much smaller than full PNG, not blurry on the card."""
-    return resolve_ui_thumb_file(
-        sunday=sunday,
-        style=style,
-        output_dir=output_dir,
-        max_w=1600,
-        quality=84,
+    """Home-CTA WebP (~1600px) with burned-in LiturgyFlow watermark.
+
+    Clean masters stay available via ``variant=full`` / thumb; Home must never
+    paint the unprotected full hero as a CSS background.
+    """
+    resolved = resolve_ai_image_style(style)
+    hero_local = local_hero_path(output_dir, sunday=sunday, style=resolved)
+    wm_local = ui_card_wm_path(hero_local)
+    hero = hero_local if hero_local.is_file() else resolve_hero_file(
+        sunday=sunday, style=resolved, output_dir=output_dir
     )
+    if wm_local.is_file():
+        try:
+            if hero is not None and hero.is_file() and wm_local.stat().st_mtime < hero.stat().st_mtime:
+                out = ensure_ui_card_watermarked(hero, sunday=sunday, style=resolved)
+                return out if out.is_file() else wm_local
+        except OSError:
+            pass
+        return wm_local
+    try:
+        from services.ai_hero_cache import shared_cache_ready
+        from services.storage_assets import download_service_asset
+
+        if shared_cache_ready():
+            raw = download_service_asset(path=shared_ui_card_wm_relative_path(sunday, resolved))
+            if raw:
+                wm_local.parent.mkdir(parents=True, exist_ok=True)
+                wm_local.write_bytes(raw)
+                if wm_local.is_file():
+                    try:
+                        if (
+                            hero is not None
+                            and hero.is_file()
+                            and wm_local.stat().st_mtime < hero.stat().st_mtime
+                        ):
+                            out = ensure_ui_card_watermarked(
+                                hero, sunday=sunday, style=resolved
+                            )
+                            return out if out.is_file() else wm_local
+                    except OSError:
+                        pass
+                    return wm_local
+    except Exception:
+        logger.debug("shared UI card wm download failed for %s %s", sunday, style, exc_info=True)
+    if hero is None or not hero.is_file():
+        return None
+    out = ensure_ui_card_watermarked(hero, sunday=sunday, style=resolved)
+    return out if out.is_file() else None
 
 
 def rebuild_ui_derivatives(*, sunday: str, style: str, output_dir: Path) -> None:
@@ -310,6 +578,13 @@ def rebuild_ui_derivatives(*, sunday: str, style: str, output_dir: Path) -> None
             max_w=max_w,
             quality=quality,
         )
+    wm = ui_card_wm_path(hero)
+    try:
+        if wm.is_file():
+            wm.unlink()
+    except OSError:
+        logger.debug("weekly UI wm rebuild unlink failed for %s", wm, exc_info=True)
+    ensure_ui_card_watermarked(hero, sunday=sunday, style=resolved)
 
 
 def _with_cache_bust(url: str, bust: str) -> str:
@@ -326,15 +601,15 @@ def _with_cache_bust(url: str, bust: str) -> str:
 
 
 def signed_or_proxy_card_url(*, sunday: str, style: str) -> str:
-    """Home CTA / large preview URL — prefer signed 1600 WebP, else auth proxy."""
+    """Home CTA URL — watermarked card only (never the clean full hero)."""
     resolved = resolve_ai_image_style(style)
-    proxy = f"/api/weekly-style-posters/image?date={sunday}&style={resolved}&variant=card"
+    proxy = f"/api/weekly-style-posters/image?date={sunday}&style={resolved}&variant=card&mark=3"
     try:
         from services.ai_hero_cache import shared_cache_ready
         from services.storage_assets import shared_asset_exists, signed_service_asset_url
 
         if shared_cache_ready():
-            card_remote = shared_ui_card_relative_path(sunday, resolved)
+            card_remote = shared_ui_card_wm_relative_path(sunday, resolved)
             if shared_asset_exists(relative_path=card_remote):
                 url = signed_service_asset_url(path=card_remote, expires_in=3600)
                 if url:
@@ -373,7 +648,7 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
         # URL minting made Extras feel stuck on every Step 6 visit.
         ready = local_hero_path(output_dir, sunday=sunday, style=sid).is_file()
         proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb"
-        card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card"
+        card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card&mark=3"
         full_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
         items.append(
             {
@@ -647,7 +922,7 @@ def ensure_weekly_heroes(
             if sid not in touch:
                 continue
             proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb"
-            card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card"
+            card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card&mark=3"
             full_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
             item["thumb_url"] = _with_cache_bust(proxy, bust)
             item["card_url"] = _with_cache_bust(card_proxy, bust)

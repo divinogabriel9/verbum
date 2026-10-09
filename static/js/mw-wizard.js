@@ -3059,6 +3059,10 @@
             if (ytClear && flowPage.contains(ytClear)) {
               e.preventDefault();
               e.stopPropagation();
+              if (typeof window.canLinkYouTubeMedia !== 'function' || !window.canLinkYouTubeMedia()) {
+                if (typeof window.notify === 'function') window.notify('Only superadmins can change YouTube links.', 'warn');
+                return;
+              }
               var ytClearSlot = ytClear.getAttribute('data-mw-media-slot');
               if (ytClearSlot && typeof window.clearMassYouTubeLink === 'function') {
                 window.clearMassYouTubeLink(ytClearSlot);
@@ -3069,6 +3073,10 @@
             if (ytLink && flowPage.contains(ytLink)) {
               e.preventDefault();
               e.stopPropagation();
+              if (typeof window.canLinkYouTubeMedia !== 'function' || !window.canLinkYouTubeMedia()) {
+                if (typeof window.notify === 'function') window.notify('Only superadmins can link YouTube.', 'warn');
+                return;
+              }
               var ytSlot = ytLink.getAttribute('data-mw-media-slot');
               if (ytSlot && typeof window.openMassMediaPickModal === 'function') {
                 window.openMassMediaPickModal('audio', ytSlot, { youtubeOnly: true });

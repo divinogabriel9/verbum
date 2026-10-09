@@ -1609,6 +1609,14 @@ class GenerateBody(BaseModel):
         False,
         description="Use AI (OpenAI or Gemini) for primary parish posters.",
     )
+    use_premium_token: bool = Field(
+        False,
+        description=(
+            "When true and the user has a remaining one-time premium Mass token, "
+            "spend that token for curated divider posters with no free-tier watermark. "
+            "When false, prefer the monthly free-tier Mass (watermark, no curated posters)."
+        ),
+    )
     ai_poster_backend: str = Field(
         "openai",
         description="Server-selected image backend (client may omit or send ai).",
@@ -3083,12 +3091,18 @@ def api_weekly_style_poster_image(
             else:
                 raise HTTPException(status_code=404, detail="poster_not_ready")
         if want_thumb or want_card:
-            max_w = 1600 if want_card else 720
-            path = ui_thumb_path(hero, max_w=max_w)
-            if not path.is_file():
-                path = ensure_ui_thumb(
-                    hero, sunday=sunday, style=resolved, max_w=max_w, quality=70
+            if want_card:
+                from services.weekly_style_posters import ensure_ui_card_watermarked
+
+                path = ensure_ui_card_watermarked(
+                    hero, sunday=sunday, style=resolved
                 )
+            else:
+                path = ui_thumb_path(hero, max_w=720)
+                if not path.is_file():
+                    path = ensure_ui_thumb(
+                        hero, sunday=sunday, style=resolved, max_w=720, quality=70
+                    )
             if path is None or not path.is_file():
                 # Active UI derivatives may already exist even when the versioned
                 # archive slot does not.
@@ -3371,7 +3385,7 @@ async def api_weekly_style_poster_activate(
                 "label": weekly_style_label(sid),
                 "ready": ready,
                 "thumb_url": f"{base}&variant=thumb" if ready else "",
-                "card_url": f"{base}&variant=card" if ready else "",
+                "card_url": f"{base}&variant=card&mark=3" if ready else "",
                 "proxy_url": f"{base}&variant=thumb",
                 "full_url": base if ready else "",
             }
@@ -4783,10 +4797,12 @@ def api_list_recent_practice_shares(
     if not session:
         raise HTTPException(status_code=401, detail="Sign in required.")
     parish_id: Optional[str] = None
+    church_ctx: Optional[dict[str, Any]] = None
     try:
         from services.parish_store import get_user_parish_context
 
         ctx = get_user_parish_context(session.user.user_id)
+        church_ctx = ctx if isinstance(ctx, dict) else None
         pid = (ctx or {}).get("parish_id")
         parish_id = str(pid).strip() if pid else None
     except Exception:
@@ -4812,7 +4828,17 @@ def api_list_recent_practice_shares(
         item["unique_visitors"] = int(st.get("unique_visitors") or 0)
         item["active_now"] = int(st.get("active_now") or 0)
         enriched.append(item)
-    return {"ok": True, "shares": enriched}
+
+    from services.choir_practice_shares import count_active_practice_shares
+    from services.free_tier import is_free_tier_account, practice_share_quota_payload
+
+    active_count = count_active_practice_shares(
+        parish_id=parish_id,
+        created_by_user_id=session.user.user_id,
+    )
+    free_tier = is_free_tier_account(church_ctx, user=session.user)
+    quota = practice_share_quota_payload(is_free_tier=free_tier, active_count=active_count)
+    return {"ok": True, "shares": enriched, "is_free_tier": free_tier, **quota}
 
 
 @app.get("/api/practice/{token}")
@@ -5235,6 +5261,32 @@ def api_create_practice_share(
             detail="Choir practice shares are temporarily disabled.",
         )
 
+    # Free tier: max N concurrent active choir lyric shares.
+    try:
+        from services.choir_practice_shares import count_active_practice_shares
+        from services.free_tier import (
+            FREE_TIER_ACTIVE_PRACTICE_SHARES,
+            free_tier_practice_share_blocked_detail,
+            is_free_tier_account,
+        )
+        from services.user_church_context import get_church_profile_context
+
+        church_ctx = get_church_profile_context()
+        if session and is_free_tier_account(church_ctx, user=session.user):
+            active = count_active_practice_shares(
+                parish_id=parish_id,
+                created_by_user_id=created_by,
+            )
+            if active >= FREE_TIER_ACTIVE_PRACTICE_SHARES:
+                raise HTTPException(
+                    status_code=403,
+                    detail=free_tier_practice_share_blocked_detail(),
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning("practice share free-tier check failed", exc_info=True)
+
     songs = [s.model_dump() for s in body.songs]
     try:
         result = create_practice_share(
@@ -5605,22 +5657,43 @@ def api_generate(
     )
 
     # Resolve credit tier before building media so free-tier gens skip curated posters.
+    # Premium tokens are opt-in via body.use_premium_token (Unlock on poster picker).
     generation_tier = "paid"
     if session and session.user and session.user.user_id:
         try:
-            from services.free_mass_credit import resolve_generation_tier
+            from services.free_mass_credit import (
+                free_mass_status_for_user,
+                resolve_generation_tier,
+            )
             from services.membership_config import membership_allows_full_access
             from services.stripe_billing import billing_enabled as _billing_on
 
             church_ctx = get_church_profile_context()
             has_full = membership_allows_full_access(church_ctx, user=session.user)
             if _billing_on() and not has_full:
+                want_premium = bool(getattr(body, "use_premium_token", False))
                 generation_tier = resolve_generation_tier(
                     session.user.user_id,
                     has_full_access=False,
                     billing_on=True,
+                    use_premium_token=want_premium,
                 )
                 if generation_tier == "none":
+                    credit = free_mass_status_for_user(
+                        session.user.user_id,
+                        has_full_access=False,
+                        billing_on=True,
+                    )
+                    premium_left = int(credit.get("premium_mass_remaining") or 0)
+                    if premium_left > 0 and not want_premium:
+                        raise HTTPException(
+                            status_code=403,
+                            detail=(
+                                "You've used this month's free Masses. "
+                                "Unlock curated posters with a premium Mass credit, "
+                                "or start a 14-day trial under Settings → Billing."
+                            ),
+                        )
                     raise HTTPException(
                         status_code=403,
                         detail="You've used this month's free Masses. Start a 14-day trial under Settings → Billing.",
@@ -5634,14 +5707,25 @@ def api_generate(
     # Prefer shared weekly heroes only — never generate a one-off poster here.
     # Partial weeks are fine: reuse the requested style when ready, else any ready
     # style. If nothing is ready, fall back to non-AI dividers (no quota burn).
-    # Free-tier monthly Masses never get curated AI divider posters.
+    # Monthly free-tier Masses never get curated AI divider posters.
+    # Unlocked premium tokens always try curated posters (client may omit include_ai).
     reuse_poster = False
-    allow_premium_posters = generation_tier in {"paid", "premium"}
-    include_ai = (
-        bool(body.include_ai_mass_poster)
-        and not bool(body.leaflet_only)
-        and allow_premium_posters
-    )
+    free_tier_footer_brand = ""
+    include_footer = bool(body.include_footer)
+    if generation_tier == "free":
+        # Soft product mark on monthly free decks only (not premium tokens / paid).
+        from services.free_tier import FREE_TIER_MASS_FOOTER_BRAND
+
+        free_tier_footer_brand = FREE_TIER_MASS_FOOTER_BRAND
+        include_footer = True
+    if bool(body.leaflet_only):
+        include_ai = False
+    elif generation_tier == "free":
+        include_ai = False
+    elif generation_tier == "premium":
+        include_ai = True
+    else:
+        include_ai = bool(body.include_ai_mass_poster)
     resolved_ai_style = (body.ai_poster_style or "cinematic").strip() or "cinematic"
     if include_ai:
         from services.ai_styles import resolve_ai_image_style
@@ -5665,8 +5749,8 @@ def api_generate(
         if style_ok:
             resolved_ai_style = style_key
             reuse_poster = True
-            # One-time premium welcome gens include curated posters without burning
-            # the weekly free-tier poster allowance.
+            # One-time premium Mass tokens include curated posters without the
+            # unpaid poster meter (monthly free tier has no curated posters).
             if generation_tier != "premium":
                 _enforce_ai_image_quota(
                     session,
@@ -5754,7 +5838,8 @@ def api_generate(
                     hymn_typography=body.hymn_typography,
                     include_church_logo=body.include_church_logo,
                     include_church_name=body.include_church_name,
-                    include_footer=body.include_footer,
+                    include_footer=include_footer,
+                    footer_brand=free_tier_footer_brand or None,
                     hymn_lyric_overrides=hymn_overrides,
                     creed_choice=body.creed_choice,
                     creed_language=body.creed_language,
@@ -6511,6 +6596,19 @@ def api_save_lyrics(
     body: SaveLyricsBody,
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
+    # YouTube practice links on catalog songs are superadmin-only.
+    if (
+        auth_enabled()
+        and session
+        and not is_superadmin_user(session.user)
+        and body.audio_media is not None
+    ):
+        yt_ref = normalize_song_media_ref(body.audio_media.model_dump())
+        if yt_ref and str(yt_ref.get("source") or "") == "youtube":
+            raise HTTPException(
+                status_code=403,
+                detail="Only superadmins can link YouTube on songs.",
+            )
     if auth_enabled() and session and not is_superadmin_user(session.user):
         from services.parish_hymn_overrides import save_override, save_parish_original_song
         from services.parish_store import get_user_parish_context
@@ -6529,6 +6627,25 @@ def api_save_lyrics(
                 status_code=400,
                 detail="Join a parish to save songs. New songs stay in your parish catalog until a superadmin approves them for the global catalog.",
             )
+        # Free tier may submit new songs only — never edit/override existing catalog entries.
+        if exact:
+            try:
+                from services.free_tier import (
+                    free_tier_song_edit_existing_blocked_detail,
+                    is_free_tier_account,
+                )
+                from services.user_church_context import get_church_profile_context
+
+                church_row = get_church_profile_context() or parish_ctx
+                if is_free_tier_account(church_row, user=session.user):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=free_tier_song_edit_existing_blocked_detail(),
+                    )
+            except HTTPException:
+                raise
+            except Exception:
+                pass
         # Existing catalog song → parish short version (does not change global SoT).
         if exact:
             hit = exact[0]

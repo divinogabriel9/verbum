@@ -892,10 +892,16 @@
       // Signed https URLs work in <img>. Same-origin /api/ needs Bearer auth.
       if (!src.startsWith("/api/")) return src;
       if (weeklyThumbBlobCache[src]) return weeklyThumbBlobCache[src];
-      const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+      let headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
         ? await window.VerbumAuth.getAuthHeaders()
         : {};
-      const res = await fetch(src, { headers: headers, credentials: "same-origin" });
+      let res = await fetch(src, { headers: headers, credentials: "same-origin" });
+      // One retry after a short wait when auth token was not ready yet.
+      if (res.status === 401 && window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function") {
+        await new Promise((r) => setTimeout(r, 300));
+        headers = await window.VerbumAuth.getAuthHeaders();
+        res = await fetch(src, { headers: headers, credentials: "same-origin" });
+      }
       if (!res.ok) throw new Error("weekly thumb " + res.status);
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -1209,13 +1215,20 @@
       if (!$("home-mass-card")) return;
       populateHomeMassSnippet("next", upcomingSundayISO());
       populateHomeMassSnippet("last", lastSundayISO());
-      void refreshHomeMassCtaPosterBg(opts);
+      // Home route should always re-attempt CTA art (do not depend on Extras visit).
+      const card = $("home-mass-card");
+      const nextOpts = Object.assign({}, opts || {});
+      if (!nextOpts.forceReload && card && !card.classList.contains("has-poster-bg")) {
+        nextOpts.forceReload = true;
+      }
+      void refreshHomeMassCtaPosterBg(nextOpts);
     }
 
     var HOME_CTA_POSTER_STYLE_KEY = "home_cta_weekly_poster_style";
     var HOME_CTA_POSTER_SLIDE_MS = 720;
     var HOME_CTA_POSTER_AUTO_MS = 9000;
     var homeCtaPosterBgInflight = null;
+    var homeCtaPosterBgLoadGen = 0;
     var homeCtaPosterSyncingFromHome = false;
     var homeCtaPosterAwaitRetryTimer = null;
     var homeCtaPosterAwaitRetries = 0;
@@ -1286,12 +1299,15 @@
         setHomeCtaPosterLoading(true, styleLabel || "");
       }
       stopHomeCtaPosterAwaitRetry();
-      if (homeCtaPosterAwaitRetries >= HOME_CTA_POSTER_AWAIT_MAX) return;
+      // Keep retrying while unpainted — Extras must not be required to finish the CTA.
       homeCtaPosterAwaitRetries += 1;
+      const delay = homeCtaPosterAwaitRetries <= HOME_CTA_POSTER_AWAIT_MAX
+        ? HOME_CTA_POSTER_AWAIT_MS
+        : Math.min(30000, HOME_CTA_POSTER_AWAIT_MS + (homeCtaPosterAwaitRetries - HOME_CTA_POSTER_AWAIT_MAX) * 2000);
       homeCtaPosterAwaitRetryTimer = setTimeout(() => {
         homeCtaPosterAwaitRetryTimer = null;
         void refreshHomeMassCtaPosterBg({ forceReload: true });
-      }, HOME_CTA_POSTER_AWAIT_MS);
+      }, delay);
     }
 
     function activeExtrasPosterStyleId() {
@@ -1457,21 +1473,25 @@
         ""
       ).trim();
       const styleId = String(item.id || "").trim();
-      const full = String(item.full_url || "").trim();
       const card = String(item.card_url || "").trim();
       // Always keep an active (non-versioned) card proxy as a last-resort paint path.
+      // Home CTA must use watermarked card only — never full_url (clean master / PPTX hero).
+      // mark=3 busts browser/blob caches from the old diagonal burn-in.
       const activeCard = styleId && sunday
-        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(sunday) + "&style=" + encodeURIComponent(styleId) + "&variant=card")
+        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(sunday) + "&style=" + encodeURIComponent(styleId) + "&variant=card&mark=3")
         : "";
-      const cardProxy = card || activeCard;
-      // Prefer HTTPS signed assets in CSS directly (no JS blob hydrate) — sharp + fast CDN load.
-      // Fall back to sharp 1600px card WebP, never the tiny 720 picker thumb.
+      // Prefer the watermarked card proxy. If catalog already has card_url, append mark=3.
+      let cardProxy = "";
+      if (card) {
+        cardProxy = card + (card.indexOf("mark=") >= 0 ? "" : (card.indexOf("?") >= 0 ? "&" : "?") + "mark=3");
+      } else {
+        cardProxy = activeCard;
+      }
+      // Prefer signed watermarked card HTTPS, then auth proxy. Never paint full hero.
       const candidates = [];
-      if (/^https?:\/\//i.test(full)) candidates.push(full);
-      if (/^https?:\/\//i.test(card)) candidates.push(card);
-      if (cardProxy) candidates.push(cardProxy);
+      if (/^https?:\/\//i.test(cardProxy)) candidates.push(cardProxy);
+      else if (cardProxy) candidates.push(cardProxy);
       if (activeCard && activeCard !== cardProxy) candidates.push(activeCard);
-      if (full) candidates.push(full);
       const seen = {};
       const urls = [];
       candidates.forEach((u) => {
@@ -1702,15 +1722,30 @@
           return;
         }
       }
-      if (homeCtaPosterBgInflight) return homeCtaPosterBgInflight;
+      // forceReload must not join a stale/failed in-flight attempt (that was why
+      // the CTA only painted after visiting Extras triggered a fresh refresh).
+      if (homeCtaPosterBgInflight && !forceReload) return homeCtaPosterBgInflight;
       if (!card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(true);
+      const loadGen = ++homeCtaPosterBgLoadGen;
       homeCtaPosterBgInflight = (async () => {
         let data = null;
         let painted = false;
         try {
           if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
-            await window.VerbumAuth.waitUntilReady(4000);
+            await window.VerbumAuth.waitUntilReady(8000);
           }
+          // Ensure we have a Bearer token before catalog/image fetches (401 → white CTA).
+          let headers = {};
+          if (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function") {
+            headers = await window.VerbumAuth.getAuthHeaders();
+            if (!headers.Authorization && typeof window.VerbumAuth.getSessionToken === "function") {
+              try {
+                await new Promise((r) => setTimeout(r, 250));
+                headers = await window.VerbumAuth.getAuthHeaders();
+              } catch (_eTok) { /* continue */ }
+            }
+          }
+          if (loadGen !== homeCtaPosterBgLoadGen) return;
           let ready = [];
           // Only reuse the Extras version catalog when it is for THIS upcoming Sunday.
           try {
@@ -1724,13 +1759,11 @@
           } catch (_eView) { /* fall through to API catalog */ }
 
           // Authoritative source: active disk heroes for the upcoming Sunday.
-          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
-            ? await window.VerbumAuth.getAuthHeaders()
-            : {};
           const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
             headers: headers,
             credentials: "same-origin",
           });
+          if (loadGen !== homeCtaPosterBgLoadGen) return;
           data = await res.json().catch(() => ({}));
           if (res.ok && data && data.ok) {
             if (data.versions && typeof syncWeeklyPosterVersionUi === "function") {
@@ -1786,20 +1819,25 @@
             if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
             return;
           }
+          if (loadGen !== homeCtaPosterBgLoadGen) return;
           painted = true;
           homeCtaPosterState.items.forEach((it) => {
             if (it && it._resolvedUrl) void preloadHomeCtaPosterUrl(it._resolvedUrl);
           });
           startHomeCtaPosterAutoplay();
         } catch (_e) {
-          if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
+          if (loadGen === homeCtaPosterBgLoadGen && !card.classList.contains("has-poster-bg")) {
+            keepHomeCtaPosterAwaiting();
+          }
         } finally {
-          homeCtaPosterBgInflight = null;
-          // Only drop the veil once a poster is actually painted.
-          if (painted || card.classList.contains("has-poster-bg")) {
-            setHomeCtaPosterLoading(false);
-          } else if (!card.classList.contains("is-poster-loading")) {
-            setHomeCtaPosterLoading(true);
+          if (loadGen === homeCtaPosterBgLoadGen) {
+            homeCtaPosterBgInflight = null;
+            // Only drop the veil once a poster is actually painted.
+            if (painted || card.classList.contains("has-poster-bg")) {
+              setHomeCtaPosterLoading(false);
+            } else if (!card.classList.contains("is-poster-loading")) {
+              setHomeCtaPosterLoading(true);
+            }
           }
         }
       })();
@@ -1810,10 +1848,11 @@
     if (!window.__homeCtaPosterAuthHook) {
       window.__homeCtaPosterAuthHook = true;
       window.addEventListener("verbum:auth-ready", () => {
-        void refreshHomeMassCtaPosterBg();
+        homeCtaPosterAwaitRetries = 0;
+        void refreshHomeMassCtaPosterBg({ forceReload: true });
       });
       if (window.VerbumAuth && window.VerbumAuth.isReady && window.VerbumAuth.isReady()) {
-        void refreshHomeMassCtaPosterBg();
+        void refreshHomeMassCtaPosterBg({ forceReload: true });
       }
     }
 
@@ -3462,10 +3501,16 @@
       const el = $("mass-date") || $("flow-mass-date");
       const fromMass = el && el.value ? String(el.value).trim() : "";
       if (fromMass) return fromMass;
-      // Fallback: Sunday dropdown when set (SA) — never invent today's date.
+      // Fallback: Sunday dropdown when set (SA).
       const sunSel = $("mw-weekly-posters-sunday");
       const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
-      return fromSun;
+      if (fromSun) return fromSun;
+      // Home / boot: use upcoming Sunday so CTA + catalog load without visiting Extras.
+      if (typeof upcomingSundayISO === "function") {
+        const upcoming = String(upcomingSundayISO() || "").trim();
+        if (upcoming) return upcoming;
+      }
+      return "";
     }
 
     function formatWeeklyPosterSundayLabel(iso) {
@@ -3636,14 +3681,32 @@
       const dateLabel = formatWeeklyPosterSundayLabel(
         weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || weeklyPosterMassDate()
       );
+      // Premium token / paid / full app may pick curated posters; monthly free tier cannot.
+      const membershipAllows = typeof canUseCuratedPosters === "function"
+        ? canUseCuratedPosters(churchMembershipState)
+        : true;
+      if (!membershipAllows) {
+        if (typeof syncCuratedPosterAccessUi === "function") syncCuratedPosterAccessUi();
+        stopWeeklyPosterAutoScroll();
+        syncWeeklyPosterExpandUi();
+        window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
+        return;
+      }
       const unlocked = areWeeklyAiPostersReady();
       if (gate) {
         gate.hidden = unlocked;
         gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
       }
-      if (wrap) wrap.classList.toggle("is-ai-poster-locked", !unlocked);
+      if (wrap) {
+        wrap.classList.remove("is-premium-poster-locked");
+        wrap.classList.toggle("is-ai-poster-locked", !unlocked);
+      }
       const section = $("mw-ai-poster-section");
-      if (section) section.classList.toggle("is-ai-poster-locked", !unlocked);
+      if (section) {
+        section.classList.remove("is-premium-poster-locked");
+        section.classList.toggle("is-ai-poster-locked", !unlocked);
+      }
+      document.body.classList.remove("is-premium-poster-locked");
       if (body) {
         body.setAttribute("aria-disabled", unlocked ? "false" : "true");
       }
@@ -4310,7 +4373,7 @@
           label: d.label,
           ready: ready,
           thumb_url: ready ? (base + "&variant=thumb") : "",
-          card_url: ready ? (base + "&variant=card") : "",
+          card_url: ready ? (base + "&variant=card&mark=3") : "",
           proxy_url: base + "&variant=thumb",
           full_url: ready ? base : "",
         };
@@ -4538,7 +4601,7 @@
           label: prev.label || id,
           ready: isReady,
           thumb_url: isReady && base ? (base + "&variant=thumb") : (isReady ? String(prev.thumb_url || "") : ""),
-          card_url: isReady && base ? (base + "&variant=card") : (isReady ? String(prev.card_url || "") : ""),
+          card_url: isReady && base ? (base + "&variant=card&mark=3") : (isReady ? String(prev.card_url || "") : ""),
           proxy_url: base ? (base + "&variant=thumb") : String(prev.proxy_url || ""),
           full_url: isReady && base ? base : (isReady ? String(prev.full_url || "") : ""),
         };
@@ -5287,6 +5350,7 @@
       window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
       window.scheduleWeeklyStylePosterRefresh = scheduleWeeklyStylePosterRefresh;
       window.setWeeklyPosterStyle = setWeeklyPosterStyle;
+      window.syncWeeklyAiPosterGate = syncWeeklyAiPosterGate;
       window.preloadExtrasPosterAssets = function preloadExtrasPosterAssets() {
         preloadLiturgyPosterThumbs();
       };

@@ -89,7 +89,7 @@
       display: none !important;
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261010-cta-no-white" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261010-free-tier-readonly" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261010-poster-skel" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261010-unlock-chip" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -860,35 +860,48 @@
 
       <div class="ui-overlay" id="add-priest-modal" aria-hidden="true" role="presentation" data-step="enter">
         <div class="ui-overlay__backdrop" id="add-priest-modal-backdrop"></div>
-        <article class="ui-card add-priest-card" role="dialog" aria-labelledby="add-priest-modal-title" aria-describedby="add-priest-modal-desc" aria-modal="true">
-          <header class="ui-card__header">
-            <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="add-priest-modal-title">Add a priest</h3>
-              <p class="ui-card__description" id="add-priest-modal-desc">Enter the celebrant name exactly as it should appear on Mass slides.</p>
+        <div class="add-priest-stage">
+          <article class="ui-card add-priest-card" id="add-priest-enter-card" role="dialog" aria-labelledby="add-priest-modal-title" aria-describedby="add-priest-modal-desc" aria-modal="true">
+            <header class="ui-card__header">
+              <div class="ui-card__header-text">
+                <h3 class="ui-card__title" id="add-priest-modal-title">Add a priest</h3>
+                <p class="ui-card__description" id="add-priest-modal-desc">Enter the celebrant name exactly as it should appear on Mass slides.</p>
+              </div>
+              <button type="button" class="ghost ui-card__close" id="add-priest-modal-close" aria-label="Close">×</button>
+            </header>
+            <div class="ui-card__content">
+              <div class="field" id="add-priest-enter-step">
+                <label for="add-priest-name">Priest name</label>
+                <input type="text" id="add-priest-name" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
+                <p class="status error" id="add-priest-error" hidden aria-live="polite"></p>
+              </div>
             </div>
-            <button type="button" class="ghost ui-card__close" id="add-priest-modal-close" aria-label="Close">×</button>
-          </header>
-          <div class="ui-card__content">
-            <div class="field" id="add-priest-enter-step">
-              <label for="add-priest-name">Priest name</label>
-              <input type="text" id="add-priest-name" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
-              <p class="status error" id="add-priest-error" hidden aria-live="polite"></p>
+            <footer class="ui-card__footer ui-card__footer--row" id="add-priest-footer-enter">
+              <button type="button" class="secondary" id="add-priest-cancel">Cancel</button>
+              <button type="button" class="primary" id="add-priest-continue">Continue</button>
+            </footer>
+          </article>
+          <article class="ui-card add-priest-card add-priest-card--confirm" id="add-priest-confirm-card" role="dialog" aria-labelledby="add-priest-confirm-title" aria-describedby="add-priest-confirm-desc" aria-modal="true" hidden>
+            <header class="ui-card__header">
+              <div class="ui-card__header-text">
+                <h3 class="ui-card__title" id="add-priest-confirm-title">Confirm spelling</h3>
+                <p class="ui-card__description" id="add-priest-confirm-desc">Double-check the name below before adding it to your parish list.</p>
+              </div>
+              <button type="button" class="ghost ui-card__close" id="add-priest-confirm-close" aria-label="Close">×</button>
+            </header>
+            <div class="ui-card__content">
+              <div class="add-priest-confirm" id="add-priest-confirm-step">
+                <p class="add-priest-confirm__label">Please confirm the spelling</p>
+                <p class="add-priest-confirm__name" id="add-priest-confirm-name" aria-live="polite"></p>
+                <p class="muted add-priest-confirm__hint">This is how the name will appear on your Mass presentation.</p>
+              </div>
             </div>
-            <div class="add-priest-confirm" id="add-priest-confirm-step" hidden>
-              <p class="add-priest-confirm__label">Please confirm the spelling</p>
-              <p class="add-priest-confirm__name" id="add-priest-confirm-name" aria-live="polite"></p>
-              <p class="muted add-priest-confirm__hint">This is how the name will appear on your Mass presentation.</p>
-            </div>
-          </div>
-          <footer class="ui-card__footer ui-card__footer--row" id="add-priest-footer-enter">
-            <button type="button" class="secondary" id="add-priest-cancel">Cancel</button>
-            <button type="button" class="primary" id="add-priest-continue">Continue</button>
-          </footer>
-          <footer class="ui-card__footer ui-card__footer--row" id="add-priest-footer-confirm" hidden>
-            <button type="button" class="secondary" id="add-priest-back">Edit name</button>
-            <button type="button" class="primary" id="add-priest-confirm">Confirm spelling</button>
-          </footer>
-        </article>
+            <footer class="ui-card__footer ui-card__footer--row" id="add-priest-footer-confirm">
+              <button type="button" class="secondary" id="add-priest-back">Edit name</button>
+              <button type="button" class="primary" id="add-priest-confirm">Confirm spelling</button>
+            </footer>
+          </article>
+        </div>
       </div>
 
       <div class="ui-overlay" id="deck-theme-modal" aria-hidden="true" role="presentation">
@@ -1704,6 +1717,26 @@
               </footer>
             </div>
           </div>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="premium-poster-unlock-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="premium-poster-unlock-backdrop"></div>
+        <article class="ui-card ui-card--popover-safe premium-poster-unlock-card" role="alertdialog" aria-labelledby="premium-poster-unlock-title" aria-describedby="premium-poster-unlock-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="premium-poster-unlock-title">Unlock curated posters?</h3>
+              <p class="ui-card__description" id="premium-poster-unlock-desc">Uses 1 premium Mass credit when you generate — curated divider posters, no watermark.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="premium-poster-unlock-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <p class="muted" id="premium-poster-unlock-credits" style="margin:0;font-size:0.88rem;line-height:1.45;"></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="premium-poster-unlock-cancel">Keep free Mass</button>
+            <button type="button" class="primary" id="premium-poster-unlock-confirm">Unlock</button>
+          </footer>
         </article>
       </div>
 
@@ -3008,6 +3041,10 @@
                         <input type="checkbox" id="flow-use-ai-poster-alt" class="sr-only" tabindex="-1" aria-hidden="true" />
                         <div class="mw-weekly-posters" id="mw-weekly-posters" data-weekly-posters>
                           <div class="mw-weekly-posters__stage">
+                            <div class="mw-weekly-posters__unlock" id="mw-premium-unlock-chip" hidden>
+                              <button type="button" class="mw-weekly-posters__unlock-btn" id="mw-ai-poster-unlock">Unlock</button>
+                              <span class="mw-weekly-posters__unlock-count" id="mw-ai-poster-unlock-count" aria-live="polite"></span>
+                            </div>
                             <button type="button" class="mw-weekly-posters__nav" data-weekly-nav="-1" aria-label="Previous styles">‹</button>
                             <div class="mw-weekly-posters__viewport" id="mw-weekly-posters-viewport">
                               <div class="mw-weekly-posters__track" id="mw-weekly-posters-track" role="listbox" aria-label="Weekly poster styles"></div>
@@ -3272,7 +3309,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261004-weekly-versions2"></script>
+      <script src="/static/js/mw-wizard.js?v=20261010-yt-link-sa3"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -5327,7 +5364,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261010-cta-no-white"></script>
+  <script src="/static/js/app.js?v=20261010-free-tier-readonly"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

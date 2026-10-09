@@ -63,6 +63,18 @@
         $("lyrics-save-title").value = titleHint;
       }
       const title = ($("lyrics-save-title") && $("lyrics-save-title").value.trim()) || "";
+      if (
+        typeof freeTierBlocksExistingCatalogSong === "function"
+        && freeTierBlocksExistingCatalogSong(title)
+      ) {
+        const msg =
+          typeof FREE_TIER_EXISTING_SONG_MSG === "string"
+            ? FREE_TIER_EXISTING_SONG_MSG
+            : "Free plan can browse the library and submit one new song per month. Existing catalog songs can't be edited.";
+        notify(msg, "error");
+        if (typeof setLyricsStatus === "function") setLyricsStatus(msg, "error");
+        return;
+      }
       const author = ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "";
       const language = ($("lyrics-save-language") && $("lyrics-save-language").value) || "";
       const section = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
@@ -281,6 +293,21 @@
         return;
       }
       if (songMetaEditCtx && songMetaEditCtx.mode === "composer") {
+        if (
+          typeof freeTierBlocksExistingCatalogSong === "function"
+          && freeTierBlocksExistingCatalogSong(title)
+        ) {
+          const msg =
+            typeof FREE_TIER_EXISTING_SONG_MSG === "string"
+              ? FREE_TIER_EXISTING_SONG_MSG
+              : "Free plan can browse the library and submit one new song per month. Existing catalog songs can't be edited.";
+          setLyricsStatus(msg, "error");
+          notify(msg, "error");
+          setSongMetadataSaveButtonState("error", "Not allowed");
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          setSongMetadataSaveButtonState("idle");
+          return;
+        }
         if (intent !== "save" && !metadataModalIsDirty()) {
           setSongMetadataSaveButtonState("error", "No changes");
           await new Promise((resolve) => setTimeout(resolve, 550));
@@ -692,6 +719,10 @@
       const ytSearchBtn = $("song-metadata-audio-youtube-search");
       const ytClearBtn = $("song-metadata-audio-youtube-clear");
       function commitComposerYouTubeLink() {
+        if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) {
+          if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+          return;
+        }
         const ref = youtubeMediaRefFromInput(ytField && ytField.value);
         if (!ref) {
           if (typeof notify === "function") notify("Enter a valid YouTube URL.", "warn");
@@ -2492,8 +2523,14 @@
     applyMassPinnedDefaults();
     syncMassDefaultPins($("flow-page"));
     if (typeof consumeEmailDeepLinkIntent === "function") consumeEmailDeepLinkIntent();
-    // Load home CTA posters first so the Mass card paints with art ASAP.
-    if (typeof refreshHomeMassCtaPosterBg === "function") void refreshHomeMassCtaPosterBg();
+    // Load home CTA posters first so the Mass card paints with art ASAP
+    // (independent of visiting Mass Builder → Extras).
+    if (typeof refreshHomeMassCtaPosterBg === "function") {
+      void refreshHomeMassCtaPosterBg({ forceReload: true });
+    }
+    if (typeof scheduleWeeklyStylePosterRefresh === "function") {
+      scheduleWeeklyStylePosterRefresh({ force: true });
+    }
     showRoute(currentRoute(), true);
     renderLyrics({ writeBack: false });
     setLyricsAnalyzeOverlay("idle");

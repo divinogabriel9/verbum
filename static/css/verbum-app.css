@@ -7188,7 +7188,9 @@
       mix-blend-mode: normal;
       filter: none;
       background-size: cover;
-      background-position: center;
+      /* Anchor top-right so the burned-in brand stamp sits under the poster nav
+         (center crop was hiding the mark on tall Home CTA cards). */
+      background-position: right top;
       background-repeat: no-repeat;
       transform: translate3d(0, 0, 0);
       transition: none;
@@ -14148,11 +14150,20 @@
       padding-top: 4px;
       border-top: 1px solid var(--card-border, rgba(0, 0, 0, 0.08));
     }
-    .celebrant-picker__add {
-      justify-content: flex-start;
+    /* Beat .vb-dropdown-item (design-system loads after this file). */
+    .celebrant-picker .celebrant-picker__add.vb-dropdown-item {
+      display: flex;
+      width: 100%;
+      justify-content: center;
+      align-items: center;
       gap: 8px;
       color: var(--accent, #2f5d50);
       font-weight: 600;
+      text-align: center;
+    }
+    .celebrant-picker .celebrant-picker__add .vb-dropdown-item__label {
+      flex: 0 0 auto;
+      text-align: center;
     }
     .celebrant-picker__add-icon {
       display: inline-flex;
@@ -14162,6 +14173,7 @@
       font-size: 1.1em;
       line-height: 1;
       font-weight: 700;
+      flex: none;
     }
     .celebrant-picker__empty {
       font-size: var(--text-sm);
@@ -14169,6 +14181,38 @@
       line-height: var(--leading-caption);
       letter-spacing: var(--tracking-caption);
       color: var(--muted);
+    }
+    .add-priest-stage {
+      position: relative;
+      width: min(420px, calc(100vw - 32px));
+      display: grid;
+      place-items: center;
+    }
+    .add-priest-stage > .add-priest-card {
+      width: 100%;
+      grid-area: 1 / 1;
+      margin: 0;
+    }
+    .add-priest-stage > .add-priest-card[hidden] {
+      display: none !important;
+    }
+    #add-priest-modal.is-open .add-priest-stage > .add-priest-card:not([hidden]) {
+      animation: add-priest-card-in 280ms var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+    }
+    @keyframes add-priest-card-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #add-priest-modal.is-open .add-priest-stage > .add-priest-card:not([hidden]) {
+        animation: none;
+      }
     }
     .add-priest-confirm {
       display: flex;
@@ -16190,6 +16234,16 @@
     .song-composer-status:empty {
       display: none;
     }
+    #lyrics-page.is-free-tier-catalog-readonly #lyrics-input,
+    #lyrics-page.is-free-tier-catalog-readonly #lyrics-input.is-readonly-free-tier {
+      cursor: default;
+      opacity: 0.92;
+    }
+    #lyrics-page.is-free-tier-catalog-readonly #btn-save-lyrics:disabled,
+    #lyrics-page.is-free-tier-catalog-readonly #btn-lyrics-focus-meta:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
     .lyrics-analyze-hint {
       flex-shrink: 0;
       margin-top: 6px;
@@ -16740,6 +16794,14 @@
     #composer-new-song-modal .primary:hover {
       background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
       border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    #premium-poster-unlock-modal .premium-poster-unlock-card {
+      width: min(420px, calc(100vw - 2rem));
+      max-width: min(420px, calc(100vw - 2rem));
+    }
+    #premium-poster-unlock-modal .premium-poster-unlock-card .ui-card__description {
+      margin-top: 6px;
+      max-width: 36ch;
     }
     /* Language / Google confirm must stack above Add new song modal (both default z-index 60). */
     #song-catalog-google-modal.ui-overlay {

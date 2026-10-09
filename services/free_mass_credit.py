@@ -2,10 +2,12 @@
 
 Two tracks when Stripe billing is on and the parish is not paid/trialing:
 
-1. **Premium (one-time)** — ``PREMIUM_MASS_LIMIT`` generations with curated
-   weekly AI divider posters.
-2. **Free tier (monthly)** — ``FREE_TIER_MONTHLY_MASS_LIMIT`` generations per
-   UTC month **without** curated AI divider posters.
+1. **Free tier (monthly)** — ``FREE_TIER_MONTHLY_MASS_LIMIT`` generations per
+   UTC month **without** curated AI divider posters (quiet product watermark).
+   Default path when the user has not unlocked a premium token.
+2. **Premium (one-time)** — ``PREMIUM_MASS_LIMIT`` generations with curated
+   weekly AI divider posters and no free-tier watermark. Opt-in via
+   ``use_premium_token`` on generate (Unlock on the curated poster picker).
 """
 
 from __future__ import annotations
@@ -134,10 +136,11 @@ def free_mass_status_for_user(
     free_used = free_tier_mass_used_count(row)
     free_remaining = max(0, FREE_TIER_MONTHLY_MASS_LIMIT - free_used)
 
-    if premium_remaining > 0:
-        next_tier: GenerationTier = "premium"
-    elif free_remaining > 0:
-        next_tier = "free"
+    # Default generate path prefers monthly free tier; premium tokens are opt-in.
+    if free_remaining > 0:
+        next_tier: GenerationTier = "free"
+    elif premium_remaining > 0:
+        next_tier = "premium"
     else:
         next_tier = "none"
 
@@ -153,6 +156,7 @@ def free_mass_status_for_user(
         "free_tier_mass_month": _utc_month_id(),
         "next_generation_tier": next_tier,
         "can_generate_mass": next_tier != "none",
+        # Has a premium token available to unlock curated posters (not auto-on).
         "can_use_premium_posters": premium_remaining > 0,
         "free_mass_limit": PREMIUM_MASS_LIMIT,
         "free_mass_remaining": premium_remaining,
@@ -167,16 +171,30 @@ def resolve_generation_tier(
     profile: Optional[dict[str, Any]] = None,
     has_full_access: bool = False,
     billing_on: bool = False,
+    use_premium_token: bool = False,
 ) -> GenerationTier:
+    """Pick credit track for this generate.
+
+    Premium tokens are never auto-spent: ``use_premium_token`` must be true.
+    Otherwise monthly free tier is used when available.
+    """
+    if has_full_access:
+        return "paid"
     status = free_mass_status_for_user(
         user_id,
         profile=profile,
-        has_full_access=has_full_access,
+        has_full_access=False,
         billing_on=billing_on,
     )
-    tier = str(status.get("next_generation_tier") or "none")
-    if tier in {"paid", "premium", "free", "none"}:
-        return tier  # type: ignore[return-value]
+    premium_remaining = int(status.get("premium_mass_remaining") or 0)
+    free_remaining = int(status.get("free_tier_mass_remaining") or 0)
+    if use_premium_token and premium_remaining > 0:
+        return "premium"
+    if free_remaining > 0:
+        return "free"
+    if premium_remaining > 0:
+        # Token left but not unlocked — caller should prompt Unlock.
+        return "none"
     return "none"
 
 

@@ -261,7 +261,8 @@ def _alert_parish_rename(
 
 
 def _membership_blocks_content_submit(session: AuthSession) -> dict[str, Any] | None:
-    """Block song/priest queue submits until parish membership is approved."""
+    """Block song/priest catalog submits unless paid/trial or free-tier (quota later)."""
+    from services.free_tier import is_free_tier_account
     from services.membership_config import is_superadmin_user, membership_allows_full_access
     from services.supabase_client import get_church_profile
     from services.user_church_context import get_church_profile_context
@@ -275,6 +276,9 @@ def _membership_blocks_content_submit(session: AuthSession) -> dict[str, Any] | 
         except Exception:
             church = None
     if membership_allows_full_access(church, user=session.user):
+        return None
+    # Unpaid with billing on → free tier; song/priest caps checked at submit time.
+    if is_free_tier_account(church, user=session.user):
         return None
     status = ((church or {}).get("membership_status") or "draft").strip().lower()
     if status == "pending":
@@ -291,6 +295,46 @@ def _membership_blocks_content_submit(session: AuthSession) -> dict[str, Any] | 
         "ok": False,
         "error": "Approved parish membership is required before submitting songs or priest names.",
     }
+
+
+def _free_tier_blocks_new_song(session: AuthSession) -> dict[str, Any] | None:
+    from services.free_tier import (
+        assert_free_tier_can_submit_song,
+        is_free_tier_account,
+    )
+    from services.membership_config import membership_allows_full_access
+    from services.user_church_context import get_church_profile_context
+
+    church = get_church_profile_context()
+    if membership_allows_full_access(church, user=session.user):
+        return None
+    if not is_free_tier_account(church, user=session.user):
+        return None
+    try:
+        assert_free_tier_can_submit_song(session.user.user_id)
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+    return None
+
+
+def _free_tier_blocks_new_priest(session: AuthSession) -> dict[str, Any] | None:
+    from services.free_tier import (
+        assert_free_tier_can_submit_priest,
+        is_free_tier_account,
+    )
+    from services.membership_config import membership_allows_full_access
+    from services.user_church_context import get_church_profile_context
+
+    church = get_church_profile_context()
+    if membership_allows_full_access(church, user=session.user):
+        return None
+    if not is_free_tier_account(church, user=session.user):
+        return None
+    try:
+        assert_free_tier_can_submit_priest(session.user.user_id)
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+    return None
 
 
 def submit_pending_song(
@@ -355,6 +399,12 @@ def submit_pending_song(
         existing_pending_id = str(pending_matches[0].get("id") or "").strip() or None
     else:
         existing_pending_id = None
+
+    # Free-tier monthly song cap applies only to new catalog submissions.
+    if not existing_pending_id:
+        quota_blocked = _free_tier_blocks_new_song(session)
+        if quota_blocked:
+            return quota_blocked
 
     payload = {
         "title": clean_title,
@@ -454,6 +504,9 @@ def submit_pending_priest(session: AuthSession, *, name: str) -> dict[str, Any]:
     blocked = _membership_blocks_content_submit(session)
     if blocked:
         return blocked
+    quota_blocked = _free_tier_blocks_new_priest(session)
+    if quota_blocked:
+        return quota_blocked
     clean = (name or "").strip()
     if not clean:
         return {"ok": False, "error": "Priest name is required."}

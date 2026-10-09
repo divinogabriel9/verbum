@@ -214,26 +214,9 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
         from services.stripe_billing import billing_enabled
 
         if billing_enabled():
-            # Premium one-time tokens and/or monthly free-tier Masses.
-            try:
-                from services.free_mass_credit import user_has_free_mass_credit
-
-                if user_has_free_mass_credit(session.user.user_id):
-                    return session
-            except Exception:
-                pass
-            sub = ((church or {}).get("stripe_subscription_status") or "").strip().lower()
-            if sub in {"canceled", "unpaid", "incomplete_expired"}:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Parish subscription is inactive. Renew under Settings → Billing.",
-                )
-            raise HTTPException(
-                status_code=403,
-                detail="You've used this month's free Masses. Start a 14-day parish trial under Settings → Billing for unlimited decks with curated posters.",
-            )
-    except HTTPException:
-        raise
+            # Unpaid / never billed → free tier. Feature caps (Mass credits,
+            # practice shares, poster quota) are enforced on those endpoints.
+            return session
     except Exception:
         pass
 

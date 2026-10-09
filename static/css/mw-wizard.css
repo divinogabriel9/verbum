@@ -472,6 +472,22 @@
           line-height: var(--leading-body);
           letter-spacing: var(--tracking-body);
         }
+        body.mw-on #flow-page .celebrant-picker .celebrant-picker__add.vb-dropdown-item {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 8px;
+          font-weight: 600;
+          text-align: center;
+          color: var(--accent, #2f5d50);
+        }
+        body.mw-on #flow-page .celebrant-picker .celebrant-picker__add .vb-dropdown-item__label {
+          flex: 0 0 auto;
+          text-align: center;
+        }
+        body.mw-on #flow-page .celebrant-picker .celebrant-picker__add-icon {
+          flex: none;
+        }
         body.mw-on #flow-page .flow-input-group {
           display: flex;
           align-items: stretch;
@@ -1416,6 +1432,10 @@
         .mass-song-media-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
         .mass-song-media-btn { font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); cursor: pointer; }
         body:not(.is-superadmin) .mass-song-media-btn--sa { display: none !important; }
+        body:not(.is-superadmin) [data-mw-link-youtube] { display: none !important; }
+        body:not(.is-superadmin) #mw-media-pick-tab-youtube,
+        body:not(.is-superadmin) #mw-media-pick-pane-youtube,
+        body:not(.is-superadmin) .song-metadata-media__youtube { display: none !important; }
         body:not(.is-superadmin) .mass-song-media-card--file { display: none !important; }
         /* Keep play controls visible for ministry even when link chips are SA-only */
         body:not(.is-superadmin) .mass-song-media-row .mw-media-play {
@@ -3677,16 +3697,93 @@
           border-radius: 10px;
           pointer-events: none;
         }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          z-index: 55;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          pointer-events: auto;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock[hidden] {
+          display: none !important;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock-btn {
+          appearance: none;
+          border: 0;
+          border-radius: 999px;
+          padding: 0.35rem 0.7rem;
+          font: inherit;
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          line-height: 1.2;
+          color: #fff;
+          background: color-mix(in srgb, var(--accent, #2f5d50) 92%, #000);
+          box-shadow: 0 1px 4px color-mix(in srgb, #000 28%, transparent);
+          cursor: pointer;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock-btn:hover {
+          filter: brightness(1.06);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock-btn:focus-visible {
+          outline: 2px solid color-mix(in srgb, var(--accent, #2f5d50) 55%, transparent);
+          outline-offset: 2px;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock-count {
+          min-width: 1.55rem;
+          height: 1.55rem;
+          padding: 0 0.35rem;
+          border-radius: 999px;
+          display: inline-grid;
+          place-items: center;
+          font-size: 0.7rem;
+          font-weight: 750;
+          line-height: 1;
+          color: color-mix(in srgb, var(--ink, #1a1a1a) 88%, transparent);
+          background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+          border: 1px solid color-mix(in srgb, var(--ink, #1a1a1a) 14%, transparent);
+          box-shadow: 0 1px 3px color-mix(in srgb, #000 18%, transparent);
+        }
+        /* Keep unlock chip clickable while the carousel is membership-locked. */
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-weekly-posters__unlock,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-weekly-posters__unlock-btn,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-weekly-posters__unlock-count {
+          opacity: 1;
+          filter: none;
+          pointer-events: auto;
+          user-select: auto;
+        }
         body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked .mw-ai-poster-body > :not(.mw-ai-poster-gate),
         body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked > .vb-select,
         body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked .mw-ai-poster-section .vb-select,
         body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-ai-poster-body > :not(.mw-ai-poster-gate),
         body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked > .vb-select,
-        body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-ai-poster-section .vb-select {
+        body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-ai-poster-section .vb-select,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-ai-poster-body > :not(.mw-ai-poster-gate):not(.mw-weekly-posters),
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-weekly-posters__stage > :not(.mw-weekly-posters__unlock),
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked > .vb-select,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-ai-poster-section .vb-select {
           opacity: 0.45;
           filter: grayscale(0.85);
           pointer-events: none;
           user-select: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked .mw-weekly-posters {
+          opacity: 1;
+          filter: none;
+          pointer-events: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked.has-premium-unlock .mw-ai-poster-gate {
+          display: none !important;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-premium-poster-locked.has-premium-unlock .mw-weekly-posters {
+          pointer-events: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap .feature-flag-hint {
+          display: none !important;
         }
         /* SA generate control must stay clickable while styles are locked. */
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__toolbar[data-superadmin-only],

@@ -706,7 +706,7 @@
       const mentionsPipeline =
         /\bai\s+(image|poster|art)\b|weekly ai|connecting to ai|image generation failed|generator\.py|providers?/i.test(lower);
       if (/limit reached|quota|allowance|429/.test(lower) || (mentionsPipeline && /limit|week|remaining/.test(lower))) {
-        return "You've reached this week's free poster allowance. Subscribe for unlimited beautifully curated posters, or try again next week.";
+        return "Curated posters aren't included on the free plan. Use a premium Mass token, or start a trial under Settings → Billing.";
       }
       if (leaksSecret || mentionsPipeline) {
         return "We couldn't prepare the poster right now. Please try again shortly.";
@@ -1820,6 +1820,17 @@
       return !!(item.youtube_id || parseYouTubeVideoId(item.youtube_url || item.url || ""));
     }
 
+
+    function canLinkYouTubeMedia() {
+      return !!(
+        document.body.classList.contains("is-superadmin") ||
+        (typeof churchMembershipState !== "undefined" &&
+          churchMembershipState &&
+          churchMembershipState.is_superadmin)
+      );
+    }
+    window.canLinkYouTubeMedia = canLinkYouTubeMedia;
+
     function youtubeIdFromMediaRef(item) {
       if (!item || typeof item !== "object") return "";
       if (!isYouTubeMediaRef(item)) return "";
@@ -2314,22 +2325,30 @@
     function massSongMediaRowHtml(slotKey) {
       const youtube = massSlotYoutubeRef(slotKey);
       const audioYoutube = !!youtube;
+      const canLinkYt = canLinkYouTubeMedia();
       const youtubePlayBtn =
         "<button type=\"button\" class=\"mw-media-play" + (audioYoutube ? " is-ready" : "") + "\" " +
           "data-mw-play-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           (audioYoutube ? "" : "disabled ") +
           "aria-label=\"Play YouTube full song\" " +
-          "title=\"" + escapeHtml(audioYoutube ? ("Play YouTube · " + (youtube.display_name || "YouTube")) : "Link YouTube first") + "\">▶</button>";
-      const audioYoutubeBtn =
-        "<button type=\"button\" class=\"mass-song-media-btn" + (audioYoutube ? " is-on" : "") + "\" " +
-          "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
-          "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>";
-      const youtubeGroup =
-        "<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
-          audioYoutubeBtn +
-          youtubePlayBtn +
-        "</div>";
+          "title=\"" + escapeHtml(audioYoutube ? ("Play YouTube · " + (youtube.display_name || "YouTube")) : (canLinkYt ? "Link YouTube first" : "No YouTube linked")) + "\">▶</button>";
+      const audioYoutubeBtn = canLinkYt
+        ? ("<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audioYoutube ? " is-on" : "") + "\" " +
+            "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+            "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>")
+        : (audioYoutube
+          ? ("<span class=\"mass-song-media-btn is-on\" title=\"" +
+              escapeHtml("YouTube · " + (youtube.display_name || "YouTube")) +
+              "\">YouTube</span>")
+          : "");
+      const youtubeGroup = (canLinkYt || audioYoutube)
+        ? ("<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
+            audioYoutubeBtn +
+            youtubePlayBtn +
+          "</div>")
+        : "";
       if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
+        if (!youtubeGroup) return "";
         return (
           "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
             youtubeGroup +
@@ -3657,6 +3676,10 @@
     }
 
     function setComposerYouTubeLink(ref) {
+      if (ref && !canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return;
+      }
       const current = composerSongMedia.audio;
       if (current && !isYouTubeMediaRef(current) && !(composerSongMedia.preview && composerSongMedia.preview.basename)) {
         composerSongMedia.preview = fileToAudioPreviewRef(current);
@@ -3705,11 +3728,20 @@
       const ytInp = $("song-metadata-audio-youtube");
       const ytSearch = $("song-metadata-audio-youtube-search");
       const ytClear = $("song-metadata-audio-youtube-clear");
-      if (ytInp && document.activeElement !== ytInp) {
-        ytInp.value = youtube ? (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube))) : "";
+      const ytLinkBtnMeta = $("song-metadata-audio-youtube-link");
+      const ytBlock = document.querySelector(".song-metadata-media__youtube");
+      const canLinkYt = canLinkYouTubeMedia();
+      if (ytBlock) ytBlock.hidden = !canLinkYt && !youtubeOn;
+      if (ytInp) {
+        ytInp.readOnly = !canLinkYt;
+        ytInp.disabled = !canLinkYt;
+        if (document.activeElement !== ytInp) {
+          ytInp.value = youtube ? (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube))) : "";
+        }
       }
-      if (ytSearch) ytSearch.hidden = !!youtube;
-      if (ytClear) ytClear.hidden = !youtube;
+      if (ytSearch) ytSearch.hidden = !canLinkYt || !!youtube;
+      if (ytLinkBtnMeta) ytLinkBtnMeta.hidden = !canLinkYt;
+      if (ytClear) ytClear.hidden = !canLinkYt || !youtube;
       if (videoLabel) {
         videoLabel.textContent = video
           ? (video.display_name || video.basename)
@@ -3908,6 +3940,10 @@
 
     function clearMassYouTubeLink(slot, opts) {
       const options = opts || {};
+      if (!canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can change YouTube links.", "warn");
+        return false;
+      }
       const key = String(slot || "").trim();
       if (!key) return false;
       const youtube = massSlotYoutubeRef(key);
@@ -3926,6 +3962,10 @@
 
     function clearComposerYouTubeLink(opts) {
       const options = opts || {};
+      if (!canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can change YouTube links.", "warn");
+        return false;
+      }
       if (!composerYoutubeRef()) return false;
       if (!options.skipConfirm && !confirmUnlinkMedia("this YouTube full-song link")) return false;
       if (massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) {

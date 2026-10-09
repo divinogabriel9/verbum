@@ -295,6 +295,69 @@
     var composerLoadedSong = null;
     var composerCatalogLyrics = "";
     var composerParishVersion = false;
+    var composerParishOnly = false;
+    var FREE_TIER_EXISTING_SONG_MSG =
+      "Free plan can browse the library and submit one new song per month. Existing catalog songs can't be edited.";
+
+    function isFreeTierSongAccount() {
+      return !!(
+        typeof churchMembershipState !== "undefined"
+        && churchMembershipState
+        && churchMembershipState.is_free_tier
+        && !churchMembershipState.is_superadmin
+        && !churchMembershipState.can_use_full_app
+      );
+    }
+
+    function freeTierBlocksExistingCatalogSong(title) {
+      if (!isFreeTierSongAccount()) return false;
+      // Global catalog song open in the editor (not a parish-only draft).
+      if (composerLoadedSong && composerLoadedSong.id && !composerParishOnly) return true;
+      const ttl = String(title || "").trim();
+      if (!ttl || typeof findExistingCatalogSongMatches !== "function") return false;
+      return findExistingCatalogSongMatches(ttl).length > 0;
+    }
+
+    function syncFreeTierSongComposerReadonly() {
+      const blocked = freeTierBlocksExistingCatalogSong(
+        ($("lyrics-save-title") && $("lyrics-save-title").value) || (composerLoadedSong && composerLoadedSong.title) || ""
+      );
+      const saveBtn = $("btn-save-lyrics");
+      const editBtn = $("btn-lyrics-focus-meta");
+      const lyricsInput = $("lyrics-input");
+      if (saveBtn) {
+        if (blocked) {
+          saveBtn.disabled = true;
+          saveBtn.title = FREE_TIER_EXISTING_SONG_MSG;
+        } else if (isFreeTierSongAccount() && churchMembershipState.can_submit_song === false) {
+          saveBtn.disabled = true;
+          saveBtn.title = "Free plan allows 1 song submission per month. Start a trial under Settings → Billing for unlimited submissions.";
+        } else {
+          saveBtn.disabled = false;
+          saveBtn.removeAttribute("title");
+        }
+      }
+      if (editBtn) {
+        editBtn.disabled = !!blocked;
+        editBtn.title = blocked
+          ? FREE_TIER_EXISTING_SONG_MSG
+          : "Edit title, author, language, section, and mood";
+      }
+      if (lyricsInput) {
+        lyricsInput.readOnly = !!blocked;
+        lyricsInput.classList.toggle("is-readonly-free-tier", !!blocked);
+      }
+      document.querySelectorAll("#lyrics-block-list textarea, #lyrics-block-list input, #lyrics-block-list select").forEach((el) => {
+        el.readOnly = !!blocked;
+        el.disabled = !!blocked;
+      });
+      document.querySelectorAll("#lyrics-block-list [data-action]").forEach((el) => {
+        if (el.matches("textarea, input, select")) return;
+        el.disabled = !!blocked;
+      });
+      const page = $("lyrics-page");
+      if (page) page.classList.toggle("is-free-tier-catalog-readonly", !!blocked);
+    }
     var composerUndoStack = [];
     var composerUndoApplying = false;
     var composerUndoBurstTimer = 0;
@@ -937,6 +1000,7 @@
       composerLoadedSong = null;
       composerCatalogLyrics = "";
       composerParishVersion = false;
+      composerParishOnly = false;
       composerSongMedia = { audio: null, video: null, preview: null };
       if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) stopMassSectionAudio();
       renderComposerSongMediaFields();
@@ -951,6 +1015,7 @@
       updateLyricsWordStats();
       if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
       if (typeof updateParishLyricsControls === "function") updateParishLyricsControls();
+      if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
       if (!preserveUndo) clearComposerUndoStack();
     }
 
@@ -1428,6 +1493,7 @@
       if (!lyricBlocks.length) {
         list.innerHTML = '<div class="empty-state">Press Analyze to detect Verse, Chorus, Pre-Chorus, Refrain, Outro, and more from your lyrics.</div>';
         if (writeBack) syncStructuredEditorToInputPanel();
+        if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
         return;
       }
       list.innerHTML = lyricBlocks.map((block, index) => {
@@ -1467,6 +1533,7 @@
       });
       initVerbumSelects(list);
       if (typeof syncLyricsComposerMobileUi === "function") syncLyricsComposerMobileUi();
+      if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
     }
 
     $("lyrics-block-list").addEventListener("beforeinput", (event) => {
@@ -2218,6 +2285,11 @@
     })();
 
     $("btn-lyrics-focus-meta") && $("btn-lyrics-focus-meta").addEventListener("click", () => {
+      if (freeTierBlocksExistingCatalogSong(($("lyrics-save-title") && $("lyrics-save-title").value) || "")) {
+        notify(FREE_TIER_EXISTING_SONG_MSG, "error");
+        setLyricsStatus(FREE_TIER_EXISTING_SONG_MSG, "error");
+        return;
+      }
       openComposerSongDetailsModal({ intent: "edit" });
     });
 
@@ -2785,8 +2857,13 @@
     }
 
     async function performSaveLyrics() {
-      if (!guardFullAppAction("Saving songs requires approved parish membership.")) return;
+      if (!guardSongSubmitAction()) return;
       const title = normalizeSongTitleInput($("lyrics-save-title"));
+      if (freeTierBlocksExistingCatalogSong(title)) {
+        setLyricsStatus(FREE_TIER_EXISTING_SONG_MSG, "error");
+        notify(FREE_TIER_EXISTING_SONG_MSG, "error");
+        return;
+      }
       tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
         flushLyricBlocksFromDom();
@@ -2827,6 +2904,7 @@
           msg = result.message || "Saved to your parish catalog and submitted for superadmin approval.";
           heading = "Saved to parish catalog";
           composerParishVersion = true;
+          composerParishOnly = !!result.parish_original || !!result.parish_only;
           if (result.id) {
             composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
           }
@@ -2838,6 +2916,7 @@
           msg = result.message || ("Saved parish version of " + (result.title || title) + ".");
           heading = "Parish version saved";
           composerParishVersion = true;
+          composerParishOnly = !!result.parish_only;
           if (result.id) {
             composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
           }
@@ -2870,11 +2949,16 @@
         }
         setLyricsStatus(msg, "ok");
         showSongSaveSuccessState(msg, heading);
+        if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
       } catch (error) {
         closeSongSaveSuccessModal();
         setLyricsStatus(error.message || "Could not save lyrics.", "error");
       } finally {
-        if ($("btn-save-lyrics")) $("btn-save-lyrics").disabled = false;
+        if (typeof syncFreeTierSongComposerReadonly === "function") {
+          syncFreeTierSongComposerReadonly();
+        } else if ($("btn-save-lyrics")) {
+          $("btn-save-lyrics").disabled = false;
+        }
       }
     }
 
@@ -2954,7 +3038,7 @@
     }
 
     $("btn-save-lyrics") && $("btn-save-lyrics").addEventListener("click", async () => {
-      if (!guardFullAppAction("Saving songs requires approved parish membership.")) return;
+      if (!guardSongSubmitAction()) return;
       if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
       tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
@@ -2972,6 +3056,11 @@
         await loadSongCatalog(true);
       }
       const title = normalizeSongTitleInput($("lyrics-save-title"));
+      if (freeTierBlocksExistingCatalogSong(title)) {
+        setLyricsStatus(FREE_TIER_EXISTING_SONG_MSG, "error");
+        notify(FREE_TIER_EXISTING_SONG_MSG, "error");
+        return;
+      }
       const matches = findExistingCatalogSongMatches(title);
       if (title && getComposerSongLanguage() && willSaveAsParishVersion(title, matches)) {
         await performSaveLyrics();

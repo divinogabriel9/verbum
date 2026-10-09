@@ -143,6 +143,7 @@
     window.persistMassSlotVideoToCatalogSong = persistMassSlotVideoToCatalogSong;
 
     async function persistMassSlotYoutubeToCatalogSong(slot, youtubeRef) {
+      if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) return;
       const assigned = massSlotAssignedSong(slot);
       if (!assigned) return;
       const ref = youtubeRef ? normalizeComposerMediaRef(youtubeRef) : null;
@@ -537,6 +538,10 @@
     }
 
     function applyYouTubeAudioLink(value) {
+      if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return false;
+      }
       const ref = youtubeMediaRefFromInput(value);
       if (!ref) {
         if (typeof notify === "function") notify("Enter a valid YouTube URL.", "warn");
@@ -578,6 +583,10 @@
       const fromTitle = !!options.fromTitle;
       const isSa = !!(document.body.classList.contains("is-superadmin") ||
         (churchMembershipState && churchMembershipState.is_superadmin));
+      if (youtubeOnly && !isSa) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return;
+      }
       if (purpose === "mass" && !youtubeOnly && !fromTitle) {
         if (!isSa) {
           if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
@@ -602,7 +611,7 @@
       const upTab = $("mw-media-pick-tab-upload");
       const useInstrumentalFetch = isVideo && isSa;
       const useFetchClip = (!isVideo && !youtubeOnly) || useInstrumentalFetch;
-      const showYoutube = !isVideo;
+      const showYoutube = !isVideo && isSa;
       if (ytTab) ytTab.hidden = !showYoutube;
       if (libTab) libTab.hidden = youtubeOnly || (useFetchClip && !isVideo);
       if (fetchTab) {

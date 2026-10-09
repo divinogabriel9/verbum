@@ -840,18 +840,16 @@
       });
       ["flow-ai-poster-style-wrap", "poster-ai-poster-style-wrap"].forEach((id) => {
         const wrap = $(id);
-        if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
+        if (!wrap) return;
+        setFeatureFlagDisabled(wrap, !aiOn);
+        // No maintenance banner/title on the weekly Gospel poster picker.
+        if (wrap.getAttribute("title") === FEATURE_OFF_HINT) wrap.removeAttribute("title");
       });
-      const aiHosts = [
-        $("flow-ai-poster-style-wrap"),
-        $("poster-ai-poster-style-wrap") || $("poster-use-ai-poster") && $("poster-use-ai-poster").closest(".field"),
-      ];
-      aiHosts.forEach((host, idx) => {
-        if (!host) return;
-        const hint = ensureFeatureFlagHint(host, "feature-hint-ai-" + idx);
+      ["feature-hint-ai-0", "feature-hint-ai-1"].forEach((id) => {
+        const hint = document.getElementById(id);
         if (hint) {
-          hint.hidden = aiOn;
-          hint.textContent = FEATURE_OFF_HINT;
+          hint.hidden = true;
+          hint.textContent = "";
         }
       });
 

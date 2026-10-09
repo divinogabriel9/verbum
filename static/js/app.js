@@ -706,7 +706,7 @@
       const mentionsPipeline =
         /\bai\s+(image|poster|art)\b|weekly ai|connecting to ai|image generation failed|generator\.py|providers?/i.test(lower);
       if (/limit reached|quota|allowance|429/.test(lower) || (mentionsPipeline && /limit|week|remaining/.test(lower))) {
-        return "You've reached this week's free poster allowance. Subscribe for unlimited beautifully curated posters, or try again next week.";
+        return "Curated posters aren't included on the free plan. Use a premium Mass token, or start a trial under Settings → Billing.";
       }
       if (leaksSecret || mentionsPipeline) {
         return "We couldn't prepare the poster right now. Please try again shortly.";
@@ -1820,6 +1820,17 @@
       return !!(item.youtube_id || parseYouTubeVideoId(item.youtube_url || item.url || ""));
     }
 
+
+    function canLinkYouTubeMedia() {
+      return !!(
+        document.body.classList.contains("is-superadmin") ||
+        (typeof churchMembershipState !== "undefined" &&
+          churchMembershipState &&
+          churchMembershipState.is_superadmin)
+      );
+    }
+    window.canLinkYouTubeMedia = canLinkYouTubeMedia;
+
     function youtubeIdFromMediaRef(item) {
       if (!item || typeof item !== "object") return "";
       if (!isYouTubeMediaRef(item)) return "";
@@ -2314,22 +2325,30 @@
     function massSongMediaRowHtml(slotKey) {
       const youtube = massSlotYoutubeRef(slotKey);
       const audioYoutube = !!youtube;
+      const canLinkYt = canLinkYouTubeMedia();
       const youtubePlayBtn =
         "<button type=\"button\" class=\"mw-media-play" + (audioYoutube ? " is-ready" : "") + "\" " +
           "data-mw-play-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           (audioYoutube ? "" : "disabled ") +
           "aria-label=\"Play YouTube full song\" " +
-          "title=\"" + escapeHtml(audioYoutube ? ("Play YouTube · " + (youtube.display_name || "YouTube")) : "Link YouTube first") + "\">▶</button>";
-      const audioYoutubeBtn =
-        "<button type=\"button\" class=\"mass-song-media-btn" + (audioYoutube ? " is-on" : "") + "\" " +
-          "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
-          "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>";
-      const youtubeGroup =
-        "<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
-          audioYoutubeBtn +
-          youtubePlayBtn +
-        "</div>";
+          "title=\"" + escapeHtml(audioYoutube ? ("Play YouTube · " + (youtube.display_name || "YouTube")) : (canLinkYt ? "Link YouTube first" : "No YouTube linked")) + "\">▶</button>";
+      const audioYoutubeBtn = canLinkYt
+        ? ("<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audioYoutube ? " is-on" : "") + "\" " +
+            "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+            "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>")
+        : (audioYoutube
+          ? ("<span class=\"mass-song-media-btn is-on\" title=\"" +
+              escapeHtml("YouTube · " + (youtube.display_name || "YouTube")) +
+              "\">YouTube</span>")
+          : "");
+      const youtubeGroup = (canLinkYt || audioYoutube)
+        ? ("<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
+            audioYoutubeBtn +
+            youtubePlayBtn +
+          "</div>")
+        : "";
       if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
+        if (!youtubeGroup) return "";
         return (
           "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
             youtubeGroup +
@@ -3657,6 +3676,10 @@
     }
 
     function setComposerYouTubeLink(ref) {
+      if (ref && !canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return;
+      }
       const current = composerSongMedia.audio;
       if (current && !isYouTubeMediaRef(current) && !(composerSongMedia.preview && composerSongMedia.preview.basename)) {
         composerSongMedia.preview = fileToAudioPreviewRef(current);
@@ -3705,11 +3728,20 @@
       const ytInp = $("song-metadata-audio-youtube");
       const ytSearch = $("song-metadata-audio-youtube-search");
       const ytClear = $("song-metadata-audio-youtube-clear");
-      if (ytInp && document.activeElement !== ytInp) {
-        ytInp.value = youtube ? (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube))) : "";
+      const ytLinkBtnMeta = $("song-metadata-audio-youtube-link");
+      const ytBlock = document.querySelector(".song-metadata-media__youtube");
+      const canLinkYt = canLinkYouTubeMedia();
+      if (ytBlock) ytBlock.hidden = !canLinkYt && !youtubeOn;
+      if (ytInp) {
+        ytInp.readOnly = !canLinkYt;
+        ytInp.disabled = !canLinkYt;
+        if (document.activeElement !== ytInp) {
+          ytInp.value = youtube ? (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube))) : "";
+        }
       }
-      if (ytSearch) ytSearch.hidden = !!youtube;
-      if (ytClear) ytClear.hidden = !youtube;
+      if (ytSearch) ytSearch.hidden = !canLinkYt || !!youtube;
+      if (ytLinkBtnMeta) ytLinkBtnMeta.hidden = !canLinkYt;
+      if (ytClear) ytClear.hidden = !canLinkYt || !youtube;
       if (videoLabel) {
         videoLabel.textContent = video
           ? (video.display_name || video.basename)
@@ -3908,6 +3940,10 @@
 
     function clearMassYouTubeLink(slot, opts) {
       const options = opts || {};
+      if (!canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can change YouTube links.", "warn");
+        return false;
+      }
       const key = String(slot || "").trim();
       if (!key) return false;
       const youtube = massSlotYoutubeRef(key);
@@ -3926,6 +3962,10 @@
 
     function clearComposerYouTubeLink(opts) {
       const options = opts || {};
+      if (!canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can change YouTube links.", "warn");
+        return false;
+      }
       if (!composerYoutubeRef()) return false;
       if (!options.skipConfirm && !confirmUnlinkMedia("this YouTube full-song link")) return false;
       if (massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) {
@@ -5108,6 +5148,7 @@
     window.persistMassSlotVideoToCatalogSong = persistMassSlotVideoToCatalogSong;
 
     async function persistMassSlotYoutubeToCatalogSong(slot, youtubeRef) {
+      if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) return;
       const assigned = massSlotAssignedSong(slot);
       if (!assigned) return;
       const ref = youtubeRef ? normalizeComposerMediaRef(youtubeRef) : null;
@@ -5502,6 +5543,10 @@
     }
 
     function applyYouTubeAudioLink(value) {
+      if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return false;
+      }
       const ref = youtubeMediaRefFromInput(value);
       if (!ref) {
         if (typeof notify === "function") notify("Enter a valid YouTube URL.", "warn");
@@ -5543,6 +5588,10 @@
       const fromTitle = !!options.fromTitle;
       const isSa = !!(document.body.classList.contains("is-superadmin") ||
         (churchMembershipState && churchMembershipState.is_superadmin));
+      if (youtubeOnly && !isSa) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return;
+      }
       if (purpose === "mass" && !youtubeOnly && !fromTitle) {
         if (!isSa) {
           if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
@@ -5567,7 +5616,7 @@
       const upTab = $("mw-media-pick-tab-upload");
       const useInstrumentalFetch = isVideo && isSa;
       const useFetchClip = (!isVideo && !youtubeOnly) || useInstrumentalFetch;
-      const showYoutube = !isVideo;
+      const showYoutube = !isVideo && isSa;
       if (ytTab) ytTab.hidden = !showYoutube;
       if (libTab) libTab.hidden = youtubeOnly || (useFetchClip && !isVideo);
       if (fetchTab) {
@@ -9285,6 +9334,69 @@
     var composerLoadedSong = null;
     var composerCatalogLyrics = "";
     var composerParishVersion = false;
+    var composerParishOnly = false;
+    var FREE_TIER_EXISTING_SONG_MSG =
+      "Free plan can browse the library and submit one new song per month. Existing catalog songs can't be edited.";
+
+    function isFreeTierSongAccount() {
+      return !!(
+        typeof churchMembershipState !== "undefined"
+        && churchMembershipState
+        && churchMembershipState.is_free_tier
+        && !churchMembershipState.is_superadmin
+        && !churchMembershipState.can_use_full_app
+      );
+    }
+
+    function freeTierBlocksExistingCatalogSong(title) {
+      if (!isFreeTierSongAccount()) return false;
+      // Global catalog song open in the editor (not a parish-only draft).
+      if (composerLoadedSong && composerLoadedSong.id && !composerParishOnly) return true;
+      const ttl = String(title || "").trim();
+      if (!ttl || typeof findExistingCatalogSongMatches !== "function") return false;
+      return findExistingCatalogSongMatches(ttl).length > 0;
+    }
+
+    function syncFreeTierSongComposerReadonly() {
+      const blocked = freeTierBlocksExistingCatalogSong(
+        ($("lyrics-save-title") && $("lyrics-save-title").value) || (composerLoadedSong && composerLoadedSong.title) || ""
+      );
+      const saveBtn = $("btn-save-lyrics");
+      const editBtn = $("btn-lyrics-focus-meta");
+      const lyricsInput = $("lyrics-input");
+      if (saveBtn) {
+        if (blocked) {
+          saveBtn.disabled = true;
+          saveBtn.title = FREE_TIER_EXISTING_SONG_MSG;
+        } else if (isFreeTierSongAccount() && churchMembershipState.can_submit_song === false) {
+          saveBtn.disabled = true;
+          saveBtn.title = "Free plan allows 1 song submission per month. Start a trial under Settings → Billing for unlimited submissions.";
+        } else {
+          saveBtn.disabled = false;
+          saveBtn.removeAttribute("title");
+        }
+      }
+      if (editBtn) {
+        editBtn.disabled = !!blocked;
+        editBtn.title = blocked
+          ? FREE_TIER_EXISTING_SONG_MSG
+          : "Edit title, author, language, section, and mood";
+      }
+      if (lyricsInput) {
+        lyricsInput.readOnly = !!blocked;
+        lyricsInput.classList.toggle("is-readonly-free-tier", !!blocked);
+      }
+      document.querySelectorAll("#lyrics-block-list textarea, #lyrics-block-list input, #lyrics-block-list select").forEach((el) => {
+        el.readOnly = !!blocked;
+        el.disabled = !!blocked;
+      });
+      document.querySelectorAll("#lyrics-block-list [data-action]").forEach((el) => {
+        if (el.matches("textarea, input, select")) return;
+        el.disabled = !!blocked;
+      });
+      const page = $("lyrics-page");
+      if (page) page.classList.toggle("is-free-tier-catalog-readonly", !!blocked);
+    }
     var composerUndoStack = [];
     var composerUndoApplying = false;
     var composerUndoBurstTimer = 0;
@@ -9927,6 +10039,7 @@
       composerLoadedSong = null;
       composerCatalogLyrics = "";
       composerParishVersion = false;
+      composerParishOnly = false;
       composerSongMedia = { audio: null, video: null, preview: null };
       if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) stopMassSectionAudio();
       renderComposerSongMediaFields();
@@ -9941,6 +10054,7 @@
       updateLyricsWordStats();
       if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
       if (typeof updateParishLyricsControls === "function") updateParishLyricsControls();
+      if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
       if (!preserveUndo) clearComposerUndoStack();
     }
 
@@ -10418,6 +10532,7 @@
       if (!lyricBlocks.length) {
         list.innerHTML = '<div class="empty-state">Press Analyze to detect Verse, Chorus, Pre-Chorus, Refrain, Outro, and more from your lyrics.</div>';
         if (writeBack) syncStructuredEditorToInputPanel();
+        if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
         return;
       }
       list.innerHTML = lyricBlocks.map((block, index) => {
@@ -10457,6 +10572,7 @@
       });
       initVerbumSelects(list);
       if (typeof syncLyricsComposerMobileUi === "function") syncLyricsComposerMobileUi();
+      if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
     }
 
     $("lyrics-block-list").addEventListener("beforeinput", (event) => {
@@ -11208,6 +11324,11 @@
     })();
 
     $("btn-lyrics-focus-meta") && $("btn-lyrics-focus-meta").addEventListener("click", () => {
+      if (freeTierBlocksExistingCatalogSong(($("lyrics-save-title") && $("lyrics-save-title").value) || "")) {
+        notify(FREE_TIER_EXISTING_SONG_MSG, "error");
+        setLyricsStatus(FREE_TIER_EXISTING_SONG_MSG, "error");
+        return;
+      }
       openComposerSongDetailsModal({ intent: "edit" });
     });
 
@@ -11775,8 +11896,13 @@
     }
 
     async function performSaveLyrics() {
-      if (!guardFullAppAction("Saving songs requires approved parish membership.")) return;
+      if (!guardSongSubmitAction()) return;
       const title = normalizeSongTitleInput($("lyrics-save-title"));
+      if (freeTierBlocksExistingCatalogSong(title)) {
+        setLyricsStatus(FREE_TIER_EXISTING_SONG_MSG, "error");
+        notify(FREE_TIER_EXISTING_SONG_MSG, "error");
+        return;
+      }
       tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
         flushLyricBlocksFromDom();
@@ -11817,6 +11943,7 @@
           msg = result.message || "Saved to your parish catalog and submitted for superadmin approval.";
           heading = "Saved to parish catalog";
           composerParishVersion = true;
+          composerParishOnly = !!result.parish_original || !!result.parish_only;
           if (result.id) {
             composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
           }
@@ -11828,6 +11955,7 @@
           msg = result.message || ("Saved parish version of " + (result.title || title) + ".");
           heading = "Parish version saved";
           composerParishVersion = true;
+          composerParishOnly = !!result.parish_only;
           if (result.id) {
             composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
           }
@@ -11860,11 +11988,16 @@
         }
         setLyricsStatus(msg, "ok");
         showSongSaveSuccessState(msg, heading);
+        if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
       } catch (error) {
         closeSongSaveSuccessModal();
         setLyricsStatus(error.message || "Could not save lyrics.", "error");
       } finally {
-        if ($("btn-save-lyrics")) $("btn-save-lyrics").disabled = false;
+        if (typeof syncFreeTierSongComposerReadonly === "function") {
+          syncFreeTierSongComposerReadonly();
+        } else if ($("btn-save-lyrics")) {
+          $("btn-save-lyrics").disabled = false;
+        }
       }
     }
 
@@ -11944,7 +12077,7 @@
     }
 
     $("btn-save-lyrics") && $("btn-save-lyrics").addEventListener("click", async () => {
-      if (!guardFullAppAction("Saving songs requires approved parish membership.")) return;
+      if (!guardSongSubmitAction()) return;
       if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
       tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
@@ -11962,6 +12095,11 @@
         await loadSongCatalog(true);
       }
       const title = normalizeSongTitleInput($("lyrics-save-title"));
+      if (freeTierBlocksExistingCatalogSong(title)) {
+        setLyricsStatus(FREE_TIER_EXISTING_SONG_MSG, "error");
+        notify(FREE_TIER_EXISTING_SONG_MSG, "error");
+        return;
+      }
       const matches = findExistingCatalogSongMatches(title);
       if (title && getComposerSongLanguage() && willSaveAsParishVersion(title, matches)) {
         await performSaveLyrics();
@@ -15757,6 +15895,49 @@
       if (anyActive) startPracticeShareHistoryCountdown();
       else stopPracticeShareHistoryCountdown();
     }
+    function syncPracticeShareQuotaFromApi(data) {
+      if (!data || typeof churchMembershipState !== "object") return;
+      if (data.is_free_tier != null) churchMembershipState.is_free_tier = !!data.is_free_tier;
+      if (data.practice_share_active_limit != null) {
+        churchMembershipState.practice_share_active_limit = Math.max(0, Number(data.practice_share_active_limit) || 0);
+      } else if (data.is_free_tier) {
+        churchMembershipState.practice_share_active_limit = 2;
+      }
+      if (data.practice_share_active_count != null) {
+        churchMembershipState.practice_share_active_count = Math.max(0, Number(data.practice_share_active_count) || 0);
+      }
+      if (data.practice_share_active_remaining != null) {
+        churchMembershipState.practice_share_active_remaining = Math.max(0, Number(data.practice_share_active_remaining) || 0);
+      } else if (churchMembershipState.practice_share_active_limit != null) {
+        churchMembershipState.practice_share_active_remaining = Math.max(
+          0,
+          churchMembershipState.practice_share_active_limit - (churchMembershipState.practice_share_active_count || 0)
+        );
+      }
+      if (data.can_create_practice_share != null) {
+        churchMembershipState.can_create_practice_share = !!data.can_create_practice_share;
+      } else {
+        const rem = churchMembershipState.practice_share_active_remaining;
+        churchMembershipState.can_create_practice_share = rem == null || rem > 0;
+      }
+    }
+
+    function canCreatePracticeShareNow() {
+      if (typeof churchMembershipState !== "object") return true;
+      if (churchMembershipState.is_superadmin || churchMembershipState.can_use_full_app) return true;
+      if (churchMembershipState.can_create_practice_share === false) return false;
+      const rem = churchMembershipState.practice_share_active_remaining;
+      if (rem == null) return true;
+      return rem > 0;
+    }
+
+    function practiceShareFreeTierBlockedMessage() {
+      const limit = (typeof churchMembershipState === "object" && churchMembershipState.practice_share_active_limit != null)
+        ? churchMembershipState.practice_share_active_limit
+        : 2;
+      return "Free plan allows " + limit + " active choir lyric shares. Expire one, or start a trial under Settings → Billing.";
+    }
+
     async function fetchRecentPracticeShares() {
       if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
@@ -15770,6 +15951,7 @@
       if (!res.ok) {
         throw new Error(data.detail || data.error || res.statusText || "Could not load shares.");
       }
+      syncPracticeShareQuotaFromApi(data);
       return Array.isArray(data.shares) ? data.shares : [];
     }
 
@@ -15805,7 +15987,10 @@
           footer.classList.remove("practice-share-history-footer--loading");
         }
         if (cancelBtn) cancelBtn.hidden = false;
-        if (newBtn) newBtn.hidden = false;
+        if (newBtn) {
+          newBtn.hidden = false;
+          syncPracticeShareNewBtnState();
+        }
       } catch (err) {
         if (loading) loading.hidden = true;
         if (list) { list.hidden = false; list.innerHTML = ""; }
@@ -15840,6 +16025,15 @@
       });
     }
 
+    function syncPracticeShareNewBtnState() {
+      const newBtn = $("practice-share-history-new");
+      if (!newBtn) return;
+      const ok = canCreatePracticeShareNow();
+      newBtn.disabled = !ok;
+      if (!ok) newBtn.title = practiceShareFreeTierBlockedMessage();
+      else newBtn.removeAttribute("title");
+    }
+
     async function expirePracticeShareFromHistory(token) {
       const tok = String(token || "").trim();
       if (!tok) return;
@@ -15851,6 +16045,7 @@
         await postJSON("/api/practice/" + encodeURIComponent(tok) + "/revoke", {});
         const shares = await fetchRecentPracticeShares();
         renderPracticeShareHistoryList(shares);
+        syncPracticeShareNewBtnState();
         notify("Practice link expired.", "ok");
       } catch (err) {
         if (status) {
@@ -16060,6 +16255,10 @@
       opts = opts || {};
       if (!isFeatureEnabled("choir_practice_shares")) {
         notify(FEATURE_OFF_HINT, "info");
+        return;
+      }
+      if (!canCreatePracticeShareNow()) {
+        notify(practiceShareFreeTierBlockedMessage(), "warn");
         return;
       }
       syncPracticeShareUiHost();
@@ -16376,6 +16575,15 @@
       const loading = $("practice-share-loading");
       const generateBtn = $("practice-share-generate");
       const setup = $("practice-share-setup");
+      if (!canCreatePracticeShareNow()) {
+        const msg = practiceShareFreeTierBlockedMessage();
+        if (status) {
+          status.textContent = msg;
+          status.hidden = false;
+        }
+        notify(msg, "warn");
+        return;
+      }
       const date = ($("mass-date") && $("mass-date").value || "").trim();
       if (!date) {
         if (status) {
@@ -16407,6 +16615,16 @@
           ttl_days: 0,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
+        if (typeof churchMembershipState === "object" && churchMembershipState.is_free_tier) {
+          const used = Math.max(0, Number(churchMembershipState.practice_share_active_count) || 0) + 1;
+          churchMembershipState.practice_share_active_count = used;
+          const limit = churchMembershipState.practice_share_active_limit != null
+            ? churchMembershipState.practice_share_active_limit
+            : 2;
+          churchMembershipState.practice_share_active_remaining = Math.max(0, limit - used);
+          churchMembershipState.can_create_practice_share =
+            churchMembershipState.practice_share_active_remaining > 0;
+        }
         showPracticeShareResult({ ...data, leader_pin: data.leader_pin, mass_date: date });
       } catch (err) {
         stopPracticeShareLoadingAnim();
@@ -16439,6 +16657,10 @@
     }
 
     function startNewPracticeShareFromHistory() {
+      if (!canCreatePracticeShareNow()) {
+        notify(practiceShareFreeTierBlockedMessage(), "warn");
+        return;
+      }
       closePracticeShareHistoryModal();
       const dateEl = $("mass-date");
       const date = dateEl ? (dateEl.value || "").trim() : "";
@@ -17561,6 +17783,10 @@
         const ytLink = e.target.closest("[data-mw-link-youtube]");
         if (ytLink && root.contains(ytLink)) {
           e.preventDefault();
+          if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) {
+            if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+            return;
+          }
           const slot = ytLink.getAttribute("data-mw-media-slot");
           if (slot) openMassMediaPickModal("audio", slot, { youtubeOnly: true });
           return;
@@ -18388,21 +18614,15 @@
       if (!modal) return;
       const enter = step !== "confirm";
       modal.setAttribute("data-step", enter ? "enter" : "confirm");
-      const enterStep = $("add-priest-enter-step");
-      const confirmStep = $("add-priest-confirm-step");
-      const footEnter = $("add-priest-footer-enter");
-      const footConfirm = $("add-priest-footer-confirm");
-      const title = $("add-priest-modal-title");
-      const desc = $("add-priest-modal-desc");
-      if (enterStep) enterStep.hidden = !enter;
-      if (confirmStep) confirmStep.hidden = enter;
-      if (footEnter) footEnter.hidden = !enter;
-      if (footConfirm) footConfirm.hidden = enter;
-      if (title) title.textContent = enter ? "Add a priest" : "Confirm spelling";
-      if (desc) {
-        desc.textContent = enter
-          ? "Enter the celebrant name exactly as it should appear on Mass slides."
-          : "Double-check the name below before adding it to your parish list.";
+      const enterCard = $("add-priest-enter-card");
+      const confirmCard = $("add-priest-confirm-card");
+      if (enterCard) {
+        enterCard.hidden = !enter;
+        enterCard.setAttribute("aria-hidden", enter ? "false" : "true");
+      }
+      if (confirmCard) {
+        confirmCard.hidden = enter;
+        confirmCard.setAttribute("aria-hidden", enter ? "true" : "false");
       }
     }
 
@@ -18526,13 +18746,14 @@
       if (!modal || modal.dataset.bound === "1") return;
       modal.dataset.bound = "1";
       const closeBtn = $("add-priest-modal-close");
+      const confirmCloseBtn = $("add-priest-confirm-close");
       const cancelBtn = $("add-priest-cancel");
       const continueBtn = $("add-priest-continue");
       const backBtn = $("add-priest-back");
       const confirmBtn = $("add-priest-confirm");
       const backdrop = $("add-priest-modal-backdrop");
       const input = $("add-priest-name");
-      [closeBtn, cancelBtn, backdrop].forEach((el) => {
+      [closeBtn, confirmCloseBtn, cancelBtn, backdrop].forEach((el) => {
         if (el) el.addEventListener("click", () => closeAddPriestModal());
       });
       if (continueBtn) continueBtn.addEventListener("click", () => showAddPriestConfirmStep());
@@ -18665,19 +18886,29 @@
           celebrantNamesCache.push(n);
           renderSettingsCelebrantList();
           renderCelebrantSelect(n);
+          if (churchMembershipState.is_free_tier) {
+            churchMembershipState.free_tier_priest_submit_remaining = 0;
+            churchMembershipState.can_submit_priest = false;
+          }
           return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
-        } catch (_e) {
+        } catch (err) {
+          const detail = (err && err.message) || "";
+          if (detail) notify(detail, "error");
           return false;
         }
       }
-      // Complimentary / early access: keep the name for this session so generate works.
+      // Free tier (quota used) / complimentary: keep the name for this session so generate works.
       if (churchMembershipState.can_generate_mass) {
         celebrantNamesCache.push(n);
         renderSettingsCelebrantList();
         renderCelebrantSelect(n);
         return { local: true };
       }
-      throw new Error("Approved parish membership is required to submit a priest name.");
+      throw new Error(
+        churchMembershipState.is_free_tier
+          ? "Free plan allows 1 priest name submission. Start a trial under Settings → Billing to submit more."
+          : "Approved parish membership is required to submit a priest name."
+      );
     }
 
     async function migrateCelebrantsFromBrowserStorage() {
@@ -19037,7 +19268,15 @@
       can_use_premium_posters: true,
       can_submit_song: true,
       can_submit_priest: true,
+      free_tier_song_submit_remaining: null,
+      free_tier_priest_submit_remaining: null,
       is_superadmin: false,
+      is_free_tier: false,
+      plan_tier: "paid",
+      practice_share_active_limit: null,
+      practice_share_active_count: 0,
+      practice_share_active_remaining: null,
+      can_create_practice_share: true,
       role: "member",
     };
 
@@ -19056,6 +19295,30 @@
     function guardFullAppAction(message) {
       if (churchMembershipState.can_use_full_app) return true;
       const msg = message || "Mass generation and parish tools require approved parish membership.";
+      notify(msg, "error");
+      return false;
+    }
+
+    function guardSongSubmitAction(message) {
+      if (churchMembershipState.can_use_full_app || churchMembershipState.is_superadmin) return true;
+      if (churchMembershipState.can_submit_song) return true;
+      const rem = churchMembershipState.free_tier_song_submit_remaining;
+      const msg = message
+        || (churchMembershipState.is_free_tier && rem != null && rem <= 0
+          ? "Free plan allows 1 song submission per month. Start a trial under Settings → Billing for unlimited submissions."
+          : "Song submissions require a parish plan or free-tier allowance.");
+      notify(msg, "error");
+      return false;
+    }
+
+    function guardPriestSubmitAction(message) {
+      if (churchMembershipState.can_use_full_app || churchMembershipState.is_superadmin) return true;
+      if (churchMembershipState.can_submit_priest) return true;
+      const rem = churchMembershipState.free_tier_priest_submit_remaining;
+      const msg = message
+        || (churchMembershipState.is_free_tier && rem != null && rem <= 0
+          ? "Free plan allows 1 priest name submission. Start a trial under Settings → Billing to submit more."
+          : "Priest submissions require a parish plan or free-tier allowance.");
       notify(msg, "error");
       return false;
     }
@@ -19618,7 +19881,7 @@
         churchMembershipState.free_mass_used = premiumLeft <= 0;
         churchMembershipState.free_tier_mass_remaining = freeLeft;
         churchMembershipState.next_generation_tier = data.next_generation_tier
-          || (premiumLeft > 0 ? "premium" : (freeLeft > 0 ? "free" : "none"));
+          || (freeLeft > 0 ? "free" : (premiumLeft > 0 ? "premium" : "none"));
         churchMembershipState.can_use_premium_posters = data.can_use_premium_posters != null
           ? !!data.can_use_premium_posters
           : premiumLeft > 0;
@@ -19628,6 +19891,8 @@
           || premiumLeft > 0
           || freeLeft > 0
         );
+        // Token spent (or free gen finished) — clear unlock for the next Mass.
+        setPremiumPosterUnlocked(false);
         syncGenerateButtons();
         syncPrivilegedUi();
         syncGlobalMembershipBanner(churchMembershipState);
@@ -20214,6 +20479,18 @@
       const canGen = data.can_generate_mass != null
         ? !!data.can_generate_mass
         : !!(canFull || premiumRemaining > 0 || freeTierRemaining > 0);
+      const isFreeTier = data.is_free_tier != null
+        ? !!data.is_free_tier
+        : (!!billing.billing_enabled && !canFull && !data.is_superadmin);
+      const practiceLimit = data.practice_share_active_limit != null
+        ? Math.max(0, Number(data.practice_share_active_limit) || 0)
+        : (isFreeTier ? 2 : null);
+      const practiceCount = data.practice_share_active_count != null
+        ? Math.max(0, Number(data.practice_share_active_count) || 0)
+        : 0;
+      const practiceRemaining = data.practice_share_active_remaining != null
+        ? Math.max(0, Number(data.practice_share_active_remaining) || 0)
+        : (practiceLimit == null ? null : Math.max(0, practiceLimit - practiceCount));
       churchMembershipState = {
         membership_status: data.membership_status || "draft",
         community_name_locked: !!data.community_name_locked,
@@ -20231,13 +20508,27 @@
         premium_mass_remaining: premiumRemaining,
         free_tier_mass_remaining: freeTierRemaining,
         next_generation_tier: data.next_generation_tier
-          || (canFull ? "paid" : (premiumRemaining > 0 ? "premium" : (freeTierRemaining > 0 ? "free" : "none"))),
+          || (canFull ? "paid" : (freeTierRemaining > 0 ? "free" : (premiumRemaining > 0 ? "premium" : "none"))),
         can_use_premium_posters: data.can_use_premium_posters != null
           ? !!data.can_use_premium_posters
           : !!(canFull || premiumRemaining > 0),
         can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!canFull && !data.is_superadmin),
         can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!canFull && !data.is_superadmin),
+        free_tier_song_submit_remaining: data.free_tier_song_submit_remaining != null
+          ? Math.max(0, Number(data.free_tier_song_submit_remaining) || 0)
+          : null,
+        free_tier_priest_submit_remaining: data.free_tier_priest_submit_remaining != null
+          ? Math.max(0, Number(data.free_tier_priest_submit_remaining) || 0)
+          : null,
         is_superadmin: !!data.is_superadmin,
+        is_free_tier: isFreeTier,
+        plan_tier: data.plan_tier || (isFreeTier ? "free" : (canFull || data.is_superadmin ? "paid" : "none")),
+        practice_share_active_limit: practiceLimit,
+        practice_share_active_count: practiceCount,
+        practice_share_active_remaining: practiceRemaining,
+        can_create_practice_share: data.can_create_practice_share != null
+          ? !!data.can_create_practice_share
+          : (practiceRemaining == null || practiceRemaining > 0),
         role: (data.role || "member").toLowerCase(),
         parish_role: (data.parish_role || "").toLowerCase(),
         parish_id: data.parish_id || "",
@@ -20349,6 +20640,190 @@
       syncPrivilegedUi();
     }
 
+    /** Client opt-in: Unlock spends a premium token on the next Mass generate. */
+    let premiumPosterUnlocked = false;
+
+    function isPremiumPosterUnlocked() {
+      return !!premiumPosterUnlocked;
+    }
+
+    function setPremiumPosterUnlocked(on) {
+      premiumPosterUnlocked = !!on;
+      try {
+        window.premiumPosterUnlocked = premiumPosterUnlocked;
+      } catch (_e) { /* ignore */ }
+      syncCuratedPosterAccessUi();
+      syncGenerateButtons();
+    }
+
+    function canUseCuratedPosters(state) {
+      const s = state || churchMembershipState;
+      if (!s) return false;
+      if (s.can_use_full_app || s.is_superadmin) return true;
+      // Unpaid: only after Unlock while a premium Mass token remains.
+      return isPremiumPosterUnlocked() && premiumMassRemaining(s) > 0;
+    }
+
+    function syncCuratedPosterAccessUi() {
+      const s = churchMembershipState;
+      const allowed = canUseCuratedPosters(s);
+      const premiumLeft = premiumMassRemaining(s);
+      const canUnlock = !!(
+        !s.can_use_full_app
+        && !s.is_superadmin
+        && premiumLeft > 0
+        && !isPremiumPosterUnlocked()
+      );
+      const wrap = $("flow-ai-poster-style-wrap");
+      const section = $("mw-ai-poster-section");
+      const gate = $("mw-ai-poster-gate");
+      const msg = $("mw-ai-poster-gate-msg");
+      const unlockChip = $("mw-premium-unlock-chip");
+      const unlockBtn = $("mw-ai-poster-unlock");
+      const unlockCount = $("mw-ai-poster-unlock-count");
+      const body = $("mw-ai-poster-body");
+      const catalogReady = typeof areWeeklyAiPostersReady === "function" && areWeeklyAiPostersReady();
+      // Membership lock is separate from "posters not generated yet" lock.
+      if (wrap) {
+        wrap.classList.toggle("is-premium-poster-locked", !allowed);
+        wrap.classList.toggle("has-premium-unlock", canUnlock);
+      }
+      if (section) section.classList.toggle("is-premium-poster-locked", !allowed);
+      document.body.classList.toggle("is-premium-poster-locked", !allowed);
+      if (unlockChip) unlockChip.hidden = !canUnlock;
+      if (unlockBtn) {
+        unlockBtn.hidden = !canUnlock;
+        unlockBtn.textContent = "Unlock";
+        unlockBtn.title = premiumLeft === 1
+          ? "Unlock curated posters — uses 1 premium credit on generate"
+          : ("Unlock curated posters — " + premiumLeft + " premium credits left");
+      }
+      if (unlockCount) {
+        unlockCount.hidden = !canUnlock;
+        unlockCount.textContent = String(premiumLeft);
+        unlockCount.title = premiumLeft === 1
+          ? "1 premium credit left"
+          : (premiumLeft + " premium credits left");
+      }
+      if (!allowed) {
+        // With an Unlock chip, keep the poster visible under a light lock — no big gate copy.
+        if (gate) {
+          gate.hidden = canUnlock;
+          gate.setAttribute("data-ai-ready", "0");
+        }
+        if (msg) {
+          msg.textContent = canUnlock
+            ? ""
+            : "Curated divider posters need a premium Mass credit or an active trial. Open Settings → Billing to start your 14-day trial.";
+        }
+        if (body) body.setAttribute("aria-disabled", "true");
+        return;
+      }
+      // Premium unlock / paid: restore normal ready/not-ready gate from weekly catalog.
+      if (typeof syncWeeklyAiPosterGate === "function") {
+        syncWeeklyAiPosterGate();
+      } else if (gate) {
+        gate.hidden = catalogReady;
+        gate.setAttribute("data-ai-ready", catalogReady ? "1" : "0");
+        if (wrap) wrap.classList.toggle("is-ai-poster-locked", !catalogReady);
+        if (section) section.classList.toggle("is-ai-poster-locked", !catalogReady);
+        if (body) body.setAttribute("aria-disabled", catalogReady ? "false" : "true");
+      }
+    }
+
+    function setPremiumUnlockOverlayOpen(open) {
+      const modal = $("premium-poster-unlock-modal");
+      if (!modal) return;
+      if (typeof setUiOverlayOpen === "function") {
+        setUiOverlayOpen(modal, open);
+        return;
+      }
+      if (open) {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      } else {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        if (!document.querySelector(".ui-overlay.is-open")) {
+          document.body.style.overflow = "";
+        }
+      }
+    }
+
+    function closePremiumPosterUnlockModal() {
+      setPremiumUnlockOverlayOpen(false);
+    }
+
+    function openPremiumPosterUnlockModal() {
+      const left = premiumMassRemaining(churchMembershipState);
+      if (left <= 0) {
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus("No premium Mass credits left. Start a 14-day trial under Settings → Billing.", "error");
+        }
+        return;
+      }
+      const credits = $("premium-poster-unlock-credits");
+      if (credits) {
+        credits.textContent = left === 1
+          ? "You have 1 premium credit left."
+          : ("You have " + left + " premium credits left.");
+      }
+      const confirmBtn = $("premium-poster-unlock-confirm");
+      if (confirmBtn) confirmBtn.focus();
+      setPremiumUnlockOverlayOpen(true);
+    }
+
+    function confirmPremiumPosterUnlock() {
+      const left = premiumMassRemaining(churchMembershipState);
+      if (left <= 0) {
+        closePremiumPosterUnlockModal();
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus("No premium Mass credits left. Start a 14-day trial under Settings → Billing.", "error");
+        }
+        return;
+      }
+      closePremiumPosterUnlockModal();
+      setPremiumPosterUnlocked(true);
+      if (typeof setFlowStatus === "function") {
+        setFlowStatus("Premium unlock on — pick a style, then generate.", "ok");
+      }
+    }
+
+    function bindPremiumPosterUnlockUi() {
+      const unlockBtn = $("mw-ai-poster-unlock");
+      if (unlockBtn && unlockBtn.dataset.boundPremiumUnlock !== "1") {
+        unlockBtn.dataset.boundPremiumUnlock = "1";
+        unlockBtn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          openPremiumPosterUnlockModal();
+        });
+      }
+      const modal = $("premium-poster-unlock-modal");
+      if (!modal || modal.dataset.boundPremiumUnlockModal === "1") return;
+      modal.dataset.boundPremiumUnlockModal = "1";
+      const backdrop = $("premium-poster-unlock-backdrop");
+      if (backdrop) {
+        backdrop.addEventListener("click", function () {
+          if (modal.classList.contains("is-open")) closePremiumPosterUnlockModal();
+        });
+      }
+      const closeBtn = $("premium-poster-unlock-close");
+      if (closeBtn) closeBtn.addEventListener("click", closePremiumPosterUnlockModal);
+      const cancelBtn = $("premium-poster-unlock-cancel");
+      if (cancelBtn) cancelBtn.addEventListener("click", closePremiumPosterUnlockModal);
+      const confirmBtn = $("premium-poster-unlock-confirm");
+      if (confirmBtn) confirmBtn.addEventListener("click", confirmPremiumPosterUnlock);
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape") return;
+        if (modal.classList.contains("is-open")) closePremiumPosterUnlockModal();
+      });
+    }
+    window.canUseCuratedPosters = canUseCuratedPosters;
+    window.isPremiumPosterUnlocked = isPremiumPosterUnlocked;
+    window.setPremiumPosterUnlocked = setPremiumPosterUnlocked;
+    window.bindPremiumPosterUnlockUi = bindPremiumPosterUnlockUi;
+
     function syncPrivilegedUi() {
       const sa = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       const canFull = !!churchMembershipState.can_use_full_app;
@@ -20362,6 +20837,8 @@
       if (flowPage) flowPage.classList.toggle("is-readonly", !canGen);
       const themePage = $("theme-page");
       if (themePage) themePage.classList.toggle("is-readonly", !sa);
+      bindPremiumPosterUnlockUi();
+      syncCuratedPosterAccessUi();
 
       [
         "btn-save-theme",
@@ -20385,6 +20862,7 @@
       if (typeof renderThemeGrid === "function") renderThemeGrid();
       if (typeof renderSongCatalog === "function") renderSongCatalog();
       if (typeof syncSongCatalogBulkBar === "function") syncSongCatalogBulkBar();
+      if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
       syncSuperadminNavVisibility();
       syncCalendarAdminVisibility();
     }
@@ -20393,7 +20871,7 @@
       const canGen = canGenerateMass(churchMembershipState);
       const premiumLeft = premiumMassRemaining(churchMembershipState);
       const freeLeft = freeTierMassRemaining(churchMembershipState);
-      const tier = churchMembershipState.next_generation_tier || "";
+      const unlocked = isPremiumPosterUnlocked() && premiumLeft > 0;
       ["btn-generate-flow", "btn-generate-flow-inline"].forEach((id) => {
         const btn = $(id);
         if (!btn) return;
@@ -20401,10 +20879,12 @@
         let title = "";
         if (!canGen) {
           title = "Start a 14-day trial under Settings → Billing to unlock Mass generation.";
-        } else if (tier === "premium" || (premiumLeft > 0 && tier !== "free")) {
-          title = "Uses 1 premium Mass with curated divider posters (" + premiumLeft + " left)";
-        } else if (tier === "free" || freeLeft > 0) {
-          title = "Uses 1 basic free Mass this month — no curated divider posters (" + freeLeft + " left)";
+        } else if (unlocked) {
+          title = "Uses 1 premium Mass credit — curated posters, no watermark (" + premiumLeft + " left)";
+        } else if (freeLeft > 0) {
+          title = "Uses 1 free Mass this month — quiet watermark, no curated posters (" + freeLeft + " left)";
+        } else if (premiumLeft > 0) {
+          title = "Unlock curated posters with a premium credit to generate (" + premiumLeft + " left)";
         }
         btn.title = title;
       });
@@ -22786,18 +23266,16 @@
       });
       ["flow-ai-poster-style-wrap", "poster-ai-poster-style-wrap"].forEach((id) => {
         const wrap = $(id);
-        if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
+        if (!wrap) return;
+        setFeatureFlagDisabled(wrap, !aiOn);
+        // No maintenance banner/title on the weekly Gospel poster picker.
+        if (wrap.getAttribute("title") === FEATURE_OFF_HINT) wrap.removeAttribute("title");
       });
-      const aiHosts = [
-        $("flow-ai-poster-style-wrap"),
-        $("poster-ai-poster-style-wrap") || $("poster-use-ai-poster") && $("poster-use-ai-poster").closest(".field"),
-      ];
-      aiHosts.forEach((host, idx) => {
-        if (!host) return;
-        const hint = ensureFeatureFlagHint(host, "feature-hint-ai-" + idx);
+      ["feature-hint-ai-0", "feature-hint-ai-1"].forEach((id) => {
+        const hint = document.getElementById(id);
         if (hint) {
-          hint.hidden = aiOn;
-          hint.textContent = FEATURE_OFF_HINT;
+          hint.hidden = true;
+          hint.textContent = "";
         }
       });
 
@@ -27035,10 +27513,16 @@
       // Signed https URLs work in <img>. Same-origin /api/ needs Bearer auth.
       if (!src.startsWith("/api/")) return src;
       if (weeklyThumbBlobCache[src]) return weeklyThumbBlobCache[src];
-      const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+      let headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
         ? await window.VerbumAuth.getAuthHeaders()
         : {};
-      const res = await fetch(src, { headers: headers, credentials: "same-origin" });
+      let res = await fetch(src, { headers: headers, credentials: "same-origin" });
+      // One retry after a short wait when auth token was not ready yet.
+      if (res.status === 401 && window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function") {
+        await new Promise((r) => setTimeout(r, 300));
+        headers = await window.VerbumAuth.getAuthHeaders();
+        res = await fetch(src, { headers: headers, credentials: "same-origin" });
+      }
       if (!res.ok) throw new Error("weekly thumb " + res.status);
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -27352,13 +27836,20 @@
       if (!$("home-mass-card")) return;
       populateHomeMassSnippet("next", upcomingSundayISO());
       populateHomeMassSnippet("last", lastSundayISO());
-      void refreshHomeMassCtaPosterBg(opts);
+      // Home route should always re-attempt CTA art (do not depend on Extras visit).
+      const card = $("home-mass-card");
+      const nextOpts = Object.assign({}, opts || {});
+      if (!nextOpts.forceReload && card && !card.classList.contains("has-poster-bg")) {
+        nextOpts.forceReload = true;
+      }
+      void refreshHomeMassCtaPosterBg(nextOpts);
     }
 
     var HOME_CTA_POSTER_STYLE_KEY = "home_cta_weekly_poster_style";
     var HOME_CTA_POSTER_SLIDE_MS = 720;
     var HOME_CTA_POSTER_AUTO_MS = 9000;
     var homeCtaPosterBgInflight = null;
+    var homeCtaPosterBgLoadGen = 0;
     var homeCtaPosterSyncingFromHome = false;
     var homeCtaPosterAwaitRetryTimer = null;
     var homeCtaPosterAwaitRetries = 0;
@@ -27429,12 +27920,15 @@
         setHomeCtaPosterLoading(true, styleLabel || "");
       }
       stopHomeCtaPosterAwaitRetry();
-      if (homeCtaPosterAwaitRetries >= HOME_CTA_POSTER_AWAIT_MAX) return;
+      // Keep retrying while unpainted — Extras must not be required to finish the CTA.
       homeCtaPosterAwaitRetries += 1;
+      const delay = homeCtaPosterAwaitRetries <= HOME_CTA_POSTER_AWAIT_MAX
+        ? HOME_CTA_POSTER_AWAIT_MS
+        : Math.min(30000, HOME_CTA_POSTER_AWAIT_MS + (homeCtaPosterAwaitRetries - HOME_CTA_POSTER_AWAIT_MAX) * 2000);
       homeCtaPosterAwaitRetryTimer = setTimeout(() => {
         homeCtaPosterAwaitRetryTimer = null;
         void refreshHomeMassCtaPosterBg({ forceReload: true });
-      }, HOME_CTA_POSTER_AWAIT_MS);
+      }, delay);
     }
 
     function activeExtrasPosterStyleId() {
@@ -27600,21 +28094,25 @@
         ""
       ).trim();
       const styleId = String(item.id || "").trim();
-      const full = String(item.full_url || "").trim();
       const card = String(item.card_url || "").trim();
       // Always keep an active (non-versioned) card proxy as a last-resort paint path.
+      // Home CTA must use watermarked card only — never full_url (clean master / PPTX hero).
+      // mark=3 busts browser/blob caches from the old diagonal burn-in.
       const activeCard = styleId && sunday
-        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(sunday) + "&style=" + encodeURIComponent(styleId) + "&variant=card")
+        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(sunday) + "&style=" + encodeURIComponent(styleId) + "&variant=card&mark=3")
         : "";
-      const cardProxy = card || activeCard;
-      // Prefer HTTPS signed assets in CSS directly (no JS blob hydrate) — sharp + fast CDN load.
-      // Fall back to sharp 1600px card WebP, never the tiny 720 picker thumb.
+      // Prefer the watermarked card proxy. If catalog already has card_url, append mark=3.
+      let cardProxy = "";
+      if (card) {
+        cardProxy = card + (card.indexOf("mark=") >= 0 ? "" : (card.indexOf("?") >= 0 ? "&" : "?") + "mark=3");
+      } else {
+        cardProxy = activeCard;
+      }
+      // Prefer signed watermarked card HTTPS, then auth proxy. Never paint full hero.
       const candidates = [];
-      if (/^https?:\/\//i.test(full)) candidates.push(full);
-      if (/^https?:\/\//i.test(card)) candidates.push(card);
-      if (cardProxy) candidates.push(cardProxy);
+      if (/^https?:\/\//i.test(cardProxy)) candidates.push(cardProxy);
+      else if (cardProxy) candidates.push(cardProxy);
       if (activeCard && activeCard !== cardProxy) candidates.push(activeCard);
-      if (full) candidates.push(full);
       const seen = {};
       const urls = [];
       candidates.forEach((u) => {
@@ -27845,15 +28343,30 @@
           return;
         }
       }
-      if (homeCtaPosterBgInflight) return homeCtaPosterBgInflight;
+      // forceReload must not join a stale/failed in-flight attempt (that was why
+      // the CTA only painted after visiting Extras triggered a fresh refresh).
+      if (homeCtaPosterBgInflight && !forceReload) return homeCtaPosterBgInflight;
       if (!card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(true);
+      const loadGen = ++homeCtaPosterBgLoadGen;
       homeCtaPosterBgInflight = (async () => {
         let data = null;
         let painted = false;
         try {
           if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
-            await window.VerbumAuth.waitUntilReady(4000);
+            await window.VerbumAuth.waitUntilReady(8000);
           }
+          // Ensure we have a Bearer token before catalog/image fetches (401 → white CTA).
+          let headers = {};
+          if (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function") {
+            headers = await window.VerbumAuth.getAuthHeaders();
+            if (!headers.Authorization && typeof window.VerbumAuth.getSessionToken === "function") {
+              try {
+                await new Promise((r) => setTimeout(r, 250));
+                headers = await window.VerbumAuth.getAuthHeaders();
+              } catch (_eTok) { /* continue */ }
+            }
+          }
+          if (loadGen !== homeCtaPosterBgLoadGen) return;
           let ready = [];
           // Only reuse the Extras version catalog when it is for THIS upcoming Sunday.
           try {
@@ -27867,13 +28380,11 @@
           } catch (_eView) { /* fall through to API catalog */ }
 
           // Authoritative source: active disk heroes for the upcoming Sunday.
-          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
-            ? await window.VerbumAuth.getAuthHeaders()
-            : {};
           const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
             headers: headers,
             credentials: "same-origin",
           });
+          if (loadGen !== homeCtaPosterBgLoadGen) return;
           data = await res.json().catch(() => ({}));
           if (res.ok && data && data.ok) {
             if (data.versions && typeof syncWeeklyPosterVersionUi === "function") {
@@ -27929,20 +28440,25 @@
             if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
             return;
           }
+          if (loadGen !== homeCtaPosterBgLoadGen) return;
           painted = true;
           homeCtaPosterState.items.forEach((it) => {
             if (it && it._resolvedUrl) void preloadHomeCtaPosterUrl(it._resolvedUrl);
           });
           startHomeCtaPosterAutoplay();
         } catch (_e) {
-          if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
+          if (loadGen === homeCtaPosterBgLoadGen && !card.classList.contains("has-poster-bg")) {
+            keepHomeCtaPosterAwaiting();
+          }
         } finally {
-          homeCtaPosterBgInflight = null;
-          // Only drop the veil once a poster is actually painted.
-          if (painted || card.classList.contains("has-poster-bg")) {
-            setHomeCtaPosterLoading(false);
-          } else if (!card.classList.contains("is-poster-loading")) {
-            setHomeCtaPosterLoading(true);
+          if (loadGen === homeCtaPosterBgLoadGen) {
+            homeCtaPosterBgInflight = null;
+            // Only drop the veil once a poster is actually painted.
+            if (painted || card.classList.contains("has-poster-bg")) {
+              setHomeCtaPosterLoading(false);
+            } else if (!card.classList.contains("is-poster-loading")) {
+              setHomeCtaPosterLoading(true);
+            }
           }
         }
       })();
@@ -27953,10 +28469,11 @@
     if (!window.__homeCtaPosterAuthHook) {
       window.__homeCtaPosterAuthHook = true;
       window.addEventListener("verbum:auth-ready", () => {
-        void refreshHomeMassCtaPosterBg();
+        homeCtaPosterAwaitRetries = 0;
+        void refreshHomeMassCtaPosterBg({ forceReload: true });
       });
       if (window.VerbumAuth && window.VerbumAuth.isReady && window.VerbumAuth.isReady()) {
-        void refreshHomeMassCtaPosterBg();
+        void refreshHomeMassCtaPosterBg({ forceReload: true });
       }
     }
 
@@ -29605,10 +30122,16 @@
       const el = $("mass-date") || $("flow-mass-date");
       const fromMass = el && el.value ? String(el.value).trim() : "";
       if (fromMass) return fromMass;
-      // Fallback: Sunday dropdown when set (SA) — never invent today's date.
+      // Fallback: Sunday dropdown when set (SA).
       const sunSel = $("mw-weekly-posters-sunday");
       const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
-      return fromSun;
+      if (fromSun) return fromSun;
+      // Home / boot: use upcoming Sunday so CTA + catalog load without visiting Extras.
+      if (typeof upcomingSundayISO === "function") {
+        const upcoming = String(upcomingSundayISO() || "").trim();
+        if (upcoming) return upcoming;
+      }
+      return "";
     }
 
     function formatWeeklyPosterSundayLabel(iso) {
@@ -29779,14 +30302,32 @@
       const dateLabel = formatWeeklyPosterSundayLabel(
         weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || weeklyPosterMassDate()
       );
+      // Premium token / paid / full app may pick curated posters; monthly free tier cannot.
+      const membershipAllows = typeof canUseCuratedPosters === "function"
+        ? canUseCuratedPosters(churchMembershipState)
+        : true;
+      if (!membershipAllows) {
+        if (typeof syncCuratedPosterAccessUi === "function") syncCuratedPosterAccessUi();
+        stopWeeklyPosterAutoScroll();
+        syncWeeklyPosterExpandUi();
+        window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
+        return;
+      }
       const unlocked = areWeeklyAiPostersReady();
       if (gate) {
         gate.hidden = unlocked;
         gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
       }
-      if (wrap) wrap.classList.toggle("is-ai-poster-locked", !unlocked);
+      if (wrap) {
+        wrap.classList.remove("is-premium-poster-locked");
+        wrap.classList.toggle("is-ai-poster-locked", !unlocked);
+      }
       const section = $("mw-ai-poster-section");
-      if (section) section.classList.toggle("is-ai-poster-locked", !unlocked);
+      if (section) {
+        section.classList.remove("is-premium-poster-locked");
+        section.classList.toggle("is-ai-poster-locked", !unlocked);
+      }
+      document.body.classList.remove("is-premium-poster-locked");
       if (body) {
         body.setAttribute("aria-disabled", unlocked ? "false" : "true");
       }
@@ -30453,7 +30994,7 @@
           label: d.label,
           ready: ready,
           thumb_url: ready ? (base + "&variant=thumb") : "",
-          card_url: ready ? (base + "&variant=card") : "",
+          card_url: ready ? (base + "&variant=card&mark=3") : "",
           proxy_url: base + "&variant=thumb",
           full_url: ready ? base : "",
         };
@@ -30681,7 +31222,7 @@
           label: prev.label || id,
           ready: isReady,
           thumb_url: isReady && base ? (base + "&variant=thumb") : (isReady ? String(prev.thumb_url || "") : ""),
-          card_url: isReady && base ? (base + "&variant=card") : (isReady ? String(prev.card_url || "") : ""),
+          card_url: isReady && base ? (base + "&variant=card&mark=3") : (isReady ? String(prev.card_url || "") : ""),
           proxy_url: base ? (base + "&variant=thumb") : String(prev.proxy_url || ""),
           full_url: isReady && base ? base : (isReady ? String(prev.full_url || "") : ""),
         };
@@ -31430,6 +31971,7 @@
       window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
       window.scheduleWeeklyStylePosterRefresh = scheduleWeeklyStylePosterRefresh;
       window.setWeeklyPosterStyle = setWeeklyPosterStyle;
+      window.syncWeeklyAiPosterGate = syncWeeklyAiPosterGate;
       window.preloadExtrasPosterAssets = function preloadExtrasPosterAssets() {
         preloadLiturgyPosterThumbs();
       };
@@ -33169,19 +33711,51 @@
       const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
         ? window.areWeeklyAiPostersReady()
         : !!posterOpts.useAi;
-      const allowPremiumPosters = !!(
-        churchMembershipState.can_use_full_app
-        || churchMembershipState.can_use_premium_posters
-        || churchMembershipState.next_generation_tier === "premium"
-        || churchMembershipState.next_generation_tier === "paid"
-        || (
-          Number(churchMembershipState.premium_mass_remaining || churchMembershipState.free_mass_remaining || 0) > 0
-          && churchMembershipState.next_generation_tier !== "free"
-        )
+      const premiumLeft = Number(
+        churchMembershipState.premium_mass_remaining
+        || churchMembershipState.free_mass_remaining
+        || 0
       );
+      const freeLeft = Number(churchMembershipState.free_tier_mass_remaining || 0);
+      const unlockedPremium = typeof isPremiumPosterUnlocked === "function"
+        ? isPremiumPosterUnlocked()
+        : !!window.premiumPosterUnlocked;
+      const usePremiumToken = !!(
+        unlockedPremium
+        && premiumLeft > 0
+        && !churchMembershipState.can_use_full_app
+        && !churchMembershipState.is_superadmin
+      );
+      if (
+        !churchMembershipState.can_use_full_app
+        && !churchMembershipState.is_superadmin
+        && !usePremiumToken
+        && freeLeft <= 0
+        && premiumLeft > 0
+      ) {
+        statusFn(
+          "Unlock curated posters with a premium credit (Extras step), or start a 14-day trial under Settings → Billing.",
+          "error"
+        );
+        return null;
+      }
+      const allowPremiumPosters = typeof canUseCuratedPosters === "function"
+        ? canUseCuratedPosters(churchMembershipState)
+        : !!(
+          churchMembershipState.can_use_full_app
+          || churchMembershipState.is_superadmin
+          || usePremiumToken
+        );
+      // Unlocked premium Masses always request curated posters when styles are ready.
+      const forcePremiumAi = allowPremiumPosters && usePremiumToken;
       const useAiPoster = allowPremiumPosters
-        && (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi)
-        && weeklyReady;
+        && weeklyReady
+        && (
+          forcePremiumAi
+          || churchMembershipState.can_use_full_app
+          || churchMembershipState.is_superadmin
+          || (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi)
+        );
       const body = {
         date,
         celebrant: celebrantMain,
@@ -33192,6 +33766,7 @@
         include_social_exports: readSocialExportSettings(o),
         include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
+        use_premium_token: usePremiumToken,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
         ai_poster_transparency_pct:
           o.ai_poster_transparency_pct != null
@@ -33396,6 +33971,7 @@
           body.include_leaflet = true;
           body.include_ai_mass_poster = false;
           body.include_social_exports = false;
+          body.use_premium_token = false;
         }
 
         const dupKey = "churchMediaLastGenFp";
@@ -36290,6 +36866,7 @@
         const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
         applySongMetaToForm(apiSec, merged);
         composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
+        composerParishOnly = !!s.parish_only;
         composerSongMedia = {
           audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
           video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
@@ -36322,6 +36899,7 @@
           (composerParishVersion ? " (parish version)." : "."),
           "ok"
         );
+        if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
         if (clearSearch) clearSongCatalogSearch();
         setSongComposerDeflated(true);
       } finally {
@@ -36669,6 +37247,18 @@
         $("lyrics-save-title").value = titleHint;
       }
       const title = ($("lyrics-save-title") && $("lyrics-save-title").value.trim()) || "";
+      if (
+        typeof freeTierBlocksExistingCatalogSong === "function"
+        && freeTierBlocksExistingCatalogSong(title)
+      ) {
+        const msg =
+          typeof FREE_TIER_EXISTING_SONG_MSG === "string"
+            ? FREE_TIER_EXISTING_SONG_MSG
+            : "Free plan can browse the library and submit one new song per month. Existing catalog songs can't be edited.";
+        notify(msg, "error");
+        if (typeof setLyricsStatus === "function") setLyricsStatus(msg, "error");
+        return;
+      }
       const author = ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "";
       const language = ($("lyrics-save-language") && $("lyrics-save-language").value) || "";
       const section = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
@@ -36887,6 +37477,21 @@
         return;
       }
       if (songMetaEditCtx && songMetaEditCtx.mode === "composer") {
+        if (
+          typeof freeTierBlocksExistingCatalogSong === "function"
+          && freeTierBlocksExistingCatalogSong(title)
+        ) {
+          const msg =
+            typeof FREE_TIER_EXISTING_SONG_MSG === "string"
+              ? FREE_TIER_EXISTING_SONG_MSG
+              : "Free plan can browse the library and submit one new song per month. Existing catalog songs can't be edited.";
+          setLyricsStatus(msg, "error");
+          notify(msg, "error");
+          setSongMetadataSaveButtonState("error", "Not allowed");
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          setSongMetadataSaveButtonState("idle");
+          return;
+        }
         if (intent !== "save" && !metadataModalIsDirty()) {
           setSongMetadataSaveButtonState("error", "No changes");
           await new Promise((resolve) => setTimeout(resolve, 550));
@@ -37298,6 +37903,10 @@
       const ytSearchBtn = $("song-metadata-audio-youtube-search");
       const ytClearBtn = $("song-metadata-audio-youtube-clear");
       function commitComposerYouTubeLink() {
+        if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) {
+          if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+          return;
+        }
         const ref = youtubeMediaRefFromInput(ytField && ytField.value);
         if (!ref) {
           if (typeof notify === "function") notify("Enter a valid YouTube URL.", "warn");
@@ -39098,8 +39707,14 @@
     applyMassPinnedDefaults();
     syncMassDefaultPins($("flow-page"));
     if (typeof consumeEmailDeepLinkIntent === "function") consumeEmailDeepLinkIntent();
-    // Load home CTA posters first so the Mass card paints with art ASAP.
-    if (typeof refreshHomeMassCtaPosterBg === "function") void refreshHomeMassCtaPosterBg();
+    // Load home CTA posters first so the Mass card paints with art ASAP
+    // (independent of visiting Mass Builder → Extras).
+    if (typeof refreshHomeMassCtaPosterBg === "function") {
+      void refreshHomeMassCtaPosterBg({ forceReload: true });
+    }
+    if (typeof scheduleWeeklyStylePosterRefresh === "function") {
+      scheduleWeeklyStylePosterRefresh({ force: true });
+    }
     showRoute(currentRoute(), true);
     renderLyrics({ writeBack: false });
     setLyricsAnalyzeOverlay("idle");

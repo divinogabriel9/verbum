@@ -324,19 +324,51 @@
       const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
         ? window.areWeeklyAiPostersReady()
         : !!posterOpts.useAi;
-      const allowPremiumPosters = !!(
-        churchMembershipState.can_use_full_app
-        || churchMembershipState.can_use_premium_posters
-        || churchMembershipState.next_generation_tier === "premium"
-        || churchMembershipState.next_generation_tier === "paid"
-        || (
-          Number(churchMembershipState.premium_mass_remaining || churchMembershipState.free_mass_remaining || 0) > 0
-          && churchMembershipState.next_generation_tier !== "free"
-        )
+      const premiumLeft = Number(
+        churchMembershipState.premium_mass_remaining
+        || churchMembershipState.free_mass_remaining
+        || 0
       );
+      const freeLeft = Number(churchMembershipState.free_tier_mass_remaining || 0);
+      const unlockedPremium = typeof isPremiumPosterUnlocked === "function"
+        ? isPremiumPosterUnlocked()
+        : !!window.premiumPosterUnlocked;
+      const usePremiumToken = !!(
+        unlockedPremium
+        && premiumLeft > 0
+        && !churchMembershipState.can_use_full_app
+        && !churchMembershipState.is_superadmin
+      );
+      if (
+        !churchMembershipState.can_use_full_app
+        && !churchMembershipState.is_superadmin
+        && !usePremiumToken
+        && freeLeft <= 0
+        && premiumLeft > 0
+      ) {
+        statusFn(
+          "Unlock curated posters with a premium credit (Extras step), or start a 14-day trial under Settings → Billing.",
+          "error"
+        );
+        return null;
+      }
+      const allowPremiumPosters = typeof canUseCuratedPosters === "function"
+        ? canUseCuratedPosters(churchMembershipState)
+        : !!(
+          churchMembershipState.can_use_full_app
+          || churchMembershipState.is_superadmin
+          || usePremiumToken
+        );
+      // Unlocked premium Masses always request curated posters when styles are ready.
+      const forcePremiumAi = allowPremiumPosters && usePremiumToken;
       const useAiPoster = allowPremiumPosters
-        && (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi)
-        && weeklyReady;
+        && weeklyReady
+        && (
+          forcePremiumAi
+          || churchMembershipState.can_use_full_app
+          || churchMembershipState.is_superadmin
+          || (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi)
+        );
       const body = {
         date,
         celebrant: celebrantMain,
@@ -347,6 +379,7 @@
         include_social_exports: readSocialExportSettings(o),
         include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
+        use_premium_token: usePremiumToken,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
         ai_poster_transparency_pct:
           o.ai_poster_transparency_pct != null
@@ -551,6 +584,7 @@
           body.include_leaflet = true;
           body.include_ai_mass_poster = false;
           body.include_social_exports = false;
+          body.use_premium_token = false;
         }
 
         const dupKey = "churchMediaLastGenFp";
@@ -3445,6 +3479,7 @@
         const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
         applySongMetaToForm(apiSec, merged);
         composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
+        composerParishOnly = !!s.parish_only;
         composerSongMedia = {
           audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
           video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
@@ -3477,6 +3512,7 @@
           (composerParishVersion ? " (parish version)." : "."),
           "ok"
         );
+        if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
         if (clearSearch) clearSongCatalogSearch();
         setSongComposerDeflated(true);
       } finally {

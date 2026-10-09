@@ -946,6 +946,10 @@
         const ytLink = e.target.closest("[data-mw-link-youtube]");
         if (ytLink && root.contains(ytLink)) {
           e.preventDefault();
+          if (typeof canLinkYouTubeMedia === "function" && !canLinkYouTubeMedia()) {
+            if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+            return;
+          }
           const slot = ytLink.getAttribute("data-mw-media-slot");
           if (slot) openMassMediaPickModal("audio", slot, { youtubeOnly: true });
           return;
@@ -1773,21 +1777,15 @@
       if (!modal) return;
       const enter = step !== "confirm";
       modal.setAttribute("data-step", enter ? "enter" : "confirm");
-      const enterStep = $("add-priest-enter-step");
-      const confirmStep = $("add-priest-confirm-step");
-      const footEnter = $("add-priest-footer-enter");
-      const footConfirm = $("add-priest-footer-confirm");
-      const title = $("add-priest-modal-title");
-      const desc = $("add-priest-modal-desc");
-      if (enterStep) enterStep.hidden = !enter;
-      if (confirmStep) confirmStep.hidden = enter;
-      if (footEnter) footEnter.hidden = !enter;
-      if (footConfirm) footConfirm.hidden = enter;
-      if (title) title.textContent = enter ? "Add a priest" : "Confirm spelling";
-      if (desc) {
-        desc.textContent = enter
-          ? "Enter the celebrant name exactly as it should appear on Mass slides."
-          : "Double-check the name below before adding it to your parish list.";
+      const enterCard = $("add-priest-enter-card");
+      const confirmCard = $("add-priest-confirm-card");
+      if (enterCard) {
+        enterCard.hidden = !enter;
+        enterCard.setAttribute("aria-hidden", enter ? "false" : "true");
+      }
+      if (confirmCard) {
+        confirmCard.hidden = enter;
+        confirmCard.setAttribute("aria-hidden", enter ? "true" : "false");
       }
     }
 
@@ -1911,13 +1909,14 @@
       if (!modal || modal.dataset.bound === "1") return;
       modal.dataset.bound = "1";
       const closeBtn = $("add-priest-modal-close");
+      const confirmCloseBtn = $("add-priest-confirm-close");
       const cancelBtn = $("add-priest-cancel");
       const continueBtn = $("add-priest-continue");
       const backBtn = $("add-priest-back");
       const confirmBtn = $("add-priest-confirm");
       const backdrop = $("add-priest-modal-backdrop");
       const input = $("add-priest-name");
-      [closeBtn, cancelBtn, backdrop].forEach((el) => {
+      [closeBtn, confirmCloseBtn, cancelBtn, backdrop].forEach((el) => {
         if (el) el.addEventListener("click", () => closeAddPriestModal());
       });
       if (continueBtn) continueBtn.addEventListener("click", () => showAddPriestConfirmStep());
@@ -2050,19 +2049,29 @@
           celebrantNamesCache.push(n);
           renderSettingsCelebrantList();
           renderCelebrantSelect(n);
+          if (churchMembershipState.is_free_tier) {
+            churchMembershipState.free_tier_priest_submit_remaining = 0;
+            churchMembershipState.can_submit_priest = false;
+          }
           return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
-        } catch (_e) {
+        } catch (err) {
+          const detail = (err && err.message) || "";
+          if (detail) notify(detail, "error");
           return false;
         }
       }
-      // Complimentary / early access: keep the name for this session so generate works.
+      // Free tier (quota used) / complimentary: keep the name for this session so generate works.
       if (churchMembershipState.can_generate_mass) {
         celebrantNamesCache.push(n);
         renderSettingsCelebrantList();
         renderCelebrantSelect(n);
         return { local: true };
       }
-      throw new Error("Approved parish membership is required to submit a priest name.");
+      throw new Error(
+        churchMembershipState.is_free_tier
+          ? "Free plan allows 1 priest name submission. Start a trial under Settings → Billing to submit more."
+          : "Approved parish membership is required to submit a priest name."
+      );
     }
 
     async function migrateCelebrantsFromBrowserStorage() {
@@ -2422,7 +2431,15 @@
       can_use_premium_posters: true,
       can_submit_song: true,
       can_submit_priest: true,
+      free_tier_song_submit_remaining: null,
+      free_tier_priest_submit_remaining: null,
       is_superadmin: false,
+      is_free_tier: false,
+      plan_tier: "paid",
+      practice_share_active_limit: null,
+      practice_share_active_count: 0,
+      practice_share_active_remaining: null,
+      can_create_practice_share: true,
       role: "member",
     };
 
@@ -2441,6 +2458,30 @@
     function guardFullAppAction(message) {
       if (churchMembershipState.can_use_full_app) return true;
       const msg = message || "Mass generation and parish tools require approved parish membership.";
+      notify(msg, "error");
+      return false;
+    }
+
+    function guardSongSubmitAction(message) {
+      if (churchMembershipState.can_use_full_app || churchMembershipState.is_superadmin) return true;
+      if (churchMembershipState.can_submit_song) return true;
+      const rem = churchMembershipState.free_tier_song_submit_remaining;
+      const msg = message
+        || (churchMembershipState.is_free_tier && rem != null && rem <= 0
+          ? "Free plan allows 1 song submission per month. Start a trial under Settings → Billing for unlimited submissions."
+          : "Song submissions require a parish plan or free-tier allowance.");
+      notify(msg, "error");
+      return false;
+    }
+
+    function guardPriestSubmitAction(message) {
+      if (churchMembershipState.can_use_full_app || churchMembershipState.is_superadmin) return true;
+      if (churchMembershipState.can_submit_priest) return true;
+      const rem = churchMembershipState.free_tier_priest_submit_remaining;
+      const msg = message
+        || (churchMembershipState.is_free_tier && rem != null && rem <= 0
+          ? "Free plan allows 1 priest name submission. Start a trial under Settings → Billing to submit more."
+          : "Priest submissions require a parish plan or free-tier allowance.");
       notify(msg, "error");
       return false;
     }
@@ -3003,7 +3044,7 @@
         churchMembershipState.free_mass_used = premiumLeft <= 0;
         churchMembershipState.free_tier_mass_remaining = freeLeft;
         churchMembershipState.next_generation_tier = data.next_generation_tier
-          || (premiumLeft > 0 ? "premium" : (freeLeft > 0 ? "free" : "none"));
+          || (freeLeft > 0 ? "free" : (premiumLeft > 0 ? "premium" : "none"));
         churchMembershipState.can_use_premium_posters = data.can_use_premium_posters != null
           ? !!data.can_use_premium_posters
           : premiumLeft > 0;
@@ -3013,6 +3054,8 @@
           || premiumLeft > 0
           || freeLeft > 0
         );
+        // Token spent (or free gen finished) — clear unlock for the next Mass.
+        setPremiumPosterUnlocked(false);
         syncGenerateButtons();
         syncPrivilegedUi();
         syncGlobalMembershipBanner(churchMembershipState);
@@ -3599,6 +3642,18 @@
       const canGen = data.can_generate_mass != null
         ? !!data.can_generate_mass
         : !!(canFull || premiumRemaining > 0 || freeTierRemaining > 0);
+      const isFreeTier = data.is_free_tier != null
+        ? !!data.is_free_tier
+        : (!!billing.billing_enabled && !canFull && !data.is_superadmin);
+      const practiceLimit = data.practice_share_active_limit != null
+        ? Math.max(0, Number(data.practice_share_active_limit) || 0)
+        : (isFreeTier ? 2 : null);
+      const practiceCount = data.practice_share_active_count != null
+        ? Math.max(0, Number(data.practice_share_active_count) || 0)
+        : 0;
+      const practiceRemaining = data.practice_share_active_remaining != null
+        ? Math.max(0, Number(data.practice_share_active_remaining) || 0)
+        : (practiceLimit == null ? null : Math.max(0, practiceLimit - practiceCount));
       churchMembershipState = {
         membership_status: data.membership_status || "draft",
         community_name_locked: !!data.community_name_locked,
@@ -3616,13 +3671,27 @@
         premium_mass_remaining: premiumRemaining,
         free_tier_mass_remaining: freeTierRemaining,
         next_generation_tier: data.next_generation_tier
-          || (canFull ? "paid" : (premiumRemaining > 0 ? "premium" : (freeTierRemaining > 0 ? "free" : "none"))),
+          || (canFull ? "paid" : (freeTierRemaining > 0 ? "free" : (premiumRemaining > 0 ? "premium" : "none"))),
         can_use_premium_posters: data.can_use_premium_posters != null
           ? !!data.can_use_premium_posters
           : !!(canFull || premiumRemaining > 0),
         can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!canFull && !data.is_superadmin),
         can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!canFull && !data.is_superadmin),
+        free_tier_song_submit_remaining: data.free_tier_song_submit_remaining != null
+          ? Math.max(0, Number(data.free_tier_song_submit_remaining) || 0)
+          : null,
+        free_tier_priest_submit_remaining: data.free_tier_priest_submit_remaining != null
+          ? Math.max(0, Number(data.free_tier_priest_submit_remaining) || 0)
+          : null,
         is_superadmin: !!data.is_superadmin,
+        is_free_tier: isFreeTier,
+        plan_tier: data.plan_tier || (isFreeTier ? "free" : (canFull || data.is_superadmin ? "paid" : "none")),
+        practice_share_active_limit: practiceLimit,
+        practice_share_active_count: practiceCount,
+        practice_share_active_remaining: practiceRemaining,
+        can_create_practice_share: data.can_create_practice_share != null
+          ? !!data.can_create_practice_share
+          : (practiceRemaining == null || practiceRemaining > 0),
         role: (data.role || "member").toLowerCase(),
         parish_role: (data.parish_role || "").toLowerCase(),
         parish_id: data.parish_id || "",
@@ -3734,6 +3803,190 @@
       syncPrivilegedUi();
     }
 
+    /** Client opt-in: Unlock spends a premium token on the next Mass generate. */
+    let premiumPosterUnlocked = false;
+
+    function isPremiumPosterUnlocked() {
+      return !!premiumPosterUnlocked;
+    }
+
+    function setPremiumPosterUnlocked(on) {
+      premiumPosterUnlocked = !!on;
+      try {
+        window.premiumPosterUnlocked = premiumPosterUnlocked;
+      } catch (_e) { /* ignore */ }
+      syncCuratedPosterAccessUi();
+      syncGenerateButtons();
+    }
+
+    function canUseCuratedPosters(state) {
+      const s = state || churchMembershipState;
+      if (!s) return false;
+      if (s.can_use_full_app || s.is_superadmin) return true;
+      // Unpaid: only after Unlock while a premium Mass token remains.
+      return isPremiumPosterUnlocked() && premiumMassRemaining(s) > 0;
+    }
+
+    function syncCuratedPosterAccessUi() {
+      const s = churchMembershipState;
+      const allowed = canUseCuratedPosters(s);
+      const premiumLeft = premiumMassRemaining(s);
+      const canUnlock = !!(
+        !s.can_use_full_app
+        && !s.is_superadmin
+        && premiumLeft > 0
+        && !isPremiumPosterUnlocked()
+      );
+      const wrap = $("flow-ai-poster-style-wrap");
+      const section = $("mw-ai-poster-section");
+      const gate = $("mw-ai-poster-gate");
+      const msg = $("mw-ai-poster-gate-msg");
+      const unlockChip = $("mw-premium-unlock-chip");
+      const unlockBtn = $("mw-ai-poster-unlock");
+      const unlockCount = $("mw-ai-poster-unlock-count");
+      const body = $("mw-ai-poster-body");
+      const catalogReady = typeof areWeeklyAiPostersReady === "function" && areWeeklyAiPostersReady();
+      // Membership lock is separate from "posters not generated yet" lock.
+      if (wrap) {
+        wrap.classList.toggle("is-premium-poster-locked", !allowed);
+        wrap.classList.toggle("has-premium-unlock", canUnlock);
+      }
+      if (section) section.classList.toggle("is-premium-poster-locked", !allowed);
+      document.body.classList.toggle("is-premium-poster-locked", !allowed);
+      if (unlockChip) unlockChip.hidden = !canUnlock;
+      if (unlockBtn) {
+        unlockBtn.hidden = !canUnlock;
+        unlockBtn.textContent = "Unlock";
+        unlockBtn.title = premiumLeft === 1
+          ? "Unlock curated posters — uses 1 premium credit on generate"
+          : ("Unlock curated posters — " + premiumLeft + " premium credits left");
+      }
+      if (unlockCount) {
+        unlockCount.hidden = !canUnlock;
+        unlockCount.textContent = String(premiumLeft);
+        unlockCount.title = premiumLeft === 1
+          ? "1 premium credit left"
+          : (premiumLeft + " premium credits left");
+      }
+      if (!allowed) {
+        // With an Unlock chip, keep the poster visible under a light lock — no big gate copy.
+        if (gate) {
+          gate.hidden = canUnlock;
+          gate.setAttribute("data-ai-ready", "0");
+        }
+        if (msg) {
+          msg.textContent = canUnlock
+            ? ""
+            : "Curated divider posters need a premium Mass credit or an active trial. Open Settings → Billing to start your 14-day trial.";
+        }
+        if (body) body.setAttribute("aria-disabled", "true");
+        return;
+      }
+      // Premium unlock / paid: restore normal ready/not-ready gate from weekly catalog.
+      if (typeof syncWeeklyAiPosterGate === "function") {
+        syncWeeklyAiPosterGate();
+      } else if (gate) {
+        gate.hidden = catalogReady;
+        gate.setAttribute("data-ai-ready", catalogReady ? "1" : "0");
+        if (wrap) wrap.classList.toggle("is-ai-poster-locked", !catalogReady);
+        if (section) section.classList.toggle("is-ai-poster-locked", !catalogReady);
+        if (body) body.setAttribute("aria-disabled", catalogReady ? "false" : "true");
+      }
+    }
+
+    function setPremiumUnlockOverlayOpen(open) {
+      const modal = $("premium-poster-unlock-modal");
+      if (!modal) return;
+      if (typeof setUiOverlayOpen === "function") {
+        setUiOverlayOpen(modal, open);
+        return;
+      }
+      if (open) {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      } else {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        if (!document.querySelector(".ui-overlay.is-open")) {
+          document.body.style.overflow = "";
+        }
+      }
+    }
+
+    function closePremiumPosterUnlockModal() {
+      setPremiumUnlockOverlayOpen(false);
+    }
+
+    function openPremiumPosterUnlockModal() {
+      const left = premiumMassRemaining(churchMembershipState);
+      if (left <= 0) {
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus("No premium Mass credits left. Start a 14-day trial under Settings → Billing.", "error");
+        }
+        return;
+      }
+      const credits = $("premium-poster-unlock-credits");
+      if (credits) {
+        credits.textContent = left === 1
+          ? "You have 1 premium credit left."
+          : ("You have " + left + " premium credits left.");
+      }
+      const confirmBtn = $("premium-poster-unlock-confirm");
+      if (confirmBtn) confirmBtn.focus();
+      setPremiumUnlockOverlayOpen(true);
+    }
+
+    function confirmPremiumPosterUnlock() {
+      const left = premiumMassRemaining(churchMembershipState);
+      if (left <= 0) {
+        closePremiumPosterUnlockModal();
+        if (typeof setFlowStatus === "function") {
+          setFlowStatus("No premium Mass credits left. Start a 14-day trial under Settings → Billing.", "error");
+        }
+        return;
+      }
+      closePremiumPosterUnlockModal();
+      setPremiumPosterUnlocked(true);
+      if (typeof setFlowStatus === "function") {
+        setFlowStatus("Premium unlock on — pick a style, then generate.", "ok");
+      }
+    }
+
+    function bindPremiumPosterUnlockUi() {
+      const unlockBtn = $("mw-ai-poster-unlock");
+      if (unlockBtn && unlockBtn.dataset.boundPremiumUnlock !== "1") {
+        unlockBtn.dataset.boundPremiumUnlock = "1";
+        unlockBtn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          openPremiumPosterUnlockModal();
+        });
+      }
+      const modal = $("premium-poster-unlock-modal");
+      if (!modal || modal.dataset.boundPremiumUnlockModal === "1") return;
+      modal.dataset.boundPremiumUnlockModal = "1";
+      const backdrop = $("premium-poster-unlock-backdrop");
+      if (backdrop) {
+        backdrop.addEventListener("click", function () {
+          if (modal.classList.contains("is-open")) closePremiumPosterUnlockModal();
+        });
+      }
+      const closeBtn = $("premium-poster-unlock-close");
+      if (closeBtn) closeBtn.addEventListener("click", closePremiumPosterUnlockModal);
+      const cancelBtn = $("premium-poster-unlock-cancel");
+      if (cancelBtn) cancelBtn.addEventListener("click", closePremiumPosterUnlockModal);
+      const confirmBtn = $("premium-poster-unlock-confirm");
+      if (confirmBtn) confirmBtn.addEventListener("click", confirmPremiumPosterUnlock);
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape") return;
+        if (modal.classList.contains("is-open")) closePremiumPosterUnlockModal();
+      });
+    }
+    window.canUseCuratedPosters = canUseCuratedPosters;
+    window.isPremiumPosterUnlocked = isPremiumPosterUnlocked;
+    window.setPremiumPosterUnlocked = setPremiumPosterUnlocked;
+    window.bindPremiumPosterUnlockUi = bindPremiumPosterUnlockUi;
+
     function syncPrivilegedUi() {
       const sa = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       const canFull = !!churchMembershipState.can_use_full_app;
@@ -3747,6 +4000,8 @@
       if (flowPage) flowPage.classList.toggle("is-readonly", !canGen);
       const themePage = $("theme-page");
       if (themePage) themePage.classList.toggle("is-readonly", !sa);
+      bindPremiumPosterUnlockUi();
+      syncCuratedPosterAccessUi();
 
       [
         "btn-save-theme",
@@ -3770,6 +4025,7 @@
       if (typeof renderThemeGrid === "function") renderThemeGrid();
       if (typeof renderSongCatalog === "function") renderSongCatalog();
       if (typeof syncSongCatalogBulkBar === "function") syncSongCatalogBulkBar();
+      if (typeof syncFreeTierSongComposerReadonly === "function") syncFreeTierSongComposerReadonly();
       syncSuperadminNavVisibility();
       syncCalendarAdminVisibility();
     }
@@ -3778,7 +4034,7 @@
       const canGen = canGenerateMass(churchMembershipState);
       const premiumLeft = premiumMassRemaining(churchMembershipState);
       const freeLeft = freeTierMassRemaining(churchMembershipState);
-      const tier = churchMembershipState.next_generation_tier || "";
+      const unlocked = isPremiumPosterUnlocked() && premiumLeft > 0;
       ["btn-generate-flow", "btn-generate-flow-inline"].forEach((id) => {
         const btn = $(id);
         if (!btn) return;
@@ -3786,10 +4042,12 @@
         let title = "";
         if (!canGen) {
           title = "Start a 14-day trial under Settings → Billing to unlock Mass generation.";
-        } else if (tier === "premium" || (premiumLeft > 0 && tier !== "free")) {
-          title = "Uses 1 premium Mass with curated divider posters (" + premiumLeft + " left)";
-        } else if (tier === "free" || freeLeft > 0) {
-          title = "Uses 1 basic free Mass this month — no curated divider posters (" + freeLeft + " left)";
+        } else if (unlocked) {
+          title = "Uses 1 premium Mass credit — curated posters, no watermark (" + premiumLeft + " left)";
+        } else if (freeLeft > 0) {
+          title = "Uses 1 free Mass this month — quiet watermark, no curated posters (" + freeLeft + " left)";
+        } else if (premiumLeft > 0) {
+          title = "Unlock curated posters with a premium credit to generate (" + premiumLeft + " left)";
         }
         btn.title = title;
       });

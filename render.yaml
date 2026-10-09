@@ -142,7 +142,7 @@ services:
       - key: APP_PUBLIC_URL
         sync: false
       - key: IMAGE_GENERATION_WEEKLY_LIMIT
-        value: "4"
+        value: "0"
       - key: RATE_LIMIT_ENABLED
         value: "1"
       - key: RATE_LIMIT_AUTH_MAX

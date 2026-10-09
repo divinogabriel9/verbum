@@ -2807,6 +2807,49 @@
       if (anyActive) startPracticeShareHistoryCountdown();
       else stopPracticeShareHistoryCountdown();
     }
+    function syncPracticeShareQuotaFromApi(data) {
+      if (!data || typeof churchMembershipState !== "object") return;
+      if (data.is_free_tier != null) churchMembershipState.is_free_tier = !!data.is_free_tier;
+      if (data.practice_share_active_limit != null) {
+        churchMembershipState.practice_share_active_limit = Math.max(0, Number(data.practice_share_active_limit) || 0);
+      } else if (data.is_free_tier) {
+        churchMembershipState.practice_share_active_limit = 2;
+      }
+      if (data.practice_share_active_count != null) {
+        churchMembershipState.practice_share_active_count = Math.max(0, Number(data.practice_share_active_count) || 0);
+      }
+      if (data.practice_share_active_remaining != null) {
+        churchMembershipState.practice_share_active_remaining = Math.max(0, Number(data.practice_share_active_remaining) || 0);
+      } else if (churchMembershipState.practice_share_active_limit != null) {
+        churchMembershipState.practice_share_active_remaining = Math.max(
+          0,
+          churchMembershipState.practice_share_active_limit - (churchMembershipState.practice_share_active_count || 0)
+        );
+      }
+      if (data.can_create_practice_share != null) {
+        churchMembershipState.can_create_practice_share = !!data.can_create_practice_share;
+      } else {
+        const rem = churchMembershipState.practice_share_active_remaining;
+        churchMembershipState.can_create_practice_share = rem == null || rem > 0;
+      }
+    }
+
+    function canCreatePracticeShareNow() {
+      if (typeof churchMembershipState !== "object") return true;
+      if (churchMembershipState.is_superadmin || churchMembershipState.can_use_full_app) return true;
+      if (churchMembershipState.can_create_practice_share === false) return false;
+      const rem = churchMembershipState.practice_share_active_remaining;
+      if (rem == null) return true;
+      return rem > 0;
+    }
+
+    function practiceShareFreeTierBlockedMessage() {
+      const limit = (typeof churchMembershipState === "object" && churchMembershipState.practice_share_active_limit != null)
+        ? churchMembershipState.practice_share_active_limit
+        : 2;
+      return "Free plan allows " + limit + " active choir lyric shares. Expire one, or start a trial under Settings → Billing.";
+    }
+
     async function fetchRecentPracticeShares() {
       if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
@@ -2820,6 +2863,7 @@
       if (!res.ok) {
         throw new Error(data.detail || data.error || res.statusText || "Could not load shares.");
       }
+      syncPracticeShareQuotaFromApi(data);
       return Array.isArray(data.shares) ? data.shares : [];
     }
 
@@ -2855,7 +2899,10 @@
           footer.classList.remove("practice-share-history-footer--loading");
         }
         if (cancelBtn) cancelBtn.hidden = false;
-        if (newBtn) newBtn.hidden = false;
+        if (newBtn) {
+          newBtn.hidden = false;
+          syncPracticeShareNewBtnState();
+        }
       } catch (err) {
         if (loading) loading.hidden = true;
         if (list) { list.hidden = false; list.innerHTML = ""; }
@@ -2890,6 +2937,15 @@
       });
     }
 
+    function syncPracticeShareNewBtnState() {
+      const newBtn = $("practice-share-history-new");
+      if (!newBtn) return;
+      const ok = canCreatePracticeShareNow();
+      newBtn.disabled = !ok;
+      if (!ok) newBtn.title = practiceShareFreeTierBlockedMessage();
+      else newBtn.removeAttribute("title");
+    }
+
     async function expirePracticeShareFromHistory(token) {
       const tok = String(token || "").trim();
       if (!tok) return;
@@ -2901,6 +2957,7 @@
         await postJSON("/api/practice/" + encodeURIComponent(tok) + "/revoke", {});
         const shares = await fetchRecentPracticeShares();
         renderPracticeShareHistoryList(shares);
+        syncPracticeShareNewBtnState();
         notify("Practice link expired.", "ok");
       } catch (err) {
         if (status) {
@@ -3110,6 +3167,10 @@
       opts = opts || {};
       if (!isFeatureEnabled("choir_practice_shares")) {
         notify(FEATURE_OFF_HINT, "info");
+        return;
+      }
+      if (!canCreatePracticeShareNow()) {
+        notify(practiceShareFreeTierBlockedMessage(), "warn");
         return;
       }
       syncPracticeShareUiHost();
@@ -3426,6 +3487,15 @@
       const loading = $("practice-share-loading");
       const generateBtn = $("practice-share-generate");
       const setup = $("practice-share-setup");
+      if (!canCreatePracticeShareNow()) {
+        const msg = practiceShareFreeTierBlockedMessage();
+        if (status) {
+          status.textContent = msg;
+          status.hidden = false;
+        }
+        notify(msg, "warn");
+        return;
+      }
       const date = ($("mass-date") && $("mass-date").value || "").trim();
       if (!date) {
         if (status) {
@@ -3457,6 +3527,16 @@
           ttl_days: 0,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
+        if (typeof churchMembershipState === "object" && churchMembershipState.is_free_tier) {
+          const used = Math.max(0, Number(churchMembershipState.practice_share_active_count) || 0) + 1;
+          churchMembershipState.practice_share_active_count = used;
+          const limit = churchMembershipState.practice_share_active_limit != null
+            ? churchMembershipState.practice_share_active_limit
+            : 2;
+          churchMembershipState.practice_share_active_remaining = Math.max(0, limit - used);
+          churchMembershipState.can_create_practice_share =
+            churchMembershipState.practice_share_active_remaining > 0;
+        }
         showPracticeShareResult({ ...data, leader_pin: data.leader_pin, mass_date: date });
       } catch (err) {
         stopPracticeShareLoadingAnim();
@@ -3489,6 +3569,10 @@
     }
 
     function startNewPracticeShareFromHistory() {
+      if (!canCreatePracticeShareNow()) {
+        notify(practiceShareFreeTierBlockedMessage(), "warn");
+        return;
+      }
       closePracticeShareHistoryModal();
       const dateEl = $("mass-date");
       const date = dateEl ? (dateEl.value || "").trim() : "";

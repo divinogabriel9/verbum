@@ -1172,6 +1172,53 @@ def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) ->
     return {"ok": True}
 
 
+def count_active_practice_shares(
+    *,
+    parish_id: Optional[str] = None,
+    created_by_user_id: Optional[str] = None,
+) -> int:
+    """Live (non-revoked, unexpired) practice shares for a parish or creator."""
+    pid = (parish_id or "").strip() or None
+    uid = (created_by_user_id or "").strip() or None
+    if not pid and not uid:
+        return 0
+
+    rows: list[dict[str, Any]] = []
+    if supabase_enabled():
+        try:
+            query = (
+                _service_client()
+                .table("choir_practice_shares")
+                .select("token,expires_at,revoked_at,parish_id,created_by")
+                .is_("revoked_at", "null")
+                .order("created_at", desc=True)
+                .limit(80)
+            )
+            if pid:
+                query = query.eq("parish_id", pid)
+            else:
+                query = query.eq("created_by", uid)
+            result = query.execute()
+            rows = [r for r in (result.data or []) if isinstance(r, dict)]
+        except Exception as exc:
+            if not _supabase_unavailable(exc):
+                raise
+            logger.warning("choir_practice_shares active count failed; using local (%s)", exc)
+            rows = []
+
+    if not rows:
+        for item in _read_local_rows():
+            if not isinstance(item, dict):
+                continue
+            if pid and str(item.get("parish_id") or "").strip() != pid:
+                continue
+            if not pid and uid and str(item.get("created_by") or "").strip() != uid:
+                continue
+            rows.append(item)
+
+    return sum(1 for row in rows if _row_live(row))
+
+
 def list_recent_practice_shares(
     *,
     created_by_user_id: str,

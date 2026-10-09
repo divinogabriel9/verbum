@@ -1,8 +1,8 @@
-"""Weekly poster-generation allowance (free tier) vs unlimited for paid parishes.
+"""Curated-poster metering: unpaid = none; paid/trial = unlimited.
 
-Shared Sunday hero cache may avoid a paid image-API call, but free-tier product
-quota is still reserved so the weekly allowance is experienced fairly.
-Subscribed (paid) parishes are unlimited.
+Free-tier accounts do not get a standalone weekly poster allowance. Curated
+posters for unpaid users come only via one-time premium Mass tokens (those
+gens skip this meter). Paid / trialing parishes are unlimited.
 """
 
 from __future__ import annotations
@@ -26,19 +26,20 @@ _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 _DB_PATH = _DATA_DIR / "app.sqlite"
 _KEY_PREFIX = "verbum:quota:image:"
 
-# Free tier: 4 curated poster uses per ISO week (UTC). Paid = unlimited.
-FREE_WEEKLY_IMAGE_LIMIT = max(
-    1,
-    int(os.environ.get("IMAGE_GENERATION_WEEKLY_LIMIT", "4")),
-)
+# Unpaid/free: no standalone curated-poster slots (default 0). Paid = unlimited.
+# Env kept for ops overrides; values below 0 are clamped to 0.
+try:
+    FREE_WEEKLY_IMAGE_LIMIT = max(0, int(os.environ.get("IMAGE_GENERATION_WEEKLY_LIMIT", "0")))
+except (TypeError, ValueError):
+    FREE_WEEKLY_IMAGE_LIMIT = 0
 # Backward-compatible aliases for admin / health probes (free-tier cap).
 WEEKLY_IMAGE_LIMIT = FREE_WEEKLY_IMAGE_LIMIT
 DAILY_IMAGE_LIMIT = FREE_WEEKLY_IMAGE_LIMIT
 
 _FREE_LIMIT_DETAIL = (
-    f"You've reached this week's free poster allowance "
-    f"({FREE_WEEKLY_IMAGE_LIMIT} per week). "
-    "Subscribe for unlimited beautifully curated posters, or try again next week."
+    "Curated posters aren't included on the free plan. "
+    "Use a premium Mass token, or start a 14-day parish trial under Settings → Billing "
+    "for unlimited beautifully curated posters."
 )
 
 
@@ -79,7 +80,7 @@ def _quota_key(subject: str, usage_period: str) -> str:
 
 
 def session_has_unlimited_image_quota(session: Optional[AuthSession]) -> bool:
-    """Paid subscribers (and superadmins) are not metered. Free tier is."""
+    """Paid / trial (and superadmins) are not metered. Unpaid free tier is blocked."""
     user = getattr(session, "user", None) if session else None
     if user is not None:
         try:
@@ -338,10 +339,11 @@ def reserve_daily_image_generation(
     source: str,
     unlimited: bool = False,
 ) -> dict[str, Any]:
-    """Reserve one weekly slot before applying a curated poster. Raises 429 when free tier is exhausted.
+    """Reserve one curated-poster slot. Raises 429 when unpaid free tier has none.
 
-    Name kept for callers; period is ISO week UTC. Paid / unlimited subjects are
-    still counted for admin stats but never blocked.
+    Name kept for callers; period is ISO week UTC. Default unpaid limit is 0
+    (no standalone free posters). Paid / unlimited subjects are still counted
+    for admin stats but never blocked. Premium Mass token gens skip this call.
     """
     period = _utc_week_id()
     return _reserve_quota_redis(
