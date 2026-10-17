@@ -55,9 +55,17 @@ body {
   margin: 0;
 }
 
-/* Boot / locked */
-.dx-boot,
-.dx-locked {
+/* Boot / locked — never let display:grid override the hidden attribute */
+.dx-boot[hidden],
+.dx-locked[hidden],
+.dx-app[hidden],
+.dx-modal-host[hidden],
+.dx-sidebar-backdrop[hidden] {
+  display: none !important;
+}
+
+.dx-boot:not([hidden]),
+.dx-locked:not([hidden]) {
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -92,7 +100,7 @@ body {
 }
 
 /* App shell */
-.dx-app {
+.dx-app:not([hidden]) {
   display: flex;
   min-height: 100vh;
 }
@@ -721,7 +729,7 @@ body {
 }
 
 /* Modal */
-.dx-modal-host {
+.dx-modal-host:not([hidden]) {
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -900,7 +908,7 @@ body {
     justify-content: center;
   }
 
-  .dx-sidebar-backdrop {
+  .dx-sidebar-backdrop:not([hidden]) {
     display: block;
     position: fixed;
     inset: 0;

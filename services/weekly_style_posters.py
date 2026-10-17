@@ -703,25 +703,6 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
     if not mass:
         return {"ok": False, "error": "invalid_date", "items": []}
     sunday = sunday_for_mass_date(mass)
-    items: list[dict[str, Any]] = []
-    for sid in weekly_style_ids():
-        # Local disk is ephemeral on Render — also treat shared-cache hits as ready
-        # so Home CTA / Extras keep working after deploys without regenerating.
-        ready = style_ready(sunday=sunday, style=sid, output_dir=output_dir)
-        proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb"
-        card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card&mark=3"
-        full_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
-        items.append(
-            {
-                "id": sid,
-                "label": weekly_style_label(sid),
-                "ready": ready,
-                "thumb_url": proxy if ready else "",
-                "card_url": card_proxy if ready else "",
-                "proxy_url": proxy,
-                "full_url": full_proxy if ready else "",
-            }
-        )
     versions: dict[str, Any] = {}
     try:
         from services.weekly_poster_versions import versions_payload
@@ -736,6 +717,41 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
             "versions": [],
             "sundays": [],
         }
+    # Bust browser/CDN caches when Superadmin flips the active version — Extras
+    # uses these unversioned URLs, which would otherwise keep showing v1 for a day.
+    try:
+        av = int(versions.get("active_version") or 0)
+    except (TypeError, ValueError):
+        av = 0
+    bust = f"&av={av}" if av > 0 else ""
+    items: list[dict[str, Any]] = []
+    for sid in weekly_style_ids():
+        # Local disk is ephemeral on Render — also treat shared-cache hits as ready
+        # so Home CTA / Extras keep working after deploys without regenerating.
+        ready = style_ready(sunday=sunday, style=sid, output_dir=output_dir)
+        proxy = (
+            f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
+            f"&variant=thumb{bust}"
+        )
+        card_proxy = (
+            f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
+            f"&variant=card&mark=3{bust}"
+        )
+        full_proxy = (
+            f"/api/weekly-style-posters/image?date={sunday}&style={sid}{bust}"
+        )
+        items.append(
+            {
+                "id": sid,
+                "label": weekly_style_label(sid),
+                "ready": ready,
+                "thumb_url": proxy if ready else "",
+                "card_url": card_proxy if ready else "",
+                "proxy_url": proxy,
+                "full_url": full_proxy if ready else "",
+                "active_version": av or None,
+            }
+        )
     return {
         "ok": True,
         "date": mass,
@@ -743,6 +759,7 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
         "items": items,
         "ready_count": sum(1 for it in items if it["ready"]),
         "total": len(items),
+        "active_version": av,
         "versions": versions,
     }
 
@@ -774,6 +791,7 @@ def ensure_weekly_heroes(
     version: Optional[int] = None,
     new_version: bool = False,
     overwrite_only: bool = False,
+    prompt_iteration: Optional[str] = None,
 ) -> dict[str, Any]:
     """Generate shared heroes for the Sunday of ``iso`` (up to ``max_generate``).
 
@@ -782,7 +800,13 @@ def ensure_weekly_heroes(
     ``overwrite_only`` is for prompt tests: regenerate selected styles in place
     without creating a new version row.
     Pass ``styles`` to generate only those style ids (enables 1/N client progress).
+    ``prompt_iteration`` selects OG fine-tune (default) or an alternate assembly.
     """
+    from services.mass_divider.prompt_iterations import (
+        prompt_iteration_label,
+        resolve_prompt_iteration,
+    )
+
     mass = normalize_mass_date(iso)
     if not mass:
         return {"ok": False, "error": "invalid_date", "generated": [], "skipped": []}
@@ -794,6 +818,7 @@ def ensure_weekly_heroes(
     queue = wanted or weekly_style_ids()
     overwrite_only = bool(overwrite_only)
     regenerate = bool(force or new_version or overwrite_only)
+    iteration_key = resolve_prompt_iteration(prompt_iteration)
     # Prompt-test / in-place path: rewrite active heroes — do not allocate a new vN.
     allocate_version = bool(new_version) or (bool(force) and not overwrite_only)
     version_no: Optional[int] = None
@@ -886,6 +911,7 @@ def ensure_weekly_heroes(
                 gospel_text=gospel_text,
                 season_key=season_key,
                 image_backend=image_backend,
+                prompt_iteration=iteration_key,
             )
             generated.append(sid)
             # New-version batches and in-place overwrites both update the version archive.
@@ -896,6 +922,7 @@ def ensure_weekly_heroes(
                     version=int(version_no),
                     style=sid,
                     prune_copies=not overwrite_only,
+                    prompt_iteration=iteration_key,
                 )
         except Exception as exc:
             logger.warning("weekly hero ensure failed %s %s: %s", sunday, sid, exc)
@@ -1001,6 +1028,8 @@ def ensure_weekly_heroes(
         "new_version": bool(new_version),
         "overwrite_only": bool(overwrite_only),
         "version": version_no if (allocate_version or overwrite_only) else None,
+        "prompt_iteration": iteration_key,
+        "prompt_iteration_label": prompt_iteration_label(iteration_key),
         "styles": list(queue),
         "catalog": catalog,
         "versions": versions,

@@ -174,6 +174,8 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                         image_url=user.image_url,
                         role="superadmin",
                     )
+                    user = enriched
+                    payload["role"] = "superadmin"
                     _store_auth_context(
                         session.token,
                         AuthSession(user=enriched, token=session.token),

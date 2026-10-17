@@ -11,6 +11,7 @@ import filecmp
 import hashlib
 import json
 import logging
+import os
 import re
 import shutil
 from datetime import datetime, timezone
@@ -371,30 +372,70 @@ def archive_active_as_version(
     return archived
 
 
-def _active_differs_from_version(
+def _active_matches_version(
     output_dir: Path, *, sunday: str, version: int
 ) -> bool:
-    """True when active heroes look different from an archived version set."""
-    saw_active = False
+    """True when every present active hero matches the archived version byte-for-byte.
+
+    Uses content (not mtime) so a promote/copy onto active does not look like a
+    brand-new set and invent phantom version rows.
+    """
+    saw = False
     for sid in weekly_style_ids():
         active = local_hero_path(output_dir, sunday=sunday, style=sid)
         archived = versioned_hero_path(
             output_dir, sunday=sunday, style=sid, version=version
         )
         if not active.is_file():
+            # Incomplete active set — not a match for a complete archive.
+            if archived.is_file():
+                return False
             continue
-        saw_active = True
+        saw = True
         if not archived.is_file():
-            return True
+            return False
         try:
             if active.stat().st_size != archived.stat().st_size:
-                return True
-            # Allow tiny mtime skew from copy2; treat clearly newer active as different.
-            if active.stat().st_mtime > archived.stat().st_mtime + 1.5:
-                return True
+                return False
+            if not filecmp.cmp(active, archived, shallow=False):
+                return False
         except OSError:
-            return True
-    return False if saw_active else False
+            return False
+    return saw
+
+
+def _active_differs_from_version(
+    output_dir: Path, *, sunday: str, version: int
+) -> bool:
+    """True when active heroes look different from an archived version set."""
+    return not _active_matches_version(output_dir, sunday=sunday, version=version)
+
+
+def find_version_matching_active(
+    output_dir: Path, *, sunday: str
+) -> int:
+    """Return the archived version number that matches active heroes, or 0."""
+    candidates = discover_version_numbers_on_disk(output_dir, sunday=sunday)
+    if not candidates:
+        return 0
+    # Prefer higher numbers when several match (shouldn't happen after prune).
+    for ver in reversed(candidates):
+        if not version_complete(output_dir, sunday=sunday, version=ver):
+            continue
+        if _active_matches_version(output_dir, sunday=sunday, version=ver):
+            return int(ver)
+    return 0
+
+
+def prune_all_duplicate_versions(
+    output_dir: Path, *, sunday: str
+) -> list[int]:
+    """Drop complete archives that are byte-identical to an older version."""
+    removed: list[int] = []
+    for ver in sorted(discover_version_numbers_on_disk(output_dir, sunday=sunday), reverse=True):
+        if prune_duplicate_version(output_dir, sunday=sunday, version=ver):
+            removed.append(ver)
+    return removed
 
 
 def record_style_in_version(
@@ -404,12 +445,18 @@ def record_style_in_version(
     version: int,
     style: str,
     prune_copies: bool = True,
+    prompt_iteration: Optional[str] = None,
 ) -> dict[str, Any]:
     """Archive one style into ``version`` and update the manifest entry."""
+    from services.mass_divider.prompt_iterations import resolve_prompt_iteration
+
     sid = resolve_ai_image_style(style)
     archive_style_version(output_dir, sunday=sunday, style=sid, version=version)
     manifest = load_manifest(output_dir, sunday=sunday)
     versions = list(manifest.get("versions") or [])
+    iteration_key = (
+        resolve_prompt_iteration(prompt_iteration) if prompt_iteration is not None else ""
+    )
     found = False
     for i, item in enumerate(versions):
         try:
@@ -427,6 +474,8 @@ def record_style_in_version(
         styles = version_styles_on_disk(output_dir, sunday=sunday, version=ver)
         row["styles"] = styles
         row["label"] = format_version_label(ver, styles)
+        if iteration_key:
+            row["prompt_iteration"] = iteration_key
         if version_complete(output_dir, sunday=sunday, version=ver):
             row["status"] = "ready"
             manifest["active_version"] = ver
@@ -437,15 +486,16 @@ def record_style_in_version(
     if not found:
         styles = version_styles_on_disk(output_dir, sunday=sunday, version=int(version))
         complete = version_complete(output_dir, sunday=sunday, version=version)
-        versions.append(
-            {
-                "version": int(version),
-                "created_at": _utc_now(),
-                "label": format_version_label(int(version), styles),
-                "styles": styles or [sid],
-                "status": "ready" if complete else ("partial" if styles else "generating"),
-            }
-        )
+        row_new: dict[str, Any] = {
+            "version": int(version),
+            "created_at": _utc_now(),
+            "label": format_version_label(int(version), styles),
+            "styles": styles or [sid],
+            "status": "ready" if complete else ("partial" if styles else "generating"),
+        }
+        if iteration_key:
+            row_new["prompt_iteration"] = iteration_key
+        versions.append(row_new)
         if complete:
             manifest["active_version"] = int(version)
     manifest["versions"] = versions
@@ -459,6 +509,23 @@ def record_style_in_version(
     return load_manifest(output_dir, sunday=sunday)
 
 
+def _link_or_copy(src: Path, dest: Path) -> None:
+    """Prefer hardlink (instant) when on the same volume; fall back to copy2."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.resolve() == src.resolve():
+        return
+    try:
+        if dest.is_file() or dest.is_symlink():
+            dest.unlink()
+    except OSError:
+        pass
+    try:
+        os.link(src, dest)
+        return
+    except OSError:
+        shutil.copy2(src, dest)
+
+
 def _copy_version_style_to_active(
     output_dir: Path,
     *,
@@ -466,27 +533,31 @@ def _copy_version_style_to_active(
     style: str,
     version: int,
     sync_shared: bool = False,
+    rebuild_ui: bool = False,
 ) -> bool:
-    """Copy one archived style onto the active hero path. Returns True on success."""
+    """Copy one archived style onto the active hero path. Returns True on success.
+
+    Version switching uses ``rebuild_ui=False`` so we never run PIL thumb rebuilds
+    on the hot path — hardlink/copy existing thumbs only.
+    """
     sid = resolve_ai_image_style(style)
     src = versioned_hero_path(output_dir, sunday=sunday, style=sid, version=version)
     if not src.is_file():
         return False
     dest = local_hero_path(output_dir, sunday=sunday, style=sid)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dest)
+    _link_or_copy(src, dest)
     need_rebuild = False
     for max_w in (720, 1600):
         src_thumb = ui_thumb_path(src, max_w=max_w)
         dest_thumb = ui_thumb_path(dest, max_w=max_w)
         if src_thumb.is_file():
             try:
-                shutil.copy2(src_thumb, dest_thumb)
+                _link_or_copy(src_thumb, dest_thumb)
             except OSError:
                 need_rebuild = True
         else:
             need_rebuild = True
-    if need_rebuild:
+    if need_rebuild and rebuild_ui:
         try:
             rebuild_ui_derivatives(sunday=sunday, style=sid, output_dir=output_dir)
         except Exception:
@@ -611,6 +682,22 @@ def promote_version_to_active(
     missing: list[str] = []
     base_promoted: list[str] = []
     complete = version_complete(output_dir, sunday=sunday, version=ver)
+    # Hot path (dropdown switch): hardlink/copy only — no PIL rebuilds.
+    rebuild_ui = bool(sync_shared)
+    # Already pointing at this archive — skip file IO.
+    if complete and _active_matches_version(output_dir, sunday=sunday, version=ver):
+        manifest["active_version"] = ver
+        save_manifest(output_dir, sunday=sunday, manifest=manifest)
+        return {
+            "ok": True,
+            "sunday": sunday,
+            "version": ver,
+            "promoted": list(owned),
+            "base_promoted": [],
+            "missing": [],
+            "soft": False,
+            "manifest": manifest,
+        }
     if not complete:
         base = previous_complete_version(output_dir, sunday=sunday, before=ver)
         if base > 0:
@@ -621,6 +708,7 @@ def promote_version_to_active(
                     style=sid,
                     version=base,
                     sync_shared=False,
+                    rebuild_ui=False,
                 ):
                     base_promoted.append(sid)
 
@@ -635,6 +723,7 @@ def promote_version_to_active(
             style=sid,
             version=ver,
             sync_shared=sync_shared,
+            rebuild_ui=rebuild_ui,
         ):
             promoted.append(sid)
         else:
@@ -768,10 +857,11 @@ def sync_manifest_with_disk(output_dir: Path, *, sunday: str) -> dict[str, Any]:
 def reconcile_active_into_versions(
     output_dir: Path, *, sunday: str
 ) -> dict[str, Any]:
-    """If active heroes differ from the latest archive, save them as a new version.
+    """If active heroes are a novel set, save them as a new version.
 
-    Recovers cases where a regenerate overwrote active files before versioning
-    finished writing ``*_v2`` archives.
+    Switching the dropdown to an older archive must NOT invent a phantom new
+    version (that was creating v3==v1, v4==v2). When active matches any
+    existing archive, only sync ``active_version``.
     """
     manifest = ensure_baseline_version_from_active(
         output_dir, sunday=sunday, allow_download=False
@@ -786,6 +876,14 @@ def reconcile_active_into_versions(
         return ensure_baseline_version_from_active(
             output_dir, sunday=sunday, allow_download=False
         )
+    # Active already equals some archived set (e.g. after switching to v1) —
+    # point the pointer; do not allocate vN+1.
+    match = find_version_matching_active(output_dir, sunday=sunday)
+    if match > 0:
+        if int(manifest.get("active_version") or 0) != match:
+            manifest["active_version"] = match
+            save_manifest(output_dir, sunday=sunday, manifest=manifest)
+        return manifest
     latest = 0
     for item in manifest.get("versions") or []:
         try:
@@ -804,12 +902,16 @@ def reconcile_active_into_versions(
     archived = archive_active_as_version(output_dir, sunday=sunday, version=new_v)
     if not archived:
         return manifest
-    # Never invent a "new" version that is a byte-for-byte copy of the latest.
-    if versions_have_same_content(
-        output_dir, sunday=sunday, version_a=latest, version_b=new_v
-    ):
-        delete_version_files(output_dir, sunday=sunday, version=new_v)
-        return manifest
+    # Never invent a "new" version that duplicates ANY older complete archive.
+    for older in range(1, new_v):
+        if versions_have_same_content(
+            output_dir, sunday=sunday, version_a=older, version_b=new_v
+        ):
+            delete_version_files(output_dir, sunday=sunday, version=new_v)
+            manifest = load_manifest(output_dir, sunday=sunday)
+            manifest["active_version"] = older
+            save_manifest(output_dir, sunday=sunday, manifest=manifest)
+            return manifest
     # Drop styles that are unchanged copies of the prior archive.
     prune_copied_styles_from_previous(output_dir, sunday=sunday, version=new_v)
     archived = version_styles_on_disk(output_dir, sunday=sunday, version=new_v)
@@ -1013,6 +1115,8 @@ def list_sundays_with_posters(output_dir: Path) -> list[dict[str, Any]]:
 def versions_payload(output_dir: Path, *, sunday: str) -> dict[str, Any]:
     # Fast path for catalog: local disk only + reconcile active→new version when needed.
     reconcile_active_into_versions(output_dir, sunday=sunday)
+    # Clean accidental clones created by older reconcile/promote bugs (v3==v1…).
+    prune_all_duplicate_versions(output_dir, sunday=sunday)
     manifest = sync_manifest_with_disk(output_dir, sunday=sunday)
     if not manifest.get("versions"):
         manifest = ensure_baseline_version_from_active(
@@ -1032,6 +1136,7 @@ def versions_payload(output_dir: Path, *, sunday: str) -> dict[str, Any]:
             v.get("styles") or []
         )
         complete = version_complete(output_dir, sunday=sunday, version=ver)
+        iteration = str(v.get("prompt_iteration") or "").strip()
         versions.append(
             {
                 "version": ver,
@@ -1040,15 +1145,20 @@ def versions_payload(output_dir: Path, *, sunday: str) -> dict[str, Any]:
                 "status": "ready" if complete else ("partial" if styles else "generating"),
                 "styles": styles,
                 "style_count": len(styles),
+                "prompt_iteration": iteration or None,
                 "active": ver == int(manifest.get("active_version") or 0),
                 "complete": complete,
             }
         )
     versions.sort(key=lambda x: x["version"], reverse=True)
-    return {
+    from services.mass_divider.prompt_iterations import iteration_payload
+
+    payload = {
         "ok": True,
         "sunday": sunday,
         "active_version": int(manifest.get("active_version") or 0),
         "versions": versions,
         "sundays": list_sundays_with_posters(output_dir),
     }
+    payload.update(iteration_payload())
+    return payload

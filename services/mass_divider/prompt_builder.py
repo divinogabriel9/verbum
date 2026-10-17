@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from services.mass_divider.types import CompositionProfile, GospelVisualAnalysis, VisualStyle
 
 NO_TEXT_EXCLUSIONS = (
@@ -32,6 +34,10 @@ _DECISIVE_MOMENT = (
     "Do not settle for a soft establishing shot of the setting alone, "
     "an empty banquet hall, or a generic outdoor teaching circle."
 )
+
+# Exported aliases for prompt_iterations.py — do not edit the string values above.
+OG_ANTI_SAMENESS = _ANTI_SAMENESS
+OG_DECISIVE_MOMENT = _DECISIVE_MOMENT
 
 
 def composition_prompt_lines(profile: CompositionProfile) -> list[str]:
@@ -79,8 +85,29 @@ def build_background_prompt(
     analysis: GospelVisualAnalysis,
     style: VisualStyle,
     profile: CompositionProfile,
+    iteration: Optional[str] = None,
 ) -> str:
-    """Artwork-only prompt. Never include Mass copy, names, dates, or citations."""
+    """Artwork-only prompt. Never include Mass copy, names, dates, or citations.
+
+    ``iteration="og"`` (default) is the frozen production fine-tune. Other values
+    are alternate assemblies of the same analysis — see ``prompt_iterations``.
+    """
+    from services.mass_divider.prompt_iterations import (
+        build_iterated_background_prompt,
+        resolve_prompt_iteration,
+    )
+
+    key = resolve_prompt_iteration(iteration)
+    if key != "og":
+        return build_iterated_background_prompt(
+            analysis=analysis,
+            style=style,
+            profile=profile,
+            iteration=key,
+        )
+
+    # --- OG Fine-tune (identical to backups/prompt_builder_og_20261018.py) ---
+    # Do not edit this block without updating the backup and verifying byte-match.
     tones = ", ".join(analysis.emotional_tone[:3]) or "reverent"
     secondaries = ", ".join(analysis.secondary_themes[:3])
     # Narrative climax first — style chrome after — so the model does not overfit stock poses.

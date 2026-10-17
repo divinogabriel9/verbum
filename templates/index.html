@@ -89,7 +89,7 @@
       display: none !important;
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261010-free-tier-readonly" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261018-sa-jump" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261010-sa-poster-cal" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261018-gospel-side8" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -3853,13 +3853,22 @@
           </aside>
           <div class="sa-main">
             <nav class="sa-mobile-nav" id="sa-mobile-nav" aria-label="Superadmin sections"></nav>
-            <header class="sa-topbar" id="sa-topbar">
-              <div>
-                <h2 class="sa-topbar__title" id="sa-topbar-title">Home</h2>
-                <p class="sa-topbar__desc" id="sa-topbar-desc">Platform pulse, analytics, and recent Mass runs.</p>
-              </div>
-              <span class="sa-topbar__meta" id="sa-topbar-group">Overview</span>
-            </header>
+            <div class="sa-sticky-chrome" id="sa-sticky-chrome">
+              <header class="sa-topbar" id="sa-topbar">
+                <div>
+                  <h2 class="sa-topbar__title" id="sa-topbar-title">Home</h2>
+                  <p class="sa-topbar__desc" id="sa-topbar-desc">Platform pulse, analytics, and recent Mass runs.</p>
+                </div>
+                <span class="sa-topbar__meta" id="sa-topbar-group">Overview</span>
+              </header>
+              <nav class="sa-jump" id="sa-jump" aria-label="Frequent superadmin shortcuts">
+                <div class="sa-jump__head">
+                  <h4 class="sa-jump__title">Jump</h4>
+                  <span class="sa-jump__hint muted">Your usual tabs</span>
+                </div>
+                <div class="sa-quick-actions sa-jump__actions" id="sa-jump-actions"></div>
+              </nav>
+            </div>
             <nav class="sa-subnav sa-subnav--mobile" id="sa-subnav" aria-label="Section tools" hidden></nav>
             <article class="sa-panel flow-bento-cell" id="sa-panel-dashboard" data-sa-panel="dashboard">
               <header class="flow-bento-cell__head home-card-head">
@@ -3872,17 +3881,6 @@
               <div class="sa-section">
                 <div class="sa-section__head"><h4>Recent activity</h4></div>
                 <ul class="sa-activity-list" id="sa-dashboard-activity" aria-live="polite"></ul>
-              </div>
-              <div class="sa-section">
-                <div class="sa-section__head"><h4>Jump</h4></div>
-                <div class="sa-quick-actions">
-                  <a class="primary" href="/admin/distribution" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Distribution CRM</a>
-                  <button type="button" class="secondary" id="sa-btn-goto-membership">Approvals</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="analytics">Analytics</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">AI &amp; quota</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="system-gospel-posters">Gospel posters</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="content-songs">Song catalog</button>
-                </div>
               </div>
               <p class="status" id="sa-dashboard-status" aria-live="polite"></p>
             </article>
@@ -4255,78 +4253,104 @@
               <p class="status" id="sa-gemini-status" aria-live="polite"></p>
             </article>
 
-            <article class="sa-panel flow-bento-cell" id="sa-panel-system-gospel-posters" data-sa-panel="system-gospel-posters" hidden>
+            <article class="sa-panel flow-bento-cell sa-panel--gospel" id="sa-panel-system-gospel-posters" data-sa-panel="system-gospel-posters" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Weekly Gospel posters</h3>
                   <p>Generate and activate the shared Sunday poster catalog. Parishes pick a style in Mass Builder → Extras.</p>
                 </div>
               </header>
-              <p class="muted" style="margin:0 0 12px;">Browse a Mass Sunday, generate styles, then set the active version. That set becomes what churches see in Extras and on the home CTA.</p>
-              <div class="sa-weekly-posters" id="sa-weekly-posters-host">
-                <div class="mw-weekly-posters__toolbar" id="mw-weekly-posters-toolbar">
-                  <div class="mw-weekly-posters__version-field mw-weekly-posters__cal-field" id="mw-weekly-posters-sunday-field">
-                    <span class="mw-weekly-posters__version-label" id="mw-weekly-posters-sunday-label">Mass Sunday</span>
-                    <input type="hidden" id="mw-weekly-posters-sunday" value="" aria-labelledby="mw-weekly-posters-sunday-label" />
-                    <div class="sa-poster-cal" id="sa-poster-cal" role="group" aria-labelledby="mw-weekly-posters-sunday-label"></div>
-                    <p class="sa-poster-cal__legend muted">
-                      <span class="sa-poster-cal__dot" aria-hidden="true"></span>
-                      Dot = posters exist for that Sunday
-                    </p>
-                  </div>
-                  <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-version-field">
-                    <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-version">Version</label>
-                    <select id="mw-weekly-posters-version" class="mw-weekly-posters__select" aria-label="Poster version"></select>
-                  </div>
-                  <fieldset class="mw-weekly-posters__style-checks" id="mw-weekly-posters-style-checks">
-                    <legend class="mw-weekly-posters__version-label">Styles to generate</legend>
-                    <div class="mw-weekly-posters__style-check-list">
-                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="cinematic" checked /><span>Cinematic</span></label>
-                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="realistic" checked /><span>Realistic</span></label>
-                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="renaissance" checked /><span>Renaissance</span></label>
-                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="stained_glass" checked /><span>Stained Glass</span></label>
-                      <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="modern" checked /><span>Modern</span></label>
+              <div class="sa-weekly-posters sa-gospel-stage" id="sa-weekly-posters-host">
+                <div class="sa-gospel-stage__canvas">
+                  <p class="mw-weekly-posters__date" id="sa-weekly-posters-date" hidden></p>
+                  <div class="mw-weekly-posters" id="sa-weekly-posters" data-weekly-posters-sa>
+                    <div class="mw-weekly-posters__stage">
+                      <button type="button" class="mw-weekly-posters__nav" data-sa-weekly-nav="-1" aria-label="Previous styles">‹</button>
+                      <div class="mw-weekly-posters__viewport" id="sa-weekly-posters-viewport">
+                        <div class="mw-weekly-posters__track" id="sa-weekly-posters-track" role="listbox" aria-label="Weekly poster styles preview"></div>
+                      </div>
+                      <button type="button" class="mw-weekly-posters__nav" data-sa-weekly-nav="1" aria-label="Next styles">›</button>
                     </div>
-                  </fieldset>
-                  <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate">
-                    Generate this week’s styles
-                  </button>
-                  <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regen-inplace" title="Remake checked styles inside the current version (no new version)">
-                    Regenerate selected in this version
-                  </button>
-                  <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regenerate" title="Create a new version (v2, v3…) without deleting older ones">
-                    Generate new version
-                  </button>
-                  <span class="muted" id="mw-weekly-posters-gen-status" aria-live="polite"></span>
-                </div>
-                <div class="mw-weekly-posters__progress" id="mw-weekly-posters-progress" hidden>
-                  <div class="mw-weekly-posters__progress-top">
-                    <span class="mw-weekly-posters__spinner" aria-hidden="true"></span>
-                    <span class="mw-weekly-posters__progress-label" id="mw-weekly-posters-progress-label">Generating…</span>
-                    <span class="mw-weekly-posters__progress-pct" id="mw-weekly-posters-progress-pct">0%</span>
                   </div>
-                  <div
-                    class="mw-weekly-posters__progress-track"
-                    id="mw-weekly-posters-progress-track"
-                    role="progressbar"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow="0"
-                    aria-labelledby="mw-weekly-posters-progress-label"
-                  >
-                    <div class="mw-weekly-posters__progress-fill" id="mw-weekly-posters-progress-fill"></div>
-                  </div>
+                  <div class="sa-gospel-stage__film" id="sa-weekly-posters-thumbs" role="listbox" aria-label="All poster styles"></div>
                 </div>
-                <p class="mw-weekly-posters__date" id="sa-weekly-posters-date" hidden></p>
-                <div class="mw-weekly-posters" id="sa-weekly-posters" data-weekly-posters-sa>
-                  <div class="mw-weekly-posters__stage">
-                    <button type="button" class="mw-weekly-posters__nav" data-sa-weekly-nav="-1" aria-label="Previous styles">‹</button>
-                    <div class="mw-weekly-posters__viewport" id="sa-weekly-posters-viewport">
-                      <div class="mw-weekly-posters__track" id="sa-weekly-posters-track" role="listbox" aria-label="Weekly poster styles preview"></div>
+                <aside class="sa-gospel-stage__dock" aria-label="Weekly poster tools">
+                  <div class="mw-weekly-posters__toolbar" id="mw-weekly-posters-toolbar">
+                    <div class="sa-gospel-stage__picks">
+                      <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-version-field">
+                        <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-version">Version</label>
+                        <select id="mw-weekly-posters-version" class="mw-weekly-posters__select" aria-label="Poster version"></select>
+                      </div>
+                      <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-prompt-field">
+                        <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-prompt">Prompt</label>
+                        <select id="mw-weekly-posters-prompt" class="mw-weekly-posters__select" aria-label="Gospel prompt iteration">
+                          <option value="og" selected>OG Fine-tune</option>
+                          <option value="og_tight">OG · Tighter climax</option>
+                          <option value="og_relational">OG · Relational beat</option>
+                          <option value="og_place">OG · Place-led</option>
+                          <option value="og_close">OG · Closer lens</option>
+                        </select>
+                      </div>
                     </div>
-                    <button type="button" class="mw-weekly-posters__nav" data-sa-weekly-nav="1" aria-label="Next styles">›</button>
+                    <div class="mw-weekly-posters__version-field mw-weekly-posters__cal-field" id="mw-weekly-posters-sunday-field">
+                      <span class="mw-weekly-posters__version-label" id="mw-weekly-posters-sunday-label">Mass Sunday</span>
+                      <input type="hidden" id="mw-weekly-posters-sunday" value="" aria-labelledby="mw-weekly-posters-sunday-label" />
+                      <div class="sa-poster-cal" id="sa-poster-cal" role="group" aria-labelledby="mw-weekly-posters-sunday-label"></div>
+                      <p class="sa-poster-cal__legend muted">
+                        <span class="sa-poster-cal__dot" aria-hidden="true"></span>
+                        Dot = posters exist for that Sunday
+                      </p>
+                    </div>
+                    <div class="sa-gospel-stage__scroll">
+                      <fieldset class="mw-weekly-posters__style-checks" id="mw-weekly-posters-style-checks">
+                        <div class="mw-weekly-posters__style-checks-head">
+                          <legend class="mw-weekly-posters__version-label">Styles to generate</legend>
+                          <div class="mw-weekly-posters__style-check-actions">
+                            <button type="button" class="mw-weekly-posters__style-all" id="mw-weekly-posters-select-all">Select all</button>
+                            <button type="button" class="mw-weekly-posters__style-all" id="mw-weekly-posters-clear-all">Clear</button>
+                          </div>
+                        </div>
+                        <div class="mw-weekly-posters__style-check-list">
+                          <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="cinematic" checked /><span>Cinematic</span></label>
+                          <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="realistic" checked /><span>Realistic</span></label>
+                          <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="renaissance" checked /><span>Renaissance</span></label>
+                          <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="stained_glass" checked /><span>Stained Glass</span></label>
+                          <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="modern" checked /><span>Modern</span></label>
+                        </div>
+                      </fieldset>
+                    </div>
+                    <div class="sa-gospel-stage__actions">
+                      <div class="mw-weekly-posters__progress" id="mw-weekly-posters-progress" hidden>
+                        <div class="mw-weekly-posters__progress-top">
+                          <span class="mw-weekly-posters__spinner" aria-hidden="true"></span>
+                          <span class="mw-weekly-posters__progress-label" id="mw-weekly-posters-progress-label">Generating…</span>
+                          <span class="mw-weekly-posters__progress-pct" id="mw-weekly-posters-progress-pct">0%</span>
+                        </div>
+                        <div
+                          class="mw-weekly-posters__progress-track"
+                          id="mw-weekly-posters-progress-track"
+                          role="progressbar"
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                          aria-valuenow="0"
+                          aria-labelledby="mw-weekly-posters-progress-label"
+                        >
+                          <div class="mw-weekly-posters__progress-fill" id="mw-weekly-posters-progress-fill"></div>
+                        </div>
+                      </div>
+                      <span class="muted" id="mw-weekly-posters-gen-status" aria-live="polite"></span>
+                      <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate">
+                        Generate this week’s styles
+                      </button>
+                      <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regen-inplace" title="Remake checked styles inside the current version (no new version)">
+                        Regenerate selected in this version
+                      </button>
+                      <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regenerate" title="Create a new version (v2, v3…) without deleting older ones">
+                        Generate new version
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </aside>
               </div>
             </article>
 
@@ -5369,7 +5393,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261010-sa-poster-cal"></script>
+  <script src="/static/js/app.js?v=20261018-extras-av2"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

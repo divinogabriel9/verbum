@@ -1920,7 +1920,19 @@
       buildSaSidebarNav();
       buildSaMobileNav();
       try { refreshSuperadminMembershipBadgeFromInbox(); } catch (_e) { /* ignore */ }
+      if (typeof renderSaJumpBar === "function") renderSaJumpBar();
+      const jumpHost = $("sa-jump-actions") || $("sa-jump");
+      if (jumpHost && jumpHost.dataset.jumpBound !== "1") {
+        jumpHost.dataset.jumpBound = "1";
+        jumpHost.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-sa-panel-jump]");
+          if (!btn || !jumpHost.contains(btn)) return;
+          e.preventDefault();
+          showSaPanel(btn.getAttribute("data-sa-panel-jump"));
+        });
+      }
       document.querySelectorAll("[data-sa-panel-jump]").forEach((btn) => {
+        if (btn.closest("#sa-jump")) return;
         btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel-jump")));
       });
       $("sa-btn-goto-membership") && $("sa-btn-goto-membership").addEventListener("click", () => showSaPanel("membership"));

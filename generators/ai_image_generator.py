@@ -170,6 +170,7 @@ def build_church_poster_background_prompt(
     season_key: str = "",
     analysis: object | None = None,
     composition_profile: object | None = None,
+    prompt_iteration: str | None = None,
 ) -> str:
     """
     Build a visual-only diffusion prompt for a Gospel poster background.
@@ -177,6 +178,7 @@ def build_church_poster_background_prompt(
     No scripture quotes, titles, or references are sent — text is composited in Python afterward.
     When ``analysis`` and ``composition_profile`` are provided, the prompt is assembled
     from Gospel concept + visual style + template safe zones.
+    ``prompt_iteration`` selects OG fine-tune (default) or an alternate assembly.
     """
     resolved = resolve_ai_image_style(style)
     visual_style = get_visual_style(resolved)
@@ -188,6 +190,7 @@ def build_church_poster_background_prompt(
             analysis=analysis,  # type: ignore[arg-type]
             style=visual_style,
             profile=composition_profile,  # type: ignore[arg-type]
+            iteration=prompt_iteration,
         )
 
     scene = _clip(visual_scene_line, 220)
@@ -917,6 +920,7 @@ def generate_sacred_illustration(
     prompt_override: Optional[str] = None,
     analysis: object | None = None,
     composition_profile: object | None = None,
+    prompt_iteration: Optional[str] = None,
 ) -> Path:
     """
     Generate a Gospel poster **background** PNG (no baked-in text or logos).
@@ -971,6 +975,7 @@ def generate_sacred_illustration(
         season_key=season_key,
         analysis=analysis,
         composition_profile=composition_profile,
+        prompt_iteration=prompt_iteration,
     )
     negative = _resolved_negative_prompt()
     prompt_preview = (prompt[:200] + "…") if len(prompt) > 200 else prompt

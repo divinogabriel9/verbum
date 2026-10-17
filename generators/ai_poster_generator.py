@@ -169,6 +169,7 @@ def ensure_ai_hero(
     image_backend: str = "openai",
     divider_style: str = "divider3",
     analysis: Optional[GospelVisualAnalysis] = None,
+    prompt_iteration: Optional[str] = None,
 ) -> Path:
     """Generate (or reuse) the artwork-only hero PNG. Safe to run in a worker thread.
 
@@ -215,6 +216,7 @@ def ensure_ai_hero(
         season_key=season_key,
         analysis=visual,
         composition_profile=template.composition,
+        prompt_iteration=prompt_iteration,
     )
     try_upload_shared_hero(hero_path, date=date.strip(), style=resolved_style)
     return hero_path

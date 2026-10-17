@@ -3207,6 +3207,13 @@ async def api_weekly_style_posters_ensure(
             version_no = int(version_raw)
     except (TypeError, ValueError):
         version_no = None
+    prompt_iteration = str(
+        request.query_params.get("prompt_iteration")
+        or request.query_params.get("iteration")
+        or body.get("prompt_iteration")
+        or body.get("iteration")
+        or ""
+    ).strip()
     if new_version:
         force = True
         overwrite_only = False
@@ -3225,18 +3232,21 @@ async def api_weekly_style_posters_ensure(
     except Exception:
         actor = ""
     logger.info(
-        "[weekly-ensure] start date=%s force=%s new_version=%s overwrite_only=%s version=%s styles=%s actor=%s",
+        "[weekly-ensure] start date=%s force=%s new_version=%s overwrite_only=%s version=%s "
+        "iteration=%s styles=%s actor=%s",
         iso,
         force,
         new_version,
         overwrite_only,
         version_no,
+        prompt_iteration or "og",
         style_filter or "all",
         actor or "unknown",
     )
     print(
         f"[weekly-ensure] start date={iso!r} force={force} new_version={new_version} "
-        f"overwrite_only={overwrite_only} version={version_no!r} styles={style_filter or 'all'!r} "
+        f"overwrite_only={overwrite_only} version={version_no!r} "
+        f"iteration={prompt_iteration or 'og'!r} styles={style_filter or 'all'!r} "
         f"actor={actor or 'unknown'!r}",
         flush=True,
     )
@@ -3253,6 +3263,7 @@ async def api_weekly_style_posters_ensure(
         version=version_no,
         new_version=new_version,
         overwrite_only=overwrite_only,
+        prompt_iteration=prompt_iteration or None,
     )
     sunday = str((result or {}).get("sunday") or iso)
     generated = list((result or {}).get("generated") or [])

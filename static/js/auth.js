@@ -819,6 +819,11 @@
   async function initMainAppAuth() {
     const publicPaths = ["/", "/sign-in", "/sign-up", "/health"];
     const path = window.location.pathname || "/";
+    // Standalone Distribution CRM owns its own sign-in / locked UX.
+    const isDistributionShell =
+      window.__VERBUM_AUTH_MODE__ === "distribution" ||
+      path === "/admin/distribution" ||
+      path.indexOf("/admin/distribution/") === 0;
 
     revealAuthGateOptimistic();
 
@@ -859,7 +864,7 @@
         });
       }
 
-      if (!state.user && !publicPaths.includes(path)) {
+      if (!state.user && !publicPaths.includes(path) && !isDistributionShell) {
         redirectToSignIn();
         return;
       }
@@ -876,8 +881,18 @@
       }
     } catch (err) {
       console.warn("[Verbum auth]", err);
-      if (state.config && state.config.auth_enabled && !publicPaths.includes(path)) {
+      if (
+        state.config &&
+        state.config.auth_enabled &&
+        !publicPaths.includes(path) &&
+        !isDistributionShell
+      ) {
         redirectToSignIn();
+      } else {
+        state.ready = true;
+        window.dispatchEvent(
+          new CustomEvent("verbum:auth-ready", { detail: { user: state.user } })
+        );
       }
     }
   }

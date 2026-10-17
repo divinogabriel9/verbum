@@ -17,6 +17,11 @@ from services.mass_divider.prompt_builder import (
     build_background_prompt,
     negative_prompt,
 )
+from services.mass_divider.prompt_iterations import (
+    PROMPT_ITERATION_DEFAULT,
+    list_prompt_iterations,
+    resolve_prompt_iteration,
+)
 from services.mass_divider.templates import (
     get_divider_template,
     list_divider_templates,
@@ -42,6 +47,7 @@ __all__ = [
     "DIVIDER_TEMPLATE_IDS",
     "HEADING_DEFAULT",
     "NO_TEXT_EXCLUSIONS",
+    "PROMPT_ITERATION_DEFAULT",
     "CompositionProfile",
     "DividerTemplate",
     "GospelVisualAnalysis",
@@ -53,9 +59,11 @@ __all__ = [
     "fields_from_liturgical_payload",
     "get_divider_template",
     "list_divider_templates",
+    "list_prompt_iterations",
     "negative_prompt",
     "resolve_divider_template_id",
     "resolve_mass_divider_fields",
+    "resolve_prompt_iteration",
     "strip_sunday_cycle_suffix",
     "sunday_title_display",
 ]

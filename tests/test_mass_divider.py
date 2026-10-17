@@ -234,3 +234,50 @@ def test_uploaded_divider_still_wins_over_poster():
         assert _resolve_divider_poster_path(
             uploaded=None, poster_ppt_path=poster, use_poster_as_divider=True
         ) is None
+
+
+def test_og_prompt_matches_frozen_backup():
+    """Default / og iteration must stay byte-identical to the frozen fine-tune backup."""
+    import importlib.util
+
+    from services.mass_divider.prompt_iterations import list_prompt_iterations, resolve_prompt_iteration
+
+    assert resolve_prompt_iteration(None) == "og"
+    assert resolve_prompt_iteration("") == "og"
+    assert list_prompt_iterations()[0]["id"] == "og"
+
+    analysis = analyze_gospel_visual(
+        sunday_title="28th Sunday in Ordinary Time",
+        gospel_reference="Matthew 22:1-14",
+        gospel_text="The king said to the attendants, Bind him hand and foot.",
+        gospel_quote="Bind him hand and foot.",
+        season_key="ordinary_time",
+    )
+    style = get_visual_style("cinematic")
+    profile = get_divider_template("divider2").composition
+    live = build_background_prompt(analysis=analysis, style=style, profile=profile)
+    live_og = build_background_prompt(
+        analysis=analysis, style=style, profile=profile, iteration="og"
+    )
+    assert live == live_og
+
+    backup_path = (
+        Path(__file__).resolve().parents[1]
+        / "services"
+        / "mass_divider"
+        / "backups"
+        / "prompt_builder_og_20261018.py"
+    )
+    spec = importlib.util.spec_from_file_location("prompt_builder_og_backup", backup_path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    frozen = mod.build_background_prompt(analysis=analysis, style=style, profile=profile)
+    assert live == frozen
+
+    tight = build_background_prompt(
+        analysis=analysis, style=style, profile=profile, iteration="og_tight"
+    )
+    assert tight != live
+    assert "tighter climax" in tight.lower()
+    assert "narrative beat" in tight.lower()

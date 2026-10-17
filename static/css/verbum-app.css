@@ -4724,6 +4724,55 @@
       color: var(--muted);
       padding: 0;
     }
+    .sa-sticky-chrome {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 0;
+      padding: 0 0 2px;
+      background: color-mix(in srgb, var(--bg, var(--surface, #f6f3ee)) 92%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      flex: none;
+    }
+    .sa-jump {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 10px 2px 12px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+      flex: none;
+    }
+    .sa-jump__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .sa-jump__title {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sa-jump__hint {
+      font-size: 0.72rem;
+    }
+    .sa-jump__actions {
+      margin-top: 0;
+    }
+    .sa-jump__actions .sa-jump__btn.is-active,
+    .sa-jump__actions [data-sa-panel-jump].is-active {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+      color: var(--ink);
+    }
     /* Desktop: section tools live as sidebar minitabs. Mobile keeps chips. */
     .sa-subnav {
       display: none;

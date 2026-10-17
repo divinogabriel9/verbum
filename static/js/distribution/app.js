@@ -1869,7 +1869,10 @@
       await window.VerbumAuth.waitUntilReady(10000);
 
       var headers = await window.VerbumAuth.getAuthHeaders();
-      var meRes = await fetch("/api/auth/me", { headers: headers, credentials: "include" });
+      var meRes = await fetch("/api/auth/me", {
+        headers: headers,
+        credentials: "include",
+      });
       var me = await meRes.json().catch(function () {
         return {};
       });

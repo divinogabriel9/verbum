@@ -4960,6 +4960,108 @@
       };
     }
 
+    var SA_JUMP_FREQ_KEY = "verbum.sa.jumpFreq.v1";
+    var SA_JUMP_DEFAULTS = [
+      "membership",
+      "system-gospel-posters",
+      "system-ai",
+      "content-songs",
+      "analytics",
+    ];
+
+    function saPanelJumpLabel(panelId) {
+      const id = String(panelId || "").trim();
+      if (!id) return "";
+      if (id === "membership") return "Approvals";
+      if (id === "content-songs") return "Song catalog";
+      for (const hub of Object.values(SA_HUBS)) {
+        const hit = (hub.panels || []).find((p) => p.id === id);
+        if (hit) return hit.label || id;
+      }
+      const meta = saPanelMeta(id);
+      return meta.title || id;
+    }
+
+    function loadSaJumpFreq() {
+      try {
+        const raw = localStorage.getItem(SA_JUMP_FREQ_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || typeof parsed !== "object") return {};
+        return parsed;
+      } catch (_e) {
+        return {};
+      }
+    }
+
+    function saveSaJumpFreq(map) {
+      try {
+        localStorage.setItem(SA_JUMP_FREQ_KEY, JSON.stringify(map || {}));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function recordSaJumpVisit(panelId) {
+      const id = String(panelId || "").trim();
+      if (!id || !document.querySelector('.sa-panel[data-sa-panel="' + id + '"]')) return;
+      const map = loadSaJumpFreq();
+      const prev = map[id] && typeof map[id] === "object" ? map[id] : {};
+      map[id] = {
+        count: Math.max(0, Number(prev.count) || 0) + 1,
+        last: Date.now(),
+      };
+      saveSaJumpFreq(map);
+      renderSaJumpBar();
+    }
+
+    function topSaJumpPanels(limit) {
+      const cap = Math.max(1, Math.min(Number(limit) || 5, 8));
+      const map = loadSaJumpFreq();
+      const ranked = Object.keys(map)
+        .filter((id) => document.querySelector('.sa-panel[data-sa-panel="' + id + '"]'))
+        .map((id) => ({
+          id: id,
+          count: Math.max(0, Number(map[id] && map[id].count) || 0),
+          last: Number(map[id] && map[id].last) || 0,
+        }))
+        .sort((a, b) => (b.count - a.count) || (b.last - a.last) || a.id.localeCompare(b.id));
+      const out = [];
+      ranked.forEach((row) => {
+        if (out.length >= cap) return;
+        if (out.indexOf(row.id) >= 0) return;
+        out.push(row.id);
+      });
+      SA_JUMP_DEFAULTS.forEach((id) => {
+        if (out.length >= cap) return;
+        if (out.indexOf(id) >= 0) return;
+        if (!document.querySelector('.sa-panel[data-sa-panel="' + id + '"]')) return;
+        out.push(id);
+      });
+      return out;
+    }
+
+    function renderSaJumpBar() {
+      const host = $("sa-jump-actions");
+      if (!host) return;
+      const active = String((saState && saState.panel) || "").trim();
+      const panels = topSaJumpPanels(5);
+      const bits = [];
+      bits.push(
+        '<a class="primary sa-jump__btn" href="/admin/distribution" ' +
+          'style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Distribution CRM</a>'
+      );
+      panels.forEach((id) => {
+        const label = saPanelJumpLabel(id);
+        const on = id === active ? " is-active" : "";
+        bits.push(
+          '<button type="button" class="secondary sa-jump__btn' + on + '" data-sa-panel-jump="' +
+            escapeHtml(id) + '"' +
+            (on ? ' aria-current="page"' : "") +
+            ">" + escapeHtml(label) + "</button>"
+        );
+      });
+      host.innerHTML = bits.join("");
+    }
+    window.renderSaJumpBar = renderSaJumpBar;
+
     function saPagerMeta(total, page, perPage) {
       const t = Math.max(0, Number(total) || 0);
       const size = Math.max(1, Number(perPage) || SA_PAGE_SIZE);
@@ -4998,6 +5100,7 @@
     function showSaPanel(panelId) {
       const nextPanel = panelId || "dashboard";
       const hubId = saHubForPanel(nextPanel);
+      const prevPanel = String((saState && saState.panel) || "");
       saState.panel = nextPanel;
       saState.hub = hubId;
       if (!saState.hubPanel) saState.hubPanel = {};
@@ -5027,6 +5130,8 @@
       });
       renderSaSubnav(hubId, nextPanel);
       syncSaTopbar(nextPanel);
+      if (prevPanel !== nextPanel) recordSaJumpVisit(nextPanel);
+      else renderSaJumpBar();
       scrollSaMobileNavToActive();
       scrollSaPanelToTop();
       if (saState.panel === "dashboard") loadSaDashboard();
