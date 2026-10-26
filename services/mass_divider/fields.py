@@ -25,8 +25,11 @@ def strip_sunday_cycle_suffix(title: str) -> str:
 
 
 def sunday_title_display(mass_title: str, season: str = "") -> str:
+    from services.usccb_readings import ensure_celebration_day_suffix
+
     title = strip_sunday_cycle_suffix(_clean(mass_title) or _clean(season, fallback="Sunday Mass"))
     title = title.replace(" Celebration", "").strip() or "Sunday Mass"
+    title = ensure_celebration_day_suffix(title)
     return strip_sunday_cycle_suffix(title)
 
 

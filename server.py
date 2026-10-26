@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -1171,11 +1170,40 @@ app = FastAPI(
     redoc_url=_redoc_url,
     openapi_url=_openapi_url,
 )
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# Skip gzip for already-compressed binaries (webp/png/…); streaming FileResponse
+# + gzip otherwise triggers uvicorn "Response content longer than Content-Length".
+from services.gzip_middleware import SelectiveGZipMiddleware
+
+app.add_middleware(SelectiveGZipMiddleware, minimum_size=1000)
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 _STATIC_DIR = _PROJECT / "static"
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+
+def _bytes_file_response(
+    path: Path,
+    *,
+    media_type: str,
+    filename: Optional[str] = None,
+    headers: Optional[dict[str, str]] = None,
+) -> Response:
+    """Serve a file as an in-memory Response (stable Content-Length).
+
+    Prefer this over FileResponse for assets that may be rewritten concurrently
+    (e.g. Home CTA watermark WebPs) or that must not be re-gzipped mid-stream.
+    """
+    file_path = Path(path)
+    raw = file_path.read_bytes()
+    out_headers = dict(headers or {})
+    out_headers["Content-Length"] = str(len(raw))
+    name = filename or file_path.name
+    if name:
+        out_headers.setdefault(
+            "Content-Disposition",
+            f'inline; filename="{name}"',
+        )
+    return Response(content=raw, media_type=media_type, headers=out_headers)
 
 
 @app.exception_handler(Exception)
@@ -3040,7 +3068,7 @@ def api_weekly_style_poster_image(
     variant: str = "full",
     version: Optional[int] = None,
     _session: Optional[AuthSession] = Depends(require_session_when_auth),
-) -> FileResponse:
+) -> Response:
     """Serve a shared weekly style hero (local or downloaded from shared cache).
 
     ``variant=thumb`` returns a small WebP for the Mass Builder carousel/picker.
@@ -3120,8 +3148,12 @@ def api_weekly_style_poster_image(
             if path.suffix.lower() == ".webp":
                 media = "image/webp"
             headers = {"Cache-Control": "public, max-age=604800, immutable"}
-            return FileResponse(path, media_type=media, filename=path.name, headers=headers)
-        return FileResponse(hero, media_type=media, filename=hero.name, headers=headers)
+            return _bytes_file_response(
+                path, media_type=media, filename=path.name, headers=headers
+            )
+        return _bytes_file_response(
+            hero, media_type=media, filename=hero.name, headers=headers
+        )
     if want_thumb or want_card:
         path = (
             resolve_ui_card_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
@@ -3133,11 +3165,15 @@ def api_weekly_style_poster_image(
         if path.suffix.lower() == ".webp":
             media = "image/webp"
         headers = {"Cache-Control": "public, max-age=604800, immutable"}
-        return FileResponse(path, media_type=media, filename=path.name, headers=headers)
+        return _bytes_file_response(
+            path, media_type=media, filename=path.name, headers=headers
+        )
     path = resolve_hero_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
     if path is None or not path.is_file():
         raise HTTPException(status_code=404, detail="poster_not_ready")
-    return FileResponse(path, media_type=media, filename=path.name, headers=headers)
+    return _bytes_file_response(
+        path, media_type=media, filename=path.name, headers=headers
+    )
 
 
 @app.post("/api/weekly-style-posters/ensure")

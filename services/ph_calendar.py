@@ -154,6 +154,12 @@ def apply_philippines_title(
         if rank_weight(str(entry.get("rank") or "")) < 70 and existing and not _title_looks_generic(existing):
             return payload
 
+    try:
+        from services.usccb_readings import ensure_celebration_day_suffix
+
+        ph_title = ensure_celebration_day_suffix(ph_title)
+    except Exception:
+        pass
     if existing and existing != ph_title:
         out["title_generic"] = existing
     out["title"] = ph_title

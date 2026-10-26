@@ -172,6 +172,40 @@ def simplify_celebration_ordinals(title: str) -> str:
     return f"{_ordinal_numeric_suffix(n)} {m.group(2)}"
 
 
+# Feasts USCCB often titles without the customary "Day" (e.g. "All Saints").
+_DAY_SUFFIX_FEAST_RE = re.compile(
+    r"(?i)\b("
+    r"all\s+saints|"
+    r"all\s+souls|"
+    r"thanksgiving|"
+    r"new\s+year'?s?"
+    r")\b"
+)
+
+
+def ensure_celebration_day_suffix(title: str) -> str:
+    """Append ``Day`` to known feast titles that customarily end that way.
+
+    Leaves numbered Sundays and other solemnities alone
+    (``30th Sunday in Ordinary Time``, ``Assumption of the Blessed Virgin Mary``, …).
+    """
+    t = _norm_heading(title)
+    if not t:
+        return t
+    low = t.lower()
+    if re.search(r"\bday\b", low):
+        return t
+    # Weekday / Sunday Mass names already name the day.
+    if re.search(
+        r"\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b",
+        low,
+    ):
+        return t
+    if not _DAY_SUFFIX_FEAST_RE.search(low):
+        return t
+    return f"{t} Day"
+
+
 def _is_reading_or_liturgy_heading(title: str) -> bool:
     t = _norm_heading(title).lower()
     if not t:
@@ -236,7 +270,9 @@ def _mass_celebration_heading_from_soup(soup: BeautifulSoup) -> str:
 def scrape_mass_celebration_from_soup(soup: BeautifulSoup) -> str:
     """USCCB mass-day heading (solemnity, feast, or Sunday), with shortened ordinals."""
     raw = _mass_celebration_heading_from_soup(soup)
-    return simplify_celebration_ordinals(raw) if raw else ""
+    if not raw:
+        return ""
+    return ensure_celebration_day_suffix(simplify_celebration_ordinals(raw))
 
 
 def ignore_readings_cache() -> bool:

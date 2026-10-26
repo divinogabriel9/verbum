@@ -14,6 +14,7 @@ from services.mass_text_format import reading_body_is_usable
 from services.ph_calendar import apply_philippines_title
 from services.usccb_readings import (
     collect_psalm_refrain_options,
+    ensure_celebration_day_suffix,
     fetch_readings_for_date,
     is_usccb_nav_chrome_title,
     scrape_mass_celebration_from_soup,
@@ -147,7 +148,7 @@ def _resolve_mass_celebration(
 ) -> str:
     celebration = (blocks.get("mass_celebration") or "").strip()
     if celebration and not is_usccb_nav_chrome_title(celebration):
-        return celebration
+        return ensure_celebration_day_suffix(celebration)
     url = (source_url or "").strip()
     if not url:
         return ""
@@ -264,7 +265,11 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
 
         season = data.get("season", "Ordinary Time")
         celebration = _resolve_mass_celebration(blocks, source_url)
-        title = celebration or f"{season} Celebration"
+        title = ensure_celebration_day_suffix(
+            celebration or f"{season} Celebration"
+        )
+        if celebration:
+            celebration = ensure_celebration_day_suffix(celebration)
 
         return {
             "title": title,
@@ -359,6 +364,18 @@ def fetch_tagalog_liturgical_data(
     return payload
 
 
+def _normalize_payload_titles(payload: dict | None) -> dict | None:
+    """Ensure feast titles that customarily end in Day get the suffix (cache-safe)."""
+    if not payload:
+        return payload
+    out = dict(payload)
+    for key in ("title", "celebration"):
+        raw = str(out.get(key) or "").strip()
+        if raw:
+            out[key] = ensure_celebration_day_suffix(raw)
+    return out
+
+
 def _with_english_language(payload: dict | None) -> dict | None:
     if not payload:
         return payload
@@ -413,7 +430,9 @@ def get_liturgical_data(
             print(f"Lectionary cache incomplete (missing first reading or psalm refrain): {normalized}")
         elif cached is not None:
             print(f"Lectionary cache hit: {normalized}")
-            return _with_english_language(apply_philippines_title(cached, normalized))
+            return _normalize_payload_titles(
+                _with_english_language(apply_philippines_title(cached, normalized))
+            )
 
     best: dict | None = cached
     for attempt in range(_MAX_FETCH_ATTEMPTS):
@@ -437,7 +456,9 @@ def get_liturgical_data(
     if best is None:
         if cached is not None:
             print(f"Lectionary live fetch failed; serving cached data: {normalized}")
-            return _with_english_language(apply_philippines_title(cached, normalized))
+            return _normalize_payload_titles(
+                _with_english_language(apply_philippines_title(cached, normalized))
+            )
         return None
 
     should_write = os.environ.get("LECTIONARY_NO_WRITE_CACHE", "").strip() not in ("1", "true")
@@ -445,4 +466,6 @@ def get_liturgical_data(
         upsert(normalized, best)
         print(f"Lectionary saved to database: {db_path()}")
 
-    return _with_english_language(apply_philippines_title(best, normalized))
+    return _normalize_payload_titles(
+        _with_english_language(apply_philippines_title(best, normalized))
+    )
