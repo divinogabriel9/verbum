@@ -490,7 +490,11 @@
         const divAllowed = ["divider2", "divider3", "auto"];
         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
         const divHidden = (divStyleEl && divStyleEl.value) || "";
-        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
+        let divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
+        // Curated posters unavailable → classic green-gradient Mass dividers.
+        if (!body.include_ai_mass_poster) {
+          divVal = "divider3";
+        }
         activeDividerStyle = divVal;
         if (divStyleEl) divStyleEl.value = divVal;
         body.divider_style = divVal;
@@ -520,12 +524,10 @@
         const creedSel = $("flow-creed-choice");
         const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
         body.creed_choice = creedVal === "apostles" ? "apostles" : (creedVal === "none" ? "none" : "nicene");
-        const creedLangSel = $("flow-creed-language");
-        body.creed_language = creedLangSel && creedLangSel.value === "tagalog" ? "tagalog" : "english";
-        const penLangSel = $("flow-penitential-language");
-        body.penitential_language = penLangSel && penLangSel.value === "tagalog" ? "tagalog" : "english";
-        const sanctusLangSel = $("flow-sanctus-language");
-        body.sanctus_language = sanctusLangSel && sanctusLangSel.value === "tagalog" ? "tagalog" : "english";
+        const riteLang = (sel) => (sel && normalizeMassSurfaceLanguage(sel.value)) || "english";
+        body.creed_language = riteLang($("flow-creed-language"));
+        body.penitential_language = riteLang($("flow-penitential-language"));
+        body.sanctus_language = riteLang($("flow-sanctus-language"));
         const gloriaSel = $("flow-gloria-choice");
         const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
         body.gloria_choice = gloriaVal === "latin" ? "latin" : (gloriaVal === "none" ? "none" : "english");
@@ -540,8 +542,7 @@
         body.kyrie_choice = kyrieSel && kyrieAllowed.includes(kyrieSel.value) ? kyrieSel.value : "english";
         const kyrieSlideSel = $("flow-kyrie-tagalog-slide");
         body.kyrie_tagalog_slide = kyrieSlideSel && kyrieSlideSel.value === "2" ? 2 : 1;
-        const massLangSel = $("flow-mass-language");
-        body.mass_language = massLangSel && massLangSel.value === "tagalog" ? "tagalog" : "english";
+        body.mass_language = currentMassSurfaceLanguage();
         body.hymn_lyrics_layout = readHymnLyricsLayout();
         body.show_hymn_section_labels = readHymnSectionLabels();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
@@ -954,7 +955,9 @@
       if (status) {
         status.textContent = lang === "tagalog"
           ? "Loading Tagalog liturgical calendar…"
-          : "Loading liturgical calendar…";
+          : (lang === "cebuano"
+            ? "Loading Cebuano liturgical calendar…"
+            : "Loading liturgical calendar…");
       }
       try {
         const qs = "year=" + y + "&month=" + m + "&lang=" + encodeURIComponent(lang);
@@ -966,7 +969,11 @@
         if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
         calendarMonthData = data.days || {};
         calendarMonthKey = key;
-        if (status) status.textContent = lang === "tagalog" ? "Tagalog readings" : "English · Philippines Proper";
+        if (status) {
+          status.textContent = lang === "tagalog"
+            ? "Tagalog readings"
+            : (lang === "cebuano" ? "Cebuano / Sulugoon readings" : "English · Philippines Proper");
+        }
       } catch (err) {
         calendarMonthData = {};
         calendarMonthKey = "";
@@ -1006,7 +1013,9 @@
       if (title) title.textContent = "Readings — " + (detail.date || "");
       if (subtitle) {
         const h = health.status || "unknown";
-        const cacheLabel = detail.language === "tagalog" ? "Tagalog cache" : "Global cache";
+        const cacheLabel = detail.language === "tagalog"
+          ? "Tagalog cache"
+          : (detail.language === "cebuano" ? "Cebuano cache" : "Global cache");
         subtitle.textContent = cacheLabel + " · " + h.charAt(0).toUpperCase() + h.slice(1);
       }
       if (statusEl) {
@@ -1277,7 +1286,10 @@
     ];
 
     function calAdminSourceName() {
-      return currentCalendarLanguage() === "tagalog" ? "Tagalog readings" : "English readings";
+      const lang = currentCalendarLanguage();
+      if (lang === "tagalog") return "Tagalog readings";
+      if (lang === "cebuano") return "Cebuano / Sulugoon readings";
+      return "English readings";
     }
 
     function syncCalAdminFetchSourceLabels() {

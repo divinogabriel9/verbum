@@ -12,6 +12,7 @@ from services.lectionary_store import get_cached
 from services.liturgical_calendar import get_liturgical_color
 from services.mass_language import normalize_mass_language
 from services.ph_calendar import apply_philippines_title, get_philippines_day
+from services.sulugoon_readings import get_cebuano_cache_entry, get_cebuano_cache_month
 from services.usccb_readings import _extract_responsorial_refrain, get_readings_cache_entry
 
 
@@ -72,7 +73,7 @@ def _summarize_from_payload(data: dict[str, Any], readings: Optional[dict[str, s
     }
 
 
-def _summarize_from_tagalog_cache(entry: dict[str, str]) -> dict[str, Any]:
+def _summarize_from_vernacular_cache(entry: dict[str, str]) -> dict[str, Any]:
     gospel_ref = str(entry.get("gospel_ref") or "").strip()
     psalm_refrain = _extract_responsorial_refrain(entry.get("psalm_response") or "")
     if not psalm_refrain:
@@ -92,6 +93,10 @@ def _summarize_from_tagalog_cache(entry: dict[str, str]) -> dict[str, Any]:
     }
 
 
+def _summarize_from_tagalog_cache(entry: dict[str, str]) -> dict[str, Any]:
+    return _summarize_from_vernacular_cache(entry)
+
+
 def _apply_english_ph_title(out: dict[str, Any], iso: str) -> None:
     ph = get_philippines_day(iso)
     if not ph:
@@ -108,6 +113,7 @@ def summarize_day(
     *,
     language: str = "english",
     tagalog_entry: Optional[dict[str, str]] = None,
+    cebuano_entry: Optional[dict[str, str]] = None,
 ) -> dict[str, Any]:
     """Build a calendar cell summary from local caches (no network)."""
     lang = normalize_mass_language(language)
@@ -147,6 +153,16 @@ def summarize_day(
         # Keep Tagalog celebration names; do not overlay English PH Proper titles.
         return out
 
+    if lang == "cebuano":
+        if cebuano_entry is not None:
+            cebuano = cebuano_entry or None
+        else:
+            cebuano = get_cebuano_cache_entry(iso)
+        out["has_cache"] = bool(cebuano)
+        if cebuano:
+            out.update(_summarize_from_vernacular_cache(cebuano))
+        return out
+
     readings = get_readings_cache_entry(iso)
     cached = get_cached(iso)
     out["has_cache"] = bool(readings or cached)
@@ -171,6 +187,7 @@ def fetch_calendar_month(
 
     ``language=tagalog`` uses Awit at Papuri cache titles/snippets only
     (no live scrape — that belongs to day click / Fetch).
+    ``language=cebuano`` uses Sulugoon cache the same way.
     ``language=english`` uses USCCB/lectionary cache + Philippines Proper titles.
     """
     if month < 1 or month > 12:
@@ -181,6 +198,7 @@ def fetch_calendar_month(
     days: dict[str, dict[str, Any]] = {}
     sundays_missing: list[str] = []
     tagalog_month = get_tagalog_cache_month(year, month) if lang == "tagalog" else {}
+    cebuano_month = get_cebuano_cache_month(year, month) if lang == "cebuano" else {}
 
     for d in range(1, days_in_month + 1):
         iso = f"{year:04d}-{month:02d}-{d:02d}"
@@ -188,12 +206,13 @@ def fetch_calendar_month(
             iso,
             language=lang,
             tagalog_entry=tagalog_month.get(iso, {}) if lang == "tagalog" else None,
+            cebuano_entry=cebuano_month.get(iso, {}) if lang == "cebuano" else None,
         )
         days[iso] = summary
-        # Tagalog live-fetch (Awit at Papuri) is two HTTP calls per Sunday and
-        # made month navigation feel stuck. Serve the grid from cache only;
-        # clicking a day still fetches that date.
-        if lang != "tagalog" and summary.get("is_sunday") and not summary.get("loaded"):
+        # Vernacular live-fetch is multiple HTTP calls per Sunday and made month
+        # navigation feel stuck. Serve the grid from cache only; clicking a day
+        # still fetches that date.
+        if lang not in {"tagalog", "cebuano"} and summary.get("is_sunday") and not summary.get("loaded"):
             sundays_missing.append(iso)
 
     for iso in sundays_missing:

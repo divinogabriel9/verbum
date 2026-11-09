@@ -561,9 +561,13 @@ def _prayer_bundle(
     our_father_choice: str,
 ) -> dict[str, str]:
     """Return prayer texts with <<P>>/<<A>>/<<H>> markers preserved for labeling."""
-    lang = (mass_language or "english").strip().lower()
+    from services.mass_language import normalize_mass_language
+
+    lang = normalize_mass_language(mass_language)
     if lang == "tagalog":
         from generators import gfcc_flow_content_tagalog as flow
+    elif lang == "cebuano":
+        from generators import gfcc_flow_content_cebuano as flow
     else:
         from generators import gfcc_flow_content as flow
 

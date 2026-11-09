@@ -735,5 +735,152 @@
     "optional_pin": "v2:fac42760628bedce:ad7e376fbd4344b50e0763087caf5bc41747923af1eaae6d38da4bb222917d7b",
     "leader_pin": "v2:c042064dabd9387a:8607439e3d2daee8a867ee044700085abdab82ba420ae23c9a31f61d597d93b3",
     "expires_at": "2026-08-16T23:59:59+00:00"
+  },
+  {
+    "id": "cb440de65a6d43788fdb6920ef4af99f",
+    "created_at": "2026-11-09T07:10:28.653230+00:00",
+    "revoked_at": null,
+    "token": "hB4mq5bwxcUSjk8_uEpA5qB-6kuZHy2f",
+    "parish_id": null,
+    "created_by": "test-cache",
+    "mass_date": "2026-11-15",
+    "mass_title": "Cache Test",
+    "parish_name": "Test",
+    "celebrant": "Fr Test",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "t1",
+        "title": "Test Song",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nHello\n\nChorus\nHi",
+        "blocks": [
+          {
+            "id": "b0-7619ee34",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Hello",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          },
+          {
+            "id": "b1-41a93acc",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Hi",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v2:9990aca47e0ca631:215b9acc84e712241b248383d6d0a98047c067431413e9cd69ed1c41fdcdfb21",
+    "leader_pin": "v2:acba66405d1e5f19:41721b1469c512d69d9cb095b990f6dff4f24919c79789e8b42097e03fe5d3aa",
+    "expires_at": "2026-11-15T23:59:59+00:00"
+  },
+  {
+    "id": "c896826649df4db98e913e3bb9e997b5",
+    "created_at": "2026-11-09T07:10:35.406174+00:00",
+    "revoked_at": null,
+    "token": "3bXzZpIapd7yMogweQ980ubIR4nETTrc",
+    "parish_id": null,
+    "created_by": "test-cache",
+    "mass_date": "2026-11-15",
+    "mass_title": "Cache Test",
+    "parish_name": "Test",
+    "celebrant": "Fr Test",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "t1",
+        "title": "Test Song",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nHello\n\nChorus\nHi",
+        "blocks": [
+          {
+            "id": "b0-5bea3a46",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Hello",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          },
+          {
+            "id": "b1-eedda4c2",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Hi",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v2:f08dbc15806e04ab:699f8c8bc725496ca6febdbb82cc63956f2905bc58e192b7ebd2aca66dcb6e33",
+    "leader_pin": "v2:49d820731c643389:4ee7d8c8113f5ed7968577f9d8e865b3e0aa30ccd5114ac2a3b85e7262ae42cd",
+    "expires_at": "2026-11-15T23:59:59+00:00"
+  },
+  {
+    "id": "4e01fb465f624dac8b53629fa0b06bb4",
+    "created_at": "2026-11-09T07:10:52.238740+00:00",
+    "revoked_at": null,
+    "token": "sTZGatjcjGzIXCHZu-hGvEkRWOpOJ7Ij",
+    "parish_id": null,
+    "created_by": "test-cache",
+    "mass_date": "2026-11-15",
+    "mass_title": "Cache Test",
+    "parish_name": "Test",
+    "celebrant": "Fr Test",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "t1",
+        "title": "Test Song",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nHello\n\nChorus\nHi",
+        "blocks": [
+          {
+            "id": "b0-44462323",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Hello",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          },
+          {
+            "id": "b1-9b9f0b3e",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Hi",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v2:83935c57df0141dd:7f3cbfa781659ac46989a39a07395566af4bef24997900bcfe0bbf375269609b",
+    "leader_pin": "v2:b5c27abf06e8ea71:522f58e415334d7c99fea9a81ded5c61ee97413af37214d2fb1596128c53c31a",
+    "expires_at": "2026-11-15T23:59:59+00:00"
   }
 ]

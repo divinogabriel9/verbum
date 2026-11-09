@@ -2149,8 +2149,8 @@
     async function reloadFlowReadingsForLanguage(date, language) {
       const d = String(date || ($("mass-date") && $("mass-date").value) || "").trim();
       if (!d) return;
-      const lang = language === "tagalog" || language === "english"
-        ? language
+      const lang = normalizeMassSurfaceLanguage(language)
+        ? readingsLanguageForMass(language)
         : currentMassLanguage();
       const apply = (data) => {
         if (!flowApplyIsCurrent(d, lang)) return;
@@ -2531,10 +2531,11 @@
         setMassBuilderFieldValue("flow-our-father-choice", suggestions.our_father_choice);
         applied = true;
       }
-      if (suggestions.mass_language === "english" || suggestions.mass_language === "tagalog") {
+      const suggestedMassLang = normalizeMassSurfaceLanguage(suggestions.mass_language);
+      if (suggestedMassLang) {
         // Never auto-switch Mass language on date/load — only Quick Mass (force) may apply it.
         if (force) {
-          setMassBuilderFieldValue("flow-mass-language", suggestions.mass_language);
+          setMassBuilderFieldValue("flow-mass-language", suggestedMassLang);
           applied = true;
         }
       }
@@ -3668,11 +3669,44 @@
       });
     }
 
+    function openSaWeeklyPosterGeneratePanel() {
+      try {
+        if (typeof showRoute === "function") showRoute("/superadmin");
+        else window.location.assign("/superadmin");
+      } catch (_e) {
+        window.location.assign("/superadmin");
+      }
+      window.setTimeout(function () {
+        if (typeof showSaPanel === "function") {
+          showSaPanel("system-gospel-posters");
+        } else if (typeof saState === "object" && saState) {
+          saState.panel = "system-gospel-posters";
+          if (saState.hubPanel) saState.hubPanel.platform = "system-gospel-posters";
+        }
+        const genBtn = $("mw-weekly-posters-generate");
+        if (genBtn && typeof genBtn.focus === "function") {
+          try { genBtn.focus(); } catch (_err) { /* ignore */ }
+        }
+      }, 120);
+    }
+
+    function bindWeeklyAiPosterSaGenerateCta() {
+      const btn = $("mw-ai-poster-sa-generate");
+      if (!btn || btn.dataset.boundSaGenCta === "1") return;
+      btn.dataset.boundSaGenCta = "1";
+      btn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        openSaWeeklyPosterGeneratePanel();
+      });
+    }
+
     function syncWeeklyAiPosterGate(catalog) {
       const gate = $("mw-ai-poster-gate");
       const body = $("mw-ai-poster-body");
       const wrap = $("flow-ai-poster-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
+      const saGenBtn = $("mw-ai-poster-sa-generate");
+      bindWeeklyAiPosterSaGenerateCta();
       if (catalog && typeof catalog === "object") {
         const items = Array.isArray(catalog.items) ? catalog.items : [];
         const readyFromItems = items.filter((it) => it && it.ready).length;
@@ -3698,6 +3732,7 @@
         ? canUseCuratedPosters(churchMembershipState)
         : true;
       if (!membershipAllows) {
+        if (saGenBtn) saGenBtn.hidden = true;
         if (typeof syncCuratedPosterAccessUi === "function") syncCuratedPosterAccessUi();
         stopWeeklyPosterAutoScroll();
         syncWeeklyPosterExpandUi();
@@ -3705,6 +3740,7 @@
         return;
       }
       const unlocked = areWeeklyAiPostersReady();
+      const sa = isWeeklyPosterSuperadmin();
       if (gate) {
         gate.hidden = unlocked;
         gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
@@ -3722,13 +3758,14 @@
       if (body) {
         body.setAttribute("aria-disabled", unlocked ? "false" : "true");
       }
+      if (saGenBtn) saGenBtn.hidden = unlocked || !sa;
       if (msg) {
         msg.textContent = unlocked
           ? ""
           : (
-            isWeeklyPosterSuperadmin()
-              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Use “Generate this week’s styles” above the carousel.')
-              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.')
+            sa
+              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Generate this week’s styles in Superadmin.')
+              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. This Mass will use the classic green gradient dividers.')
           );
       }
       if (unlocked) {
@@ -5775,6 +5812,7 @@
       const parts = [];
       if (model.collection) parts.push(model.collection);
       if (model.aiPoster) parts.push("Beautifully curated poster");
+      else parts.push("Classic green gradient dividers");
       if (model.creed) parts.push(model.creed);
       return parts.join(" · ");
     }

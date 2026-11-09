@@ -330,6 +330,8 @@ hymn_lyric_overrides: dict[str, dict[str,str]]?    # {section: {song_id: lyrics}
 hymn_layout_overrides: dict[str, dict[str,str]]?   # {section: {song_id: "single"|"dual"}}
 creed_choice: str = "nicene"                 # nicene | apostles
 our_father_choice: str = "english"           # english | malay | tagalog | visaya | korean
+mass_language: str = "english"               # english | tagalog | cebuano (Order of Mass wording; cebuano → Sulugoon readings)
+creed_language / penitential_language / sanctus_language: str = "english"   # english | tagalog | cebuano
 hymn_lyrics_layout: str = "single"           # single | dual
 ```
 **`SongSelection`** (the `songs` field):

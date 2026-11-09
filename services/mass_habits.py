@@ -53,7 +53,7 @@ ENUM_FIELDS = (
 _ALLOWED: dict[str, frozenset[Any]] = {
     "creed_choice": frozenset({"nicene", "apostles", "none"}),
     "our_father_choice": frozenset({"english", "malay", "tagalog", "visaya", "korean"}),
-    "mass_language": frozenset({"english", "tagalog"}),
+    "mass_language": frozenset({"english", "tagalog", "cebuano"}),
     "hymn_lyrics_layout": frozenset({"single", "dual"}),
     "lotw_poster": frozenset({"lotw1", "lotw2", "lotw3", "lotw4"}),
     "lote_poster": frozenset({"lote1", "lote2", "lote3", "lote4"}),

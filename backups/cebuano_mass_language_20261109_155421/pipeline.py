@@ -1,0 +1,1173 @@
+"""Shared mass media generation for CLI and web."""
+
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+import logging
+import os
+import random
+import time
+from pathlib import Path
+from typing import Any, Mapping, Optional
+
+from generators.poster_generator import (
+    export_social_variants,
+)
+from generators.powerpoint import generate_mass_ppt
+from services.community_config import get_community_name, update_community
+from services.gospel_quote_extractor import (
+    preferred_slide_quote,
+    preferred_slide_sentence_index,
+    pick_sentence_interactive,
+    split_slide_sentences,
+)
+from services.hymn_library import get_hymn, recommend_sections, section_candidates, web_cached_for_section
+from services.song_selection import (
+    default_song_selections_for_date,
+    default_song_selections_for_preview,
+    filter_songs_rows_en_tl_only,
+)
+
+logger = logging.getLogger(__name__)
+from services.liturgical_calendar import get_liturgical_color
+from services.lectionary_service import get_liturgical_data, payload_complete
+from services.mass_divider.gospel_analysis import analyze_gospel_visual
+from services.mass_divider.templates import resolve_divider_template_id
+from services.media_naming import mass_export_stem
+from services.runtime_config import song_web_fetch_enabled
+from services.web_hymn_discovery import discover_hymns_for_readings
+from services.lyrics_fetcher import ensure_lyrics_for_song
+from services.mass_text_format import synopsis_from_reading
+from services.usccb_readings import collect_psalm_refrain_options, repair_eaten_r_refrain, resolve_psalm_slide_text
+
+
+@dataclass
+class PreviewPayload:
+    ok: bool
+    error: Optional[str] = None
+    title: str = ""
+    gospel_reference: str = ""
+    season: str = ""
+    lectionary_cycle: str = ""
+    liturgical_color: Optional[Mapping[str, Any]] = None
+    gospel_text_length: int = 0
+    sentences: list[str] = field(default_factory=list)
+    preferred_sentence_index: int = 0
+    quote_attribution: Optional[str] = None
+    songs_by_section: dict[str, list[dict[str, str]]] = field(default_factory=dict)
+    gospel_quote: str = ""
+    default_song_selections: dict[str, str] = field(default_factory=dict)
+    estimated_slide_count: int = 0
+    first_reading_reference: str = ""
+    first_reading_excerpt: str = ""
+    second_reading_reference: str = ""
+    second_reading_excerpt: str = ""
+    psalm_text: str = ""
+    psalm_verses: str = ""
+    psalm_reference: str = ""
+    psalm_refrains: list[str] = field(default_factory=list)
+    gospel_text: str = ""
+    gospel_acclamation: str = ""
+    readings_complete: bool = False
+    readings_language: str = "english"
+
+
+def _merge_song_sections(
+    base: dict[str, list[dict[str, Any]]],
+    extra: dict[str, list[dict[str, Any]]],
+    *,
+    cap: int = 10,
+) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
+    for sec in ("entrance", "offertory", "communion", "recessional", "meditation"):
+        merged: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
+        seen_titles: set[str] = set()
+        for row in (base.get(sec) or []) + (extra.get(sec) or []):
+            hid = str(row.get("id") or "").strip()
+            title = str(row.get("title") or "").strip()
+            if not hid or not title:
+                continue
+            tl = title.lower()
+            if hid in seen_ids or tl in seen_titles:
+                continue
+            seen_ids.add(hid)
+            seen_titles.add(tl)
+            merged.append(
+                {
+                    "id": hid,
+                    "title": title,
+                    "author": str(row.get("author") or "").strip(),
+                    "source": str(row.get("source") or ""),
+                    "language": str(row.get("language") or ""),
+                    "has_lyrics": bool(row.get("has_lyrics", False)),
+                }
+            )
+            if len(merged) >= cap:
+                break
+        out[sec] = filter_songs_rows_en_tl_only(merged)
+    return out
+
+
+def refresh_song_section(
+    *,
+    date: str,
+    section: str,
+    current_ids: Optional[list[str]] = None,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    """
+    Live-refresh a single section's recommendations.
+    Prioritizes freshly discovered web songs, then cached web, then local library.
+    """
+    sec = (section or "").strip().lower()
+    if sec not in {"entrance", "offertory", "communion", "recessional", "meditation"}:
+        return []
+    data = get_liturgical_data(date)
+    if not data:
+        return []
+    liturgical_color = get_liturgical_color(date)
+    season_key = str(liturgical_color.get("season") or "ordinary_time")
+    web_enabled = song_web_fetch_enabled()
+    fresh_web: list[dict[str, Any]] = []
+    if web_enabled:
+        web_map = discover_hymns_for_readings(
+            gospel_reference=str(data.get("gospel_reference") or ""),
+            season_key=season_key,
+            max_candidates=24,
+            fetch_lyrics_count=12,
+        )
+        fresh_web = list(web_map.get(sec) or [])
+        for row in fresh_web:
+            row["source"] = "web"
+
+    cached_web = web_cached_for_section(sec, limit=60)
+    local_pool = section_candidates(season_key=season_key, section=sec, limit=60)
+    random.shuffle(local_pool)
+
+    seen_ids = set()
+    seen_titles = set()
+    avoid = {str(x).strip() for x in (current_ids or []) if str(x).strip()}
+    out: list[dict[str, Any]] = []
+
+    def push(rows: list[dict[str, Any]], *, prefer_new: bool = False) -> None:
+        nonlocal out
+        for row in rows:
+            hid = str(row.get("id") or "").strip()
+            title = str(row.get("title") or "").strip()
+            src = str(row.get("source") or "")
+            language = str(row.get("language") or "")
+            has_lyrics = bool(row.get("has_lyrics", False))
+            if not hid or not title:
+                continue
+            tl = title.lower()
+            if hid in seen_ids or tl in seen_titles:
+                continue
+            if prefer_new and hid in avoid:
+                continue
+            seen_ids.add(hid)
+            seen_titles.add(tl)
+            out.append(
+                {
+                    "id": hid,
+                    "title": title,
+                    "source": src,
+                    "language": language,
+                    "has_lyrics": has_lyrics,
+                }
+            )
+            if len(out) >= limit:
+                return
+
+    push(fresh_web, prefer_new=True)
+    if len(out) < limit:
+        push(cached_web, prefer_new=True)
+    if len(out) < limit:
+        push(local_pool, prefer_new=True)
+    # backfill with previous ids only if needed
+    if len(out) < limit:
+        push(fresh_web)
+    if len(out) < limit:
+        push(cached_web)
+    if len(out) < limit:
+        push(local_pool)
+    return out[: max(1, limit)]
+
+
+def refresh_all_song_sections(
+    *,
+    date: str,
+    current_ids: Optional[Mapping[str, list[str]]] = None,
+    limit: int = 10,
+) -> dict[str, list[dict[str, Any]]]:
+    cmap = current_ids or {}
+    return {
+        "entrance": refresh_song_section(
+            date=date, section="entrance", current_ids=list(cmap.get("entrance", [])), limit=limit
+        ),
+        "offertory": refresh_song_section(
+            date=date, section="offertory", current_ids=list(cmap.get("offertory", [])), limit=limit
+        ),
+        "communion": refresh_song_section(
+            date=date, section="communion", current_ids=list(cmap.get("communion", [])), limit=limit
+        ),
+        "recessional": refresh_song_section(
+            date=date, section="recessional", current_ids=list(cmap.get("recessional", [])), limit=limit
+        ),
+        "meditation": refresh_song_section(
+            date=date, section="meditation", current_ids=list(cmap.get("meditation", [])), limit=limit
+        ),
+    }
+
+
+def resolve_slide_line(
+    gospel_slide_quote: str,
+    gospel_text: str,
+    *,
+    sentence_index: Optional[int] = None,
+    interactive_pick: bool = False,
+    gospel_quote_override: Optional[str] = None,
+) -> str:
+    """Pick the short line for slides (middle when 3+, never longest, or chosen index / override / CLI prompt)."""
+    ovr = (gospel_quote_override or "").strip()
+    if ovr:
+        return ovr
+    base_quote = (gospel_slide_quote or "").strip() or (gospel_text or "")
+    sentences = split_slide_sentences(base_quote)
+    if sentence_index is not None and sentences and 0 <= sentence_index < len(sentences):
+        return sentences[sentence_index]
+    if interactive_pick and len(sentences) > 1:
+        return pick_sentence_interactive(sentences)
+    return preferred_slide_quote(base_quote)
+
+
+def _dedupe_song_ids_across_sections(sel: Mapping[str, Any]) -> dict[str, Any]:
+    order = [
+        "entrance",
+        "offertory",
+        "communion_1",
+        "communion_2",
+        "communion_3",
+        "communion_4",
+        "communion_5",
+        "recessional",
+        "meditation",
+    ]
+    used: set[str] = set()
+    out: dict[str, Any] = {}
+    for key in order:
+        hid = str(sel.get(key) or "").strip()
+        if not hid or hid in used:
+            continue
+        used.add(hid)
+        out[key] = hid
+    extras = sel.get("extra_sections")
+    if isinstance(extras, list):
+        out["extra_sections"] = extras
+    return out
+
+
+def _merge_default_and_user_songs(
+    season_key: str,
+    user: Optional[Mapping[str, Any]],
+) -> dict[str, Any]:
+    defaults = default_song_selections_for_date(season_key)
+    merged: dict[str, Any] = {**defaults}
+    if user:
+        extras = user.get("extra_sections")
+        for k, v in user.items():
+            kk = str(k).strip()
+            if kk == "extra_sections":
+                continue
+            vv = str(v or "").strip()
+            if vv:
+                merged[kk] = vv
+        if isinstance(extras, list):
+            merged["extra_sections"] = extras
+        user_keys = {str(k).strip() for k in user.keys()}
+        for i in range(1, 6):
+            ck = f"communion_{i}"
+            if ck not in user_keys:
+                merged.pop(ck, None)
+    return _dedupe_song_ids_across_sections(merged)
+
+
+def _hymn_title_for_poster(section: str, hymn_id: str) -> str:
+    hid = (hymn_id or "").strip()
+    if not hid:
+        return ""
+    row = get_hymn(section, hid)
+    return str(row.get("title") or hid).strip() if row else hid
+
+
+def _resolve_divider_poster_path(
+    *,
+    uploaded: Optional[Path],
+    poster_ppt_path: Optional[Path] = None,
+    use_poster_as_divider: bool = False,
+) -> Optional[Path]:
+    """Uploaded divider still replaces the whole cover. AI artwork is a background, not a poster."""
+    del poster_ppt_path, use_poster_as_divider
+    if uploaded and Path(uploaded).is_file():
+        return Path(uploaded)
+    return None
+
+
+def _cached_hero_path(date: str, images_dir: Path) -> Optional[Path]:
+    iso = (date or "").strip()
+    if not iso or not images_dir.is_dir():
+        return None
+    matches = sorted(images_dir.glob(f"{iso}_*_hero.png"))
+    real = [p for p in matches if p.is_file() and p.stat().st_size > 2048]
+    return real[-1] if real else None
+
+
+_PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
+# Bump when default_song_selections semantics change (e.g. mood-only, no first-song).
+_PREVIEW_CACHE_VERSION = 3
+_PREVIEW_CACHE: dict[tuple, tuple[float, PreviewPayload]] = {}
+_PREVIEW_CACHE_TTL_S = 600.0
+_PREVIEW_INCOMPLETE_TTL_S = 15.0
+_PREVIEW_CACHE_MAX = 24
+
+
+def prune_preview_cache() -> None:
+    """Drop expired / excess preview payloads (unbounded growth → OOM)."""
+    now = time.monotonic()
+    for key in list(_PREVIEW_CACHE):
+        cached = _PREVIEW_CACHE.get(key)
+        if not cached:
+            continue
+        age = now - cached[0]
+        complete = cached[1].readings_complete
+        ttl = _PREVIEW_CACHE_TTL_S if complete else _PREVIEW_INCOMPLETE_TTL_S
+        if age >= ttl:
+            del _PREVIEW_CACHE[key]
+    if len(_PREVIEW_CACHE) <= _PREVIEW_CACHE_MAX:
+        return
+    # Drop oldest first.
+    ordered = sorted(_PREVIEW_CACHE.items(), key=lambda item: item[1][0])
+    for key, _ in ordered[: max(0, len(ordered) - _PREVIEW_CACHE_MAX)]:
+        _PREVIEW_CACHE.pop(key, None)
+
+
+def invalidate_preview_cache(date: str | None = None, language: str | None = None) -> None:
+    if not date:
+        _PREVIEW_CACHE.clear()
+        return
+    d = date.strip()
+    lang = None
+    if language:
+        from services.mass_language import normalize_mass_language
+
+        lang = normalize_mass_language(language)
+    for key in list(_PREVIEW_CACHE):
+        if key[0] != d:
+            continue
+        if lang is None or key[2] == lang:
+            del _PREVIEW_CACHE[key]
+
+
+def _empty_songs_by_section() -> dict[str, list[dict[str, Any]]]:
+    return {sec: [] for sec in _PREVIEW_SECTIONS}
+
+
+def fetch_preview(
+    date: str,
+    *,
+    readings_only: bool = False,
+    force_refresh: bool = False,
+    language: str = "english",
+) -> PreviewPayload:
+    d = (date or "").strip()
+    from services.mass_language import normalize_mass_language
+
+    lang = normalize_mass_language(language)
+    cache_key = (d, readings_only, lang, _PREVIEW_CACHE_VERSION)
+    now = time.monotonic()
+    if force_refresh:
+        invalidate_preview_cache(d, language=lang)
+    else:
+        cached = _PREVIEW_CACHE.get(cache_key)
+        if cached:
+            age = now - cached[0]
+            complete = cached[1].readings_complete
+            ttl = _PREVIEW_CACHE_TTL_S if complete else _PREVIEW_INCOMPLETE_TTL_S
+            if age < ttl:
+                return cached[1]
+
+    data = get_liturgical_data(d, force_refresh=force_refresh, language=lang)
+    if not data:
+        return PreviewPayload(
+            ok=False,
+            error="Unable to fetch liturgical data. Use a valid date (YYYY-MM-DD).",
+        )
+    liturgical_color = get_liturgical_color(d)
+    gospel_text = data.get("gospel_text") or ""
+    gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
+    base_quote = gospel_slide_quote or gospel_text or ""
+    sentences = split_slide_sentences(base_quote)
+    season_key = str(liturgical_color.get("season") or "ordinary_time")
+    if readings_only:
+        by_sec = _empty_songs_by_section()
+        default_picks: dict[str, str] = {}
+    else:
+        by_sec_base = recommend_sections(season_key=season_key, per_section=7)
+        by_sec_web: dict[str, list[dict[str, Any]]] = {}
+        web_enabled = song_web_fetch_enabled()
+        if web_enabled:
+            by_sec_web = discover_hymns_for_readings(
+                gospel_reference=str(data.get("gospel_reference") or ""),
+                season_key=season_key,
+                max_candidates=18,
+                fetch_lyrics_count=10,
+            )
+        for sec in _PREVIEW_SECTIONS:
+            for row in by_sec_web.get(sec) or []:
+                row["source"] = "web"
+                row["language"] = str(row.get("language") or "")
+                row["has_lyrics"] = bool(row.get("has_lyrics", False))
+        by_sec = _merge_song_sections(by_sec_base, by_sec_web, cap=10)
+        g_quote_preview = (preferred_slide_quote(base_quote) or "").strip()
+        mood_preview = {
+            "season": data.get("season") or season_key,
+            "title": data.get("title") or "",
+            "gospel_reference": data.get("gospel_reference") or "",
+            "gospel_text": gospel_text,
+            "gospel_quote": g_quote_preview,
+        }
+        default_picks = default_song_selections_for_preview(season_key, mood_preview)
+    g_quote_preview = (preferred_slide_quote(base_quote) or "").strip()
+    est_slides = 78 + min(12, len(sentences))
+    fr_txt = data.get("first_reading_text") or ""
+    sr_txt = data.get("second_reading_text") or ""
+    raw_psalm = repair_eaten_r_refrain((data.get("psalm_text") or "").split(" or ", 1)[0].strip())
+    psalm_ref = str(data.get("psalm") or "").strip()
+    psalm_resp = repair_eaten_r_refrain((data.get("psalm_response") or "").strip())
+    psalm_refrains = collect_psalm_refrain_options(
+        raw_psalm,
+        psalm_ref,
+        psalm_response=psalm_resp,
+    )
+    result = PreviewPayload(
+        ok=True,
+        title=data.get("title") or "Sunday Mass Celebration",
+        gospel_reference=data.get("gospel_reference") or "N/A",
+        season=data.get("season") or "",
+        lectionary_cycle=data.get("lectionary_cycle") or "",
+        liturgical_color=liturgical_color,
+        gospel_text_length=len(gospel_text),
+        sentences=sentences,
+        preferred_sentence_index=preferred_slide_sentence_index(sentences) if sentences else 0,
+        quote_attribution=data.get("quote_attribution"),
+        songs_by_section=by_sec,
+        gospel_quote=g_quote_preview,
+        default_song_selections=default_picks,
+        estimated_slide_count=est_slides,
+        first_reading_reference=str(data.get("first_reading") or "").strip(),
+        first_reading_excerpt=synopsis_from_reading(fr_txt, max_chars=720) if fr_txt else "",
+        second_reading_reference=str(data.get("second_reading") or "").strip(),
+        second_reading_excerpt=synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
+        psalm_text=raw_psalm,
+        psalm_verses=(data.get("psalm_verses") or "").strip(),
+        psalm_reference=psalm_ref,
+        psalm_refrains=psalm_refrains,
+        gospel_text=gospel_text,
+        gospel_acclamation=str(data.get("gospel_acclamation") or "").strip(),
+        readings_complete=payload_complete(data),
+        readings_language=str(data.get("readings_language") or lang or "english"),
+    )
+    _PREVIEW_CACHE[cache_key] = (now, result)
+    if len(_PREVIEW_CACHE) > _PREVIEW_CACHE_MAX:
+        prune_preview_cache()
+    return result
+
+
+@dataclass
+class GenerationResult:
+    ok: bool
+    error: Optional[str] = None
+    pptx_path: Optional[Path] = None
+    poster_path: Optional[Path] = None
+    poster_ppt_path: Optional[Path] = None
+    title: str = ""
+    gospel_reference: str = ""
+    slide_line_preview: str = ""
+    gospel_text_length: int = 0
+    liturgical_color_name: str = ""
+    liturgical_color_hex: str = ""
+    liturgical_season_label: str = ""
+    selected_songs: dict[str, str] = field(default_factory=dict)
+    gospel_quote: str = ""
+    slide_count: int = 0
+    liturgical_color: Optional[Mapping[str, Any]] = None
+    export_stem: str = ""
+    include_social_exports: bool = False
+    leaflet_path: Optional[Path] = None
+    slideshow_cues: list[dict[str, Any]] = field(default_factory=list)
+
+
+
+
+
+def generate_mass_media(
+    date: str,
+    celebrant: str,
+    *,
+    co_celebrant: str = "",
+    sentence_index: Optional[int] = None,
+    interactive_pick: bool = False,
+    poster_template: str = "liturgical_color",  # deprecated — non-AI wallpapers removed; ignored
+    include_social_exports: bool = False,
+    include_leaflet: bool = False,
+    leaflet_only: bool = False,
+    include_gospel_art: bool = False,  # deprecated — gospel_moment PNG removed
+    include_ai_mass_poster: bool = False,
+    ai_poster_backend: str = "openai",
+    ai_poster_style: str = "cinematic",
+    ai_poster_transparency_pct: float = 0.0,
+    reuse_existing_poster: bool = False,
+    community_name: Optional[str] = None,
+    song_selections: Optional[Mapping[str, str]] = None,
+    custom_theme: Optional[Mapping[str, Any]] = None,
+    divider_poster_path: Optional[Path] = None,
+    divider_style: str = "divider3",
+    lotw_poster: str = "lotw1",
+    lote_poster: str = "lote1",
+    announcement_image_paths: Optional[list[Path]] = None,
+    mass_collection_amount: Optional[str] = None,
+    mass_collection_date_label: Optional[str] = None,
+    mass_collection_currency: Optional[str] = None,
+    food_sponsors: Optional[list[str]] = None,
+    include_mass_collection_slide: bool = False,
+    include_food_sponsor_slide: bool = False,
+    include_sponsorship_contact_slide: bool = False,
+    include_merienda_location_slide: bool = False,
+    include_welcoming_newcomers_slide: bool = False,
+    sponsorship_contact: Optional[str] = None,
+    merienda_location: Optional[str] = None,
+    announcement_bg_colors: Optional[Mapping[str, str]] = None,
+    custom_announcement_slides: Optional[list[Mapping[str, Any]]] = None,
+    psalm_text_override: Optional[str] = None,
+    psalm_refrain_index: Optional[int] = None,
+    psalm_response_override: Optional[str] = None,
+    gospel_quote_override: Optional[str] = None,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    include_church_logo: bool = False,
+    include_church_name: bool = False,
+    include_footer: bool = False,
+    footer_brand: Optional[str] = None,
+    hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+    creed_choice: str = "nicene",
+    creed_language: str = "english",
+    penitential_language: str = "english",
+    sanctus_language: str = "english",
+    gloria_choice: str = "english",
+    our_father_choice: str = "english",
+    kyrie_choice: str = "english",
+    kyrie_tagalog_slide: int = 1,
+    hymn_lyrics_layout: str = "dual",
+    hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
+    video_replacements: Optional[Mapping[str, Any]] = None,
+    mass_language: str = "english",
+    show_hymn_section_labels: bool = False,
+    slide_kinds: Optional[list[str]] = None,
+    parish_deck_dna: Optional[Mapping[str, Any]] = None,
+) -> GenerationResult:
+    if community_name and str(community_name).strip():
+        update_community(community_name=str(community_name).strip())
+
+    # Posters keep the combined "Celebrant · Co-celebrant" line; the deck divider
+    # renders them in separate placeholders (see generate_mass_ppt).
+    co_celebrant = (co_celebrant or "").strip()
+    poster_celebrant = f"{celebrant} · {co_celebrant}" if co_celebrant else celebrant
+
+    data = get_liturgical_data(date, language=mass_language)
+    if not data:
+        return GenerationResult(
+            ok=False,
+            error="Unable to fetch liturgical data.",
+        )
+
+    # Manual overrides (never mutate the cached payload object) — let users paste a
+    # refrain when the upstream sources miss them.
+    effective_psalm_override = (
+        (psalm_text_override or "").strip() or (psalm_response_override or "").strip() or None
+    )
+
+    title = data.get("title") or "Sunday Mass Celebration"
+    gospel_ref = data.get("gospel_reference") or "N/A"
+    gospel_text = data.get("gospel_text") or ""
+    gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
+    season = data.get("season") or ""
+    cycle = data.get("lectionary_cycle") or ""
+    quote_attr = data.get("quote_attribution")
+
+    liturgical_color = get_liturgical_color(date)
+    color_name = str(liturgical_color.get("color_name") or "")
+    color_hex = str(liturgical_color.get("hex") or "")
+    season_lbl = str(liturgical_color.get("season") or "")
+    season_key = str(liturgical_color.get("season") or "ordinary_time")
+
+    slide_line = resolve_slide_line(
+        gospel_slide_quote,
+        gospel_text,
+        sentence_index=sentence_index,
+        interactive_pick=interactive_pick,
+        gospel_quote_override=gospel_quote_override,
+    )
+
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=slide_line, sunday_title=title
+    )
+    gospel_analysis = analyze_gospel_visual(
+        sunday_title=title.replace(" Celebration", "").strip() or title,
+        gospel_reference=gospel_ref,
+        gospel_text=gospel_text,
+        gospel_quote=slide_line,
+        season_key=season_key,
+    )
+
+    picks = _merge_default_and_user_songs(season_key, song_selections)
+
+    community_display = get_community_name()
+    stem = mass_export_stem(community_display, date, title, season)
+    display_title = title.replace(" Celebration", "").strip() or title
+    _ = poster_template  # ignored — non-AI liturgical/classic posters removed
+
+    _root = Path(__file__).resolve().parent
+    _out = _root / "outputs"
+    hero_path: Optional[Path] = None
+    poster_path: Optional[Path] = None
+    poster_ppt_path: Optional[Path] = None
+    backend = (ai_poster_backend or "openai").strip().lower()
+    if backend not in ("openai", "gemini"):
+        backend = "openai"
+
+    # Kick off the image API immediately so it overlaps hymn lyric fetches and
+    # (after the hero lands) the PowerPoint build.
+    ai_pool: Optional[ThreadPoolExecutor] = None
+    hero_future = None
+    compose_future = None
+    if slide_kinds:
+        # Partial generate may still request AI divider art via include_ai_mass_poster.
+        include_social_exports = False
+        include_leaflet = False
+        leaflet_only = False
+    if leaflet_only:
+        include_leaflet = True
+        include_ai_mass_poster = False
+        include_social_exports = False
+
+    # Mass generate never creates a one-off AI poster. Only reuse shared weekly
+    # Sunday heroes prepared by superadmin; otherwise fall back to non-AI dividers.
+    if include_ai_mass_poster:
+        try:
+            from services.weekly_style_posters import (
+                normalize_mass_date,
+                resolve_hero_file,
+                sunday_for_mass_date,
+            )
+
+            mass_iso = normalize_mass_date(date) or str(date or "").strip()
+            sunday = sunday_for_mass_date(mass_iso) if mass_iso else ""
+            weekly_hero = (
+                resolve_hero_file(sunday=sunday, style=ai_poster_style, output_dir=_out)
+                if sunday
+                else None
+            )
+        except Exception:
+            weekly_hero = None
+        if weekly_hero is not None and Path(weekly_hero).is_file():
+            hero_path = Path(weekly_hero)
+            print(f"[generate] reusing weekly AI hero {hero_path.name}", flush=True)
+        else:
+            include_ai_mass_poster = False
+            hero_path = None
+            logger.info(
+                "AI mass poster unavailable for %s style=%s — using non-AI dividers",
+                date,
+                ai_poster_style,
+            )
+
+    # Ensure selected songs have lyrics before deck generation (best-effort auto-heal).
+    try:
+        sec_map = {
+            "entrance": "entrance",
+            "offertory": "offertory",
+            "communion_1": "communion",
+            "communion_2": "communion",
+            "communion_3": "communion",
+            "communion_4": "communion",
+            "communion_5": "communion",
+            "recessional": "recessional",
+            "meditation": "meditation",
+        }
+        for key, sec in sec_map.items():
+            sid = str(picks.get(key) or "").strip()
+            if sid:
+                ensure_lyrics_for_song(sec, sid)
+
+        entrance_title = _hymn_title_for_poster("entrance", picks.get("entrance", ""))
+        comm_titles: list[str] = []
+        for i in range(1, 6):
+            t = _hymn_title_for_poster("communion", picks.get(f"communion_{i}", ""))
+            if t:
+                comm_titles.append(t)
+        communion_line = " · ".join(comm_titles)
+
+        psalm_body = resolve_psalm_slide_text(
+            (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
+            data.get("psalm") or "",
+            psalm_response=(data.get("psalm_response") or "").strip(),
+            psalm_text_override=effective_psalm_override,
+            refrain_index=psalm_refrain_index,
+        )
+
+        def _build_leaflet_pdf() -> Optional[Path]:
+            from generators.leaflet import generate_mass_leaflet
+            from services.mass_text_format import (
+                pick_hymn_lyrics_for_slides,
+                strip_reading_verse_markers,
+            )
+
+            hymn_overrides = hymn_lyric_overrides if isinstance(hymn_lyric_overrides, Mapping) else {}
+            song_rows: list[dict[str, str]] = []
+            for label, key, sec in (
+                ("Entrance", "entrance", "entrance"),
+                ("Offertory", "offertory", "offertory"),
+                ("Communion", "communion_1", "communion"),
+                ("Communion II", "communion_2", "communion"),
+                ("Communion III", "communion_3", "communion"),
+                ("Meditation", "meditation", "meditation"),
+                ("Recessional", "recessional", "recessional"),
+            ):
+                hid = str(picks.get(key) or "").strip()
+                if not hid:
+                    continue
+                row = get_hymn(sec, hid) or {}
+                song_title = str(row.get("title") or hid).strip()
+                lib_lyrics = str(row.get("lyrics") or "").strip()
+                override = None
+                raw_ov = hymn_overrides.get(key) or hymn_overrides.get(hid)
+                if isinstance(raw_ov, Mapping):
+                    override = str(raw_ov.get("lyrics") or raw_ov.get("text") or "").strip() or None
+                elif raw_ov:
+                    override = str(raw_ov).strip() or None
+                lyrics = pick_hymn_lyrics_for_slides(lib_lyrics, override)
+                song_rows.append({"label": label, "title": song_title, "lyrics": lyrics})
+
+            ann_notes: list[str] = []
+            for row in custom_announcement_slides or []:
+                if not isinstance(row, Mapping):
+                    continue
+                line = str(row.get("title") or row.get("body") or row.get("text") or "").strip()
+                if line:
+                    ann_notes.append(line)
+
+            return generate_mass_leaflet(
+                output_path=_out / f"{stem}_leaflet.pdf",
+                title=title,
+                date=date,
+                parish_name=community_display,
+                celebrant=celebrant,
+                co_celebrant=co_celebrant,
+                season=season_lbl or season,
+                lectionary_cycle=cycle,
+                liturgical_color_name=color_name,
+                liturgical_color_hex=color_hex,
+                gospel_quote=slide_line,
+                gospel_reference=gospel_ref,
+                first_reading_ref=str(data.get("first_reading") or ""),
+                first_reading_text=strip_reading_verse_markers(
+                    str(data.get("first_reading_text") or "")
+                ),
+                psalm_ref=str(data.get("psalm") or ""),
+                psalm_text=psalm_body,
+                second_reading_ref=str(data.get("second_reading") or ""),
+                second_reading_text=strip_reading_verse_markers(
+                    str(data.get("second_reading_text") or "")
+                ),
+                gospel_text=strip_reading_verse_markers(gospel_text),
+                gospel_acclamation=str(data.get("gospel_acclamation") or ""),
+                songs=song_rows,
+                announcements=ann_notes,
+                mass_language=mass_language,
+                creed_choice=creed_choice,
+                gloria_choice=gloria_choice,
+                our_father_choice=our_father_choice,
+            )
+
+        if leaflet_only:
+            try:
+                leaflet_path = _build_leaflet_pdf()
+            except Exception as exc:
+                logger.exception("Mass leaflet generation failed")
+                return GenerationResult(ok=False, error=f"Leaflet generation failed: {exc}")
+            preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
+            return GenerationResult(
+                ok=True,
+                title=title,
+                gospel_reference=gospel_ref,
+                slide_line_preview=preview,
+                gospel_text_length=len(gospel_text),
+                liturgical_color_name=color_name,
+                liturgical_color_hex=color_hex,
+                liturgical_season_label=season_lbl,
+                selected_songs=dict(picks),
+                gospel_quote=slide_line,
+                slide_count=0,
+                liturgical_color=liturgical_color,
+                export_stem=stem,
+                leaflet_path=leaflet_path,
+            )
+
+        if include_ai_mass_poster and hero_path is not None:
+            print("[generate] weekly AI hero ready — composing posters in parallel with PPTX", flush=True)
+            from generators.ai_poster_generator import compose_primary_posters_from_hero
+
+            ai_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ai-poster")
+            compose_future = ai_pool.submit(
+                compose_primary_posters_from_hero,
+                date,
+                hero_path=hero_path,
+                output_stem=stem,
+                output_dir=_out,
+                celebrant_name=celebrant,
+                co_celebrant_name=co_celebrant,
+                gospel_quote=slide_line,
+                gospel_reference=gospel_ref,
+                liturgical_title=display_title,
+                lectionary_cycle=cycle,
+                season=season,
+                season_key=season_key,
+                divider_style=layout_id,
+                include_social_exports=include_social_exports,
+            )
+        else:
+            # Non-AI liturgical/classic poster wallpapers removed — PPTX uses
+            # deck themes / uploaded dividers only when AI poster is off.
+            poster_path, poster_ppt_path = None, None
+            if not include_ai_mass_poster:
+                hero_path = None
+
+        divider_for_ppt = _resolve_divider_poster_path(uploaded=divider_poster_path)
+
+        slide_count, pptx_path, slideshow_cues = generate_mass_ppt(
+            title=title,
+            gospel_reference=gospel_ref,
+            gospel_quote=slide_line or gospel_text,
+            season=season,
+            lectionary_cycle=cycle,
+            celebrant=celebrant,
+            co_celebrant=co_celebrant,
+            date=date,
+            quote_attribution=quote_attr,
+            quote_max_chars=400,
+            gospel_full_text=gospel_text,
+            first_reading_ref=data.get("first_reading") or "",
+            first_reading_text=data.get("first_reading_text") or "",
+            psalm_ref=data.get("psalm") or "",
+            psalm_text=psalm_body,
+            second_reading_ref=data.get("second_reading") or "",
+            second_reading_text=data.get("second_reading_text") or "",
+            gospel_acclamation_verse=data.get("gospel_acclamation") or "",
+            liturgical_color=liturgical_color,
+            custom_theme=custom_theme,
+            song_selections=picks,
+            output_stem=stem,
+            liturgical_poster_png=hero_path,
+            divider_poster_png=divider_for_ppt,
+            divider_style=layout_id,
+            ai_poster_transparency_pct=ai_poster_transparency_pct,
+            lotw_poster=lotw_poster,
+            lote_poster=lote_poster,
+            announcement_image_paths=announcement_image_paths,
+            mass_collection_amount=mass_collection_amount or "",
+            mass_collection_date_label=mass_collection_date_label or "",
+            mass_collection_currency=mass_collection_currency or "PHP",
+            food_sponsors=food_sponsors,
+            include_mass_collection_slide=bool(include_mass_collection_slide),
+            include_food_sponsor_slide=bool(include_food_sponsor_slide),
+            include_sponsorship_contact_slide=bool(include_sponsorship_contact_slide),
+            include_merienda_location_slide=bool(include_merienda_location_slide),
+            include_welcoming_newcomers_slide=bool(include_welcoming_newcomers_slide),
+            sponsorship_contact=(sponsorship_contact or "").strip(),
+            merienda_location=(merienda_location or "").strip(),
+            announcement_bg_colors=announcement_bg_colors,
+            custom_announcement_slides=custom_announcement_slides,
+            hymn_typography=hymn_typography,
+            include_church_logo=include_church_logo,
+            include_church_name=include_church_name,
+            include_footer=include_footer,
+            footer_brand=(footer_brand or "").strip(),
+            hymn_lyric_overrides=hymn_lyric_overrides,
+            creed_choice=creed_choice,
+            gloria_choice=gloria_choice,
+            our_father_choice=our_father_choice,
+            kyrie_choice=kyrie_choice,
+            kyrie_tagalog_slide=kyrie_tagalog_slide,
+            hymn_lyrics_layout=hymn_lyrics_layout,
+            hymn_layout_overrides=hymn_layout_overrides,
+            video_replacements=video_replacements,
+            mass_language=mass_language,
+            creed_language=creed_language,
+            penitential_language=penitential_language,
+            sanctus_language=sanctus_language,
+            show_hymn_section_labels=show_hymn_section_labels,
+            slide_kinds=slide_kinds,
+            parish_deck_dna=parish_deck_dna,
+        )
+
+        if compose_future is not None:
+            try:
+                poster_path, poster_ppt_path = compose_future.result()
+            except Exception:
+                logger.warning("AI poster compose failed after deck was built", exc_info=True)
+
+        if include_social_exports and poster_path and poster_path.is_file():
+            export_social_variants(poster_path, output_dir=_out, prefix=stem)
+        # include_gospel_art is ignored — non-AI gospel_moment PNG export removed.
+
+        leaflet_path: Optional[Path] = None
+        if include_leaflet:
+            try:
+                leaflet_path = _build_leaflet_pdf()
+            except Exception:
+                logger.exception("Mass leaflet generation failed")
+                leaflet_path = None
+
+        preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
+
+        return GenerationResult(
+            ok=True,
+            pptx_path=pptx_path,
+            poster_path=poster_path,
+            poster_ppt_path=poster_ppt_path,
+            title=title,
+            gospel_reference=gospel_ref,
+            slide_line_preview=preview,
+            gospel_text_length=len(gospel_text),
+            liturgical_color_name=color_name,
+            liturgical_color_hex=color_hex,
+            liturgical_season_label=season_lbl,
+            selected_songs=dict(picks),
+            gospel_quote=slide_line,
+            slide_count=slide_count,
+            liturgical_color=liturgical_color,
+            export_stem=stem,
+            include_social_exports=include_social_exports,
+            leaflet_path=leaflet_path,
+            slideshow_cues=list(slideshow_cues or []),
+        )
+    finally:
+        if ai_pool is not None:
+            ai_pool.shutdown(wait=True)
+        try:
+            from services.memory_guard import release_after_heavy_job
+
+            release_after_heavy_job("mass-generate")
+        except Exception:
+            logger.debug("post-generate memory release failed", exc_info=True)
+
+
+def regenerate_mass_pptx(
+    date: str,
+    celebrant: str,
+    *,
+    co_celebrant: str = "",
+    sentence_index: Optional[int] = None,
+    song_selections: Optional[Mapping[str, str]] = None,
+    custom_theme: Optional[Mapping[str, Any]] = None,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    divider_poster_path: Optional[Path] = None,
+    divider_style: str = "divider3",
+    lotw_poster: str = "lotw1",
+    lote_poster: str = "lote1",
+    announcement_image_paths: Optional[list[Path]] = None,
+    mass_collection_amount: Optional[str] = None,
+    mass_collection_date_label: Optional[str] = None,
+    mass_collection_currency: Optional[str] = None,
+    food_sponsors: Optional[list[str]] = None,
+    include_mass_collection_slide: bool = False,
+    include_food_sponsor_slide: bool = False,
+    include_sponsorship_contact_slide: bool = False,
+    include_merienda_location_slide: bool = False,
+    include_welcoming_newcomers_slide: bool = False,
+    sponsorship_contact: Optional[str] = None,
+    merienda_location: Optional[str] = None,
+    announcement_bg_colors: Optional[Mapping[str, str]] = None,
+    custom_announcement_slides: Optional[list[Mapping[str, Any]]] = None,
+    psalm_text_override: Optional[str] = None,
+    psalm_refrain_index: Optional[int] = None,
+    psalm_response_override: Optional[str] = None,
+    gospel_quote_override: Optional[str] = None,
+    include_church_logo: bool = False,
+    include_church_name: bool = False,
+    include_footer: bool = False,
+    footer_brand: Optional[str] = None,
+    hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+    creed_choice: str = "nicene",
+    creed_language: str = "english",
+    penitential_language: str = "english",
+    sanctus_language: str = "english",
+    gloria_choice: str = "english",
+    our_father_choice: str = "english",
+    kyrie_choice: str = "english",
+    kyrie_tagalog_slide: int = 1,
+    hymn_lyrics_layout: str = "dual",
+    hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
+    video_replacements: Optional[Mapping[str, Any]] = None,
+    mass_language: str = "english",
+    show_hymn_section_labels: bool = False,
+    slide_kinds: Optional[list[str]] = None,
+    parish_deck_dna: Optional[Mapping[str, Any]] = None,
+) -> GenerationResult:
+    """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
+    data = get_liturgical_data(date, language=mass_language)
+    if not data:
+        return GenerationResult(ok=False, error="Unable to fetch liturgical data.")
+
+    # Manual overrides (never mutate the cached payload object).
+    effective_psalm_override = (
+        (psalm_text_override or "").strip() or (psalm_response_override or "").strip() or None
+    )
+
+    title = data.get("title") or "Sunday Mass Celebration"
+    gospel_ref = data.get("gospel_reference") or "N/A"
+    gospel_text = data.get("gospel_text") or ""
+    gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
+    season = data.get("season") or ""
+    cycle = data.get("lectionary_cycle") or ""
+    quote_attr = data.get("quote_attribution")
+    liturgical_color = get_liturgical_color(date)
+
+    slide_line = resolve_slide_line(
+        gospel_slide_quote,
+        gospel_text,
+        sentence_index=sentence_index,
+        interactive_pick=False,
+        gospel_quote_override=gospel_quote_override,
+    )
+
+    picks = _merge_default_and_user_songs(
+        str(liturgical_color.get("season") or "ordinary_time"), song_selections
+    )
+    sec_map = {
+        "entrance": "entrance",
+        "offertory": "offertory",
+        "communion_1": "communion",
+        "communion_2": "communion",
+        "communion_3": "communion",
+        "communion_4": "communion",
+        "communion_5": "communion",
+        "recessional": "recessional",
+        "meditation": "meditation",
+    }
+    for key, sec in sec_map.items():
+        sid = str(picks.get(key) or "").strip()
+        if sid:
+            ensure_lyrics_for_song(sec, sid)
+
+    community_display = get_community_name()
+    stem = mass_export_stem(community_display, date, title, season)
+    _root = Path(__file__).resolve().parent
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=slide_line, sunday_title=title
+    )
+    hero_path = _cached_hero_path(date, _root / "outputs" / "images")
+
+    divider_for_ppt = _resolve_divider_poster_path(uploaded=divider_poster_path)
+
+    psalm_body = resolve_psalm_slide_text(
+        (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
+        data.get("psalm") or "",
+        psalm_response=(data.get("psalm_response") or "").strip(),
+        psalm_text_override=effective_psalm_override,
+        refrain_index=psalm_refrain_index,
+    )
+
+    slide_count, pptx_path, slideshow_cues = generate_mass_ppt(
+        title=title,
+        gospel_reference=gospel_ref,
+        gospel_quote=slide_line or gospel_text,
+        season=season,
+        lectionary_cycle=cycle,
+        celebrant=celebrant,
+        co_celebrant=co_celebrant,
+        date=date,
+        quote_attribution=quote_attr,
+        quote_max_chars=400,
+        gospel_full_text=gospel_text,
+        first_reading_ref=data.get("first_reading") or "",
+        first_reading_text=data.get("first_reading_text") or "",
+        psalm_ref=data.get("psalm") or "",
+        psalm_text=psalm_body,
+        second_reading_ref=data.get("second_reading") or "",
+        second_reading_text=data.get("second_reading_text") or "",
+        gospel_acclamation_verse=data.get("gospel_acclamation") or "",
+        liturgical_color=liturgical_color,
+        custom_theme=custom_theme,
+        song_selections=picks,
+        output_stem=stem,
+        liturgical_poster_png=hero_path,
+        divider_poster_png=divider_for_ppt,
+        divider_style=layout_id,
+        ai_poster_transparency_pct=ai_poster_transparency_pct,
+        lotw_poster=lotw_poster,
+        lote_poster=lote_poster,
+        announcement_image_paths=announcement_image_paths,
+        mass_collection_amount=mass_collection_amount or "",
+        mass_collection_date_label=mass_collection_date_label or "",
+        mass_collection_currency=mass_collection_currency or "PHP",
+        food_sponsors=food_sponsors,
+        include_mass_collection_slide=bool(include_mass_collection_slide),
+        include_food_sponsor_slide=bool(include_food_sponsor_slide),
+        include_sponsorship_contact_slide=bool(include_sponsorship_contact_slide),
+        include_merienda_location_slide=bool(include_merienda_location_slide),
+        include_welcoming_newcomers_slide=bool(include_welcoming_newcomers_slide),
+        sponsorship_contact=(sponsorship_contact or "").strip(),
+        merienda_location=(merienda_location or "").strip(),
+        announcement_bg_colors=announcement_bg_colors,
+        custom_announcement_slides=custom_announcement_slides,
+        hymn_typography=hymn_typography,
+        include_church_logo=include_church_logo,
+        include_church_name=include_church_name,
+        include_footer=include_footer,
+        footer_brand=(footer_brand or "").strip(),
+        hymn_lyric_overrides=hymn_lyric_overrides,
+        creed_choice=creed_choice,
+        gloria_choice=gloria_choice,
+        our_father_choice=our_father_choice,
+        kyrie_choice=kyrie_choice,
+        kyrie_tagalog_slide=kyrie_tagalog_slide,
+        hymn_lyrics_layout=hymn_lyrics_layout,
+        hymn_layout_overrides=hymn_layout_overrides,
+        video_replacements=video_replacements,
+        mass_language=mass_language,
+        creed_language=creed_language,
+        penitential_language=penitential_language,
+        sanctus_language=sanctus_language,
+        show_hymn_section_labels=show_hymn_section_labels,
+        slide_kinds=slide_kinds,
+        parish_deck_dna=parish_deck_dna,
+    )
+
+    try:
+        from services.memory_guard import release_after_heavy_job
+
+        release_after_heavy_job("regenerate-pptx")
+    except Exception:
+        logger.debug("post-regenerate memory release failed", exc_info=True)
+
+    return GenerationResult(
+        ok=True,
+        pptx_path=pptx_path,
+        title=title,
+        gospel_reference=gospel_ref,
+        slide_line_preview=slide_line[:180] + ("…" if len(slide_line) > 180 else ""),
+        slide_count=slide_count,
+        export_stem=stem,
+        slideshow_cues=list(slideshow_cues or []),
+    )

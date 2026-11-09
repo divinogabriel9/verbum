@@ -1,0 +1,6853 @@
+"""
+Church Media Generator — minimal web UI + JSON API.
+
+Run from project root:
+  cd church_media_generator && uvicorn server:app --reload --host 127.0.0.1 --port 8000
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import logging
+import base64
+import os
+import re
+import shutil
+import time
+import subprocess
+import tempfile
+import threading
+import uuid
+import zipfile
+from pathlib import Path
+from typing import Any, Optional
+
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field, model_validator
+from starlette.concurrency import run_in_threadpool
+from urllib.parse import quote, urlencode
+
+from services.env_config import load_project_dotenv
+
+load_project_dotenv()
+
+logger = logging.getLogger("server")
+
+from services.calendar_month import fetch_calendar_month
+from services.catholic_news import fetch_catholic_headlines
+from services.catholic_radio import radio_catalog
+
+from pipeline import (
+    GenerationResult,
+    PreviewPayload,
+    fetch_preview,
+    generate_mass_media,
+    regenerate_mass_pptx,
+    refresh_all_song_sections,
+    refresh_song_section,
+)
+from services.community_config import (
+    LOGO_RELATIVE,
+    get_celebrant_names,
+    get_community_name,
+    load_community,
+    logo_file_absolute,
+    update_community,
+    uploads_dir,
+)
+from services.gospel_mood import gospel_moods_for_song
+from services.hymn_library import get_hymn
+from services.hymn_slide_preview import build_hymn_slide_preview
+from services.rite_slide_preview import build_rite_slide_preview
+from services.lyrics_fetcher import fetch_and_store_for_selection
+from services.ppt_preview_render import (
+    begin_progressive_ppt_preview,
+    get_last_convert_error,
+    list_slide_images,
+    render_pdf_page_range,
+    render_ppt_preview_pngs,
+)
+from services.ppt_template_analyze import analyze_pptx_theme
+from services.song_catalog import (
+    catalog_for_api,
+    catalog_lite_response,
+    catalog_whats_new,
+    delete_catalog_song,
+    delete_catalog_songs,
+    find_catalog_row_by_id,
+    import_song_rows,
+    import_titles,
+    import_verbum_songs_from_txt,
+    move_catalog_songs,
+    normalize_audio_preview_ref,
+    normalize_song_media_ref,
+    save_lyrics_song,
+    undo_verbum_song_import,
+    update_catalog_song,
+)
+from services.app_version import get_app_version, get_version_info
+from services.auth_config import auth_enabled, invite_contact_email, supabase_enabled
+from services.api_security import (
+    AuthSession,
+    optional_session,
+    register_security_middleware,
+    require_approved_membership,
+    require_session_when_auth,
+    require_superadmin,
+)
+from services.membership_config import (
+    can_edit_logo,
+    is_superadmin_user,
+    membership_payload,
+    parish_name_is_locked,
+)
+from services.pending_submissions import (
+    submit_pending_parish_rename,
+    submit_pending_priest,
+    submit_pending_song,
+)
+from services.choir_practice_shares import (
+    create_practice_share,
+    fetch_practice_share,
+    get_practice_share_by_token,
+    list_recent_practice_shares,
+    practice_catalog_index,
+    reset_practice_share_pin,
+    resolve_practice_song,
+    revoke_practice_share,
+    update_practice_share_lyrics,
+    verify_practice_share_pin,
+)
+from services.practice_lyrics_handoff import (
+    create_lyrics_handoff,
+    get_lyrics_handoff,
+    public_handoff_payload,
+)
+from services.practice_access import (
+    check_pin_unlock_allowed,
+    check_practice_fetch_allowed,
+    check_practice_lead_allowed,
+    check_practice_lead_song_allowed,
+    check_practice_page_allowed,
+    check_practice_share_create_allowed,
+    check_practice_token_allowed,
+    claim_practice_leader_seat,
+    ensure_practice_secret_configured,
+    is_unlocked,
+    issue_lead_token,
+    practice_device_id_from_request,
+    practice_no_store_headers,
+    release_unlock_slot,
+    renew_practice_leader_seat,
+    try_acquire_unlock_slot,
+    verify_lead_token,
+)
+from services.practice_visits import (
+    count_practice_active_now,
+    get_practice_visit_stats,
+    get_practice_visit_stats_batch,
+    record_practice_visit,
+)
+from services.catalog_rate_limit import check_catalog_lyric_fetch_allowed
+from services.hymn_normalized_store import (
+    fetch_lyrics_from_normalized,
+    fetch_song_from_normalized,
+)
+from services.lyric_audit import log_lyric_read
+from services.media_ownership import register_owned_files, session_may_access_media
+from services.runtime_config import is_production_runtime
+from services.practice_qr import practice_qr_data_url
+from services.user_church_context import get_church_profile_context
+from services.readings_snapshot import readings_snapshot, warm_readings_for_date
+from services.image_generation_quota import (
+    quota_status_payload,
+    reserve_daily_image_generation,
+    resolve_subject,
+)
+from services.input_limits import public_limits
+from services import input_limits as L
+from services.input_validation import (
+    check_hymn_layout_overrides,
+    check_hymn_overrides,
+    check_length,
+    check_optional_length,
+    check_string_list,
+)
+from services.private_files import (
+    media_file_url,
+    media_type_for,
+    preview_file_url,
+    resolve_under_root,
+    upload_file_url,
+)
+from services.storage_assets import (
+    delete_parish_asset,
+    delete_user_asset,
+    download_service_asset,
+    download_user_asset,
+    list_parish_assets,
+    list_user_assets,
+    parish_storage_ready,
+    signed_asset_url,
+    signed_service_asset_url,
+    storage_ready,
+    upload_parish_asset,
+    upload_user_asset,
+)
+from routes.admin import register_admin_routes
+from routes.auth import register_auth_routes
+from routes.billing import register_billing_routes
+from routes.distribution import register_distribution_routes
+from routes.email_jobs import register_email_job_routes
+from routes.readings_jobs import register_readings_job_routes
+from routes.parish import register_parish_routes
+from routes.theme_marketplace import register_theme_marketplace_routes
+
+# Optional outputs produced alongside mass_poster.png (Phase 3)
+_BUNDLE_OPTIONAL = (
+    "mass_poster_16x9.png",
+    "mass_poster_instagram_square.png",
+    "mass_poster_instagram_story.png",
+    "mass_poster_open_graph.png",
+)
+
+_PROJECT = Path(__file__).resolve().parent
+_OUTPUT_DIR = _PROJECT / "outputs"
+_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+_PREVIEW_DIR = _OUTPUT_DIR / "preview_slides"
+_PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+_PROJECTION_DECK_DIR = _OUTPUT_DIR / "projection_decks"
+_PROJECTION_DECK_DIR.mkdir(parents=True, exist_ok=True)
+_PROJECTION_DECK_TTL_S = 6 * 60 * 60
+_PROJECTION_DECK_MAX_BYTES = 80 * 1024 * 1024
+
+_UPLOAD_DIR = uploads_dir()
+_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+_MASS_ASSET_DIR = _UPLOAD_DIR / "mass_assets"
+_MASS_ASSET_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_POSTER_DIR = _UPLOAD_DIR / "saved_posters"
+_SAVED_POSTER_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_MEDIA_MUSIC_DIR = _UPLOAD_DIR / "saved_media" / "music"
+_SAVED_MEDIA_VIDEO_DIR = _UPLOAD_DIR / "saved_media" / "video"
+_SAVED_MEDIA_MUSIC_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_MEDIA_VIDEO_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_MEDIA_MANIFEST_PATH = _UPLOAD_DIR / "saved_media" / "manifest.json"
+_SAVED_MEDIA_MANIFEST_STORAGE = "saved_media/manifest.json"
+_SAVED_MEDIA_MANIFEST_CACHE: dict[str, Any] | None = None
+_SAVED_MEDIA_MANIFEST_PULLED = False
+
+_MAX_MUSIC_BYTES = 10_000_000
+_MAX_VIDEO_BYTES = 11_000_000
+_ALLOWED_MUSIC_TYPES = frozenset(("audio/mpeg", "audio/mp3", "application/octet-stream"))
+_ALLOWED_VIDEO_TYPES = frozenset(("video/mp4", "application/octet-stream"))
+
+_ALLOWED_LOGO_TYPES = frozenset(
+    ("image/png", "image/jpeg", "image/webp", "image/gif", "image/x-png", "image/jpg")
+)
+_MAX_LOGO_BYTES = 2_500_000
+_MAX_ASSET_BYTES = 8_000_000
+_ALLOWED_IMAGE_TYPES = _ALLOWED_LOGO_TYPES
+
+_BUNDLE_NAME = "mass_bundle.zip"  # legacy fallback only
+
+
+def _bundle_zip_name(export_stem: str) -> str:
+    stem = (export_stem or "mass_bundle").strip() or "mass_bundle"
+    return f"{stem}_bundle.zip"
+
+
+def _collect_generation_owned_paths(result: GenerationResult) -> list[str]:
+    owned: list[str] = []
+    for attr in ("pptx_path", "poster_path", "poster_ppt_path", "leaflet_path"):
+        p = getattr(result, attr, None)
+        if p and Path(p).is_file():
+            owned.append(Path(p).name)
+    bundle = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
+    if bundle.is_file():
+        owned.append(bundle.name)
+    post_dir = _OUTPUT_DIR / "posters"
+    if post_dir.is_dir() and result.export_stem:
+        for child in post_dir.glob("*.png"):
+            if child.is_file():
+                owned.append(f"posters/{child.name}")
+    if result.export_stem:
+        cues = _OUTPUT_DIR / f"{result.export_stem}_slideshow_cues.json"
+        if cues.is_file():
+            owned.append(cues.name)
+        media_dir = _OUTPUT_DIR / "slideshow_media" / result.export_stem
+        if media_dir.is_dir():
+            for child in media_dir.glob("*.mp4"):
+                if child.is_file():
+                    owned.append(f"slideshow_media/{result.export_stem}/{child.name}")
+    for cue in getattr(result, "slideshow_cues", None) or []:
+        rel = str((cue or {}).get("rel_path") or "").strip().lstrip("/")
+        if rel and rel not in owned:
+            owned.append(rel)
+    return owned
+
+
+def _slideshow_cues_payload(cues: Optional[list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for cue in cues or []:
+        if not isinstance(cue, dict):
+            continue
+        rel = str(cue.get("rel_path") or "").strip().lstrip("/")
+        if not rel:
+            continue
+        item = {
+            "index": int(cue.get("index") or 0),
+            "slot": str(cue.get("slot") or ""),
+            "title": str(cue.get("title") or ""),
+            "kind": "video",
+            "basename": str(cue.get("basename") or ""),
+            "video_url": media_file_url(rel),
+        }
+        if item["index"] > 0 and item["video_url"]:
+            out.append(item)
+    return out
+
+
+def _load_slideshow_cues_for_ppt(ppt: Path) -> list[dict[str, Any]]:
+    cues_path = ppt.with_name(f"{ppt.stem}_slideshow_cues.json")
+    if not cues_path.is_file():
+        return []
+    try:
+        raw = json.loads(cues_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    videos = raw.get("videos") if isinstance(raw, dict) else None
+    if not isinstance(videos, list):
+        return []
+    return _slideshow_cues_payload(videos)
+
+
+def _resolve_child_file(parent: Path, basename: str) -> Optional[Path]:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        return None
+    cand = (parent / base).resolve()
+    try:
+        cand.relative_to(parent.resolve())
+    except ValueError:
+        return None
+    return cand if cand.is_file() else None
+
+
+def _safe_storage_leaf(basename: str, *, folder: str) -> str:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        raise HTTPException(status_code=400, detail="Invalid asset name.")
+    return f"{folder.strip('/')}/{base}"
+
+
+def _materialize_storage_asset(
+    session: Optional[AuthSession], storage_path: str, *, suffix: str = ".png"
+) -> Optional[Path]:
+    key = (storage_path or "").strip()
+    if not key:
+        return None
+    raw: Optional[bytes] = None
+    if parish_storage_ready():
+        try:
+            raw = download_service_asset(path=key)
+        except Exception:
+            raw = None
+    if raw is None and session and storage_ready(session.token):
+        try:
+            raw = download_user_asset(access_token=session.token, path=key)
+        except Exception:
+            raw = None
+    if raw is None:
+        return None
+    tmp = tempfile.NamedTemporaryFile(prefix="verbum_asset_", suffix=suffix, delete=False)
+    tmp.write(raw)
+    tmp.flush()
+    tmp.close()
+    return Path(tmp.name)
+
+
+def _session_parish_id(session: Optional[AuthSession]) -> str:
+    if not session or not session.user or not session.user.user_id:
+        return ""
+    ctx = get_church_profile_context() or {}
+    pid = str(ctx.get("parish_id") or "").strip()
+    if pid:
+        return pid
+    try:
+        from services.parish_store import get_user_parish_context
+
+        parish_ctx = get_user_parish_context(
+            session.user.user_id, access_token=session.token
+        ) or {}
+        return str(parish_ctx.get("parish_id") or "").strip()
+    except Exception:
+        return ""
+
+
+def _resolve_mass_asset_path(
+    session: Optional[AuthSession],
+    basename: str,
+    *,
+    temp_assets: list[Path],
+) -> Optional[Path]:
+    bn = str(basename or "").strip()
+    if not bn:
+        return None
+    local = _resolve_child_file(_MASS_ASSET_DIR, bn)
+    if local:
+        return local
+    key = _safe_storage_leaf(bn, folder="mass_assets")
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        path = _materialize_storage_asset(session, f"parishes/{parish_id}/{key}")
+        if path:
+            temp_assets.append(path)
+            return path
+    if session and session.user:
+        path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
+        if path:
+            temp_assets.append(path)
+            return path
+    return None
+
+
+def _resolve_saved_video_path(
+    session: Optional[AuthSession],
+    basename: str,
+    *,
+    temp_assets: list[Path],
+) -> Optional[Path]:
+    """Resolve an MP4 from parish/user saved_media/video for PPTX embedding."""
+    bn = Path(str(basename or "").strip()).name
+    if not bn or not bn.lower().endswith(".mp4"):
+        return None
+    local = _resolve_child_file(_SAVED_MEDIA_VIDEO_DIR, bn)
+    if local:
+        return local
+    key = _safe_storage_leaf(bn, folder="saved_media/video")
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        path = _materialize_storage_asset(session, f"parishes/{parish_id}/{key}", suffix=".mp4")
+        if path:
+            temp_assets.append(path)
+            return path
+    if session and session.user:
+        path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}", suffix=".mp4")
+        if path:
+            temp_assets.append(path)
+            return path
+    return None
+
+
+def _materialize_video_replacements(
+    session: Optional[AuthSession],
+    replacements: Optional[dict[str, str]],
+    *,
+    temp_assets: list[Path],
+) -> dict[str, Path]:
+    out: dict[str, Path] = {}
+    if not isinstance(replacements, dict):
+        return out
+    for key, basename in replacements.items():
+        path = _resolve_saved_video_path(session, str(basename or ""), temp_assets=temp_assets)
+        if path:
+            out[str(key).strip().lower()] = path
+    return out
+
+
+async def _save_uploaded_image(file: UploadFile, dest_dir: Path, *, prefix: str) -> str:
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Use a PNG, JPEG, WebP, or GIF image.")
+    raw = await file.read()
+    if len(raw) > _MAX_ASSET_BYTES:
+        raise HTTPException(status_code=400, detail="Image too large (max about 8 MB).")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    orig = Path(file.filename or "upload").name
+    ext = Path(orig).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        ext = ".png"
+    name = f"{prefix}_{uuid.uuid4().hex}{ext}"
+    out = dest_dir / name
+    out.write_bytes(raw)
+    return name
+
+
+async def _save_uploaded_media(
+    file: UploadFile,
+    dest_dir: Path,
+    *,
+    prefix: str,
+    allowed_ext: str,
+    allowed_types: frozenset[str],
+    max_bytes: int,
+) -> str:
+    orig = Path(file.filename or "upload").name
+    ext = Path(orig).suffix.lower()
+    if ext != allowed_ext:
+        raise HTTPException(status_code=400, detail=f"Use a {allowed_ext.lstrip('.').upper()} file only.")
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype and ctype not in allowed_types and ctype != "application/octet-stream":
+        raise HTTPException(status_code=400, detail=f"Use a {allowed_ext.lstrip('.').upper()} file only.")
+    raw = await file.read()
+    if len(raw) > max_bytes:
+        mb = max(1, max_bytes // (1024 * 1024))
+        raise HTTPException(status_code=400, detail=f"File too large (max about {mb} MB).")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    name = f"{prefix}_{uuid.uuid4().hex}{allowed_ext}"
+    out = dest_dir / name
+    out.write_bytes(raw)
+    return name
+
+
+def _manifest_user_key(session: Optional[AuthSession]) -> str:
+    if session and session.user and session.user.user_id:
+        return str(session.user.user_id).strip() or "_local"
+    return "_local"
+
+
+def _manifest_scope_keys(session: Optional[AuthSession]) -> list[tuple[str, str]]:
+    """Prefer parish-scoped display names; fall back to the uploader's user key."""
+    keys: list[tuple[str, str]] = []
+    parish_id = _session_parish_id(session)
+    if parish_id:
+        keys.append(("parishes", parish_id))
+    keys.append(("users", _manifest_user_key(session)))
+    return keys
+
+
+def _blank_saved_media_manifest() -> dict[str, Any]:
+    return {"users": {}, "parishes": {}}
+
+
+def _merge_saved_media_manifest(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    out = _blank_saved_media_manifest()
+    for group in ("users", "parishes"):
+        merged: dict[str, Any] = {}
+        for src in (base, incoming):
+            bucket = src.get(group) if isinstance(src, dict) else None
+            if not isinstance(bucket, dict):
+                continue
+            for key, entries in bucket.items():
+                if not isinstance(entries, dict):
+                    continue
+                slot = merged.setdefault(str(key), {})
+                for basename, payload in entries.items():
+                    if isinstance(payload, dict):
+                        slot[str(basename)] = payload
+        out[group] = merged
+    return out
+
+
+def _pull_saved_media_manifest_from_storage(session: Optional[AuthSession]) -> dict[str, Any]:
+    """Load display-name manifest from parish storage (survives Render restarts)."""
+    if not parish_storage_ready():
+        return _blank_saved_media_manifest()
+    parish_id = _session_parish_id(session)
+    if not parish_id:
+        return _blank_saved_media_manifest()
+    try:
+        raw = download_service_asset(
+            path=f"parishes/{parish_id}/{_SAVED_MEDIA_MANIFEST_STORAGE}"
+        )
+        data = json.loads(raw.decode("utf-8"))
+    except Exception:
+        return _blank_saved_media_manifest()
+    if not isinstance(data, dict):
+        return _blank_saved_media_manifest()
+    data.setdefault("users", {})
+    data.setdefault("parishes", {})
+    return data
+
+
+def _push_saved_media_manifest_to_storage(
+    data: dict[str, Any], session: Optional[AuthSession]
+) -> None:
+    parish_id = _session_parish_id(session)
+    if not parish_id or not parish_storage_ready():
+        return
+    try:
+        upload_parish_asset(
+            parish_id=parish_id,
+            relative_path=_SAVED_MEDIA_MANIFEST_STORAGE,
+            raw=json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"),
+            content_type="application/json",
+            upsert=True,
+        )
+    except Exception:
+        logger.warning(
+            "Could not upload saved media manifest to parish storage.",
+            exc_info=True,
+        )
+
+
+def _load_saved_media_manifest(session: Optional[AuthSession] = None) -> dict[str, Any]:
+    global _SAVED_MEDIA_MANIFEST_CACHE, _SAVED_MEDIA_MANIFEST_PULLED
+    if _SAVED_MEDIA_MANIFEST_CACHE is not None and (
+        _SAVED_MEDIA_MANIFEST_PULLED or not parish_storage_ready()
+    ):
+        return _SAVED_MEDIA_MANIFEST_CACHE
+
+    local = _blank_saved_media_manifest()
+    if _SAVED_MEDIA_MANIFEST_PATH.is_file():
+        try:
+            raw = json.loads(_SAVED_MEDIA_MANIFEST_PATH.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                local = raw
+                local.setdefault("users", {})
+                local.setdefault("parishes", {})
+        except (OSError, json.JSONDecodeError):
+            local = _blank_saved_media_manifest()
+
+    remote = _pull_saved_media_manifest_from_storage(session)
+    merged = _merge_saved_media_manifest(remote, local)
+    _SAVED_MEDIA_MANIFEST_CACHE = merged
+    _SAVED_MEDIA_MANIFEST_PULLED = True
+    try:
+        _SAVED_MEDIA_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _SAVED_MEDIA_MANIFEST_PATH.write_text(
+            json.dumps(merged, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+    return merged
+
+
+def _save_saved_media_manifest(
+    data: dict[str, Any], session: Optional[AuthSession] = None
+) -> None:
+    global _SAVED_MEDIA_MANIFEST_CACHE
+    _SAVED_MEDIA_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data.setdefault("users", {})
+    data.setdefault("parishes", {})
+    _SAVED_MEDIA_MANIFEST_PATH.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    _SAVED_MEDIA_MANIFEST_CACHE = data
+    _push_saved_media_manifest_to_storage(data, session)
+
+
+def _register_saved_media_meta(
+    session: Optional[AuthSession],
+    basename: str,
+    display_name: str,
+    kind: str,
+) -> None:
+    data = _load_saved_media_manifest(session)
+    parish_id = _session_parish_id(session)
+    clean = str(display_name or "").strip() or basename
+    payload = {"display_name": clean[:240], "kind": kind}
+    if parish_id:
+        data.setdefault("parishes", {}).setdefault(parish_id, {})[basename] = payload
+    data.setdefault("users", {}).setdefault(_manifest_user_key(session), {})[basename] = payload
+    _save_saved_media_manifest(data, session)
+
+
+def _unregister_saved_media_meta(session: Optional[AuthSession], basename: str) -> None:
+    data = _load_saved_media_manifest(session)
+    changed = False
+    for group, key in _manifest_scope_keys(session):
+        bucket = (data.get(group) or {}).get(key)
+        if bucket and basename in bucket:
+            del bucket[basename]
+            changed = True
+    if changed:
+        _save_saved_media_manifest(data, session)
+
+
+def _humanize_media_stem(stem: str) -> str:
+    text = str(stem or "").strip()
+    if not text:
+        return ""
+    # Drop trailing YouTube video ids before spacing (ids may contain '-').
+    text = re.sub(r"[_-][0-9A-Za-z_-]{10,12}$", "", text).strip("_- ")
+    text = re.sub(r"[_-]+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\b[0-9a-f]{16,}\b$", "", text, flags=re.I).strip()
+    if not text:
+        return ""
+    return text.title() if text == text.lower() else text
+
+def _friendly_saved_media_basename(basename: str, *, kind: str) -> str:
+    """Readable label when the durable manifest has no display_name yet."""
+    name = str(basename or "").strip()
+    if not name:
+        return "Media"
+    stem = Path(name).stem
+    suffix = Path(name).suffix.lower()
+    lower = stem.lower()
+
+    if lower.startswith("preview_"):
+        parts = stem.split("_")
+        dur = parts[-1] if parts and parts[-1].isdigit() else ""
+        body = parts[2:-1] if dur and len(parts) > 3 else parts[2:]
+        label = _humanize_media_stem("_".join(body)) or "Song"
+        return f"{label} · {dur}s" if dur else f"{label} · preview"
+
+    for prefix, tag in (
+        ("instrumental_", "instrumental"),
+        ("karaoke_", "karaoke"),
+    ):
+        if lower.startswith(prefix):
+            parts = stem.split("_")
+            body = parts[2:] if len(parts) > 2 else parts[1:]
+            label = _humanize_media_stem("_".join(body)) or tag.title()
+            return f"{label} · {tag}"
+
+    kind_prefix = f"{kind}_"
+    if lower.startswith(kind_prefix):
+        rest = stem[len(kind_prefix) :]
+        if re.fullmatch(r"[0-9a-f]{8,}", rest, flags=re.I):
+            return f"Uploaded {kind}"
+        label = _humanize_media_stem(rest)
+        if label:
+            return label
+
+    return _humanize_media_stem(stem) or name
+
+
+def _saved_media_display_name(
+    session: Optional[AuthSession],
+    basename: str,
+    *,
+    kind: str,
+    manifest: Optional[dict[str, Any]] = None,
+) -> str:
+    data = manifest if isinstance(manifest, dict) else _load_saved_media_manifest(session)
+    for group, key in _manifest_scope_keys(session):
+        entry = (data.get(group) or {}).get(key, {}).get(basename, {})
+        name = str(entry.get("display_name") or "").strip()
+        if name:
+            return name
+    for group in ("parishes", "users"):
+        bucket = data.get(group) or {}
+        if not isinstance(bucket, dict):
+            continue
+        for entries in bucket.values():
+            if not isinstance(entries, dict):
+                continue
+            entry = entries.get(basename) or {}
+            name = str(entry.get("display_name") or "").strip()
+            if name:
+                return name
+    return _friendly_saved_media_basename(basename, kind=kind)
+
+
+def _enrich_saved_media_rows(
+    rows: list[dict[str, str]],
+    *,
+    session: Optional[AuthSession],
+    kind: str,
+) -> list[dict[str, str]]:
+    # Load once — previously re-read manifest.json for every row (slow on large libraries).
+    manifest = _load_saved_media_manifest(session)
+    out: list[dict[str, str]] = []
+    for row in rows:
+        item = dict(row)
+        item["display_name"] = _saved_media_display_name(
+            session,
+            item.get("basename", ""),
+            kind=kind,
+            manifest=manifest,
+        )
+        item["kind"] = kind
+        out.append(item)
+    return out
+
+
+def _list_saved_media_rows(
+    local_dir: Path,
+    *,
+    folder: str,
+    allowed_ext: str,
+    session: Optional[AuthSession],
+) -> list[dict[str, str]]:
+    local_items: list[dict[str, str]] = []
+    if local_dir.is_dir():
+        for p in sorted(local_dir.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+            if p.is_file() and p.suffix.lower() == allowed_ext:
+                local_items.append({"basename": p.name, "url": upload_file_url(f"{folder}/{p.name}")})
+
+    remote_items: list[dict[str, str]] = []
+    parish_id = _session_parish_id(session)
+    if session and storage_ready(session.token):
+        try:
+            rows = list_user_assets(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                prefix=folder,
+                sign_urls=False,
+            )
+            remote_items.extend(
+                {"basename": row["name"], "url": ""}
+                for row in rows
+                if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
+            )
+        except Exception:
+            logger.warning("Could not list %s from storage; using local files.", folder, exc_info=True)
+    if parish_id and parish_storage_ready():
+        try:
+            rows = list_parish_assets(parish_id=parish_id, prefix=folder, sign_urls=False)
+            remote_items.extend(
+                {"basename": row["name"], "url": ""}
+                for row in rows
+                if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
+            )
+        except Exception:
+            logger.warning("Could not list parish %s from storage.", folder, exc_info=True)
+    # Note: shared/catalog clips are NOT listed here — they clutter the Media tab
+    # and signing dozens of URLs times out on Render. Catalog 10s play uses
+    # /api/files/uploads/... which hydrates from shared storage on demand.
+
+    if remote_items or (parish_id and parish_storage_ready()) or (session and storage_ready(session.token)):
+        merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
+        for item in remote_items:
+            # Prefer same-origin private URLs (fast list; server hydrates from storage).
+            name = item["basename"]
+            merged[name] = {
+                "basename": name,
+                "url": upload_file_url(f"{folder}/{name}") or item.get("url") or "",
+            }
+        out = list(merged.values())
+        out.sort(key=lambda r: r["basename"], reverse=True)
+        return out
+    return local_items
+
+
+def _delete_saved_media_item(
+    session: Optional[AuthSession],
+    *,
+    basename: str,
+    local_dir: Path,
+    storage_folder: str,
+    allowed_ext: str,
+    not_found_detail: str,
+) -> dict[str, Any]:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        raise HTTPException(status_code=400, detail="Invalid asset name.")
+    removed = False
+    rel = _safe_storage_leaf(base, folder=storage_folder)
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        try:
+            delete_parish_asset(parish_id=parish_id, relative_path=rel)
+            removed = True
+        except Exception:
+            logger.warning("Parish storage delete failed for %s", base, exc_info=True)
+    if session and storage_ready(session.token):
+        try:
+            delete_user_asset(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                relative_path=rel,
+            )
+            removed = True
+        except HTTPException:
+            raise
+        except Exception:
+            logger.warning("Storage delete failed for %s", base, exc_info=True)
+    p = _resolve_child_file(local_dir, base)
+    if p and p.suffix.lower() == allowed_ext:
+        p.unlink(missing_ok=True)
+        removed = True
+    if not removed:
+        raise HTTPException(status_code=404, detail=not_found_detail)
+    _unregister_saved_media_meta(session, base)
+    return {"ok": True}
+
+
+def _upload_saved_media_url(
+    *,
+    session: Optional[AuthSession],
+    local_path: Path,
+    relative_path: str,
+    content_type: str,
+    local_url: str,
+) -> str:
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        try:
+            stored = upload_parish_asset(
+                parish_id=parish_id,
+                relative_path=relative_path,
+                raw=local_path.read_bytes(),
+                content_type=content_type,
+                upsert=True,
+            )
+            return stored.signed_url
+        except Exception:
+            logger.warning(
+                "Parish storage upload failed for %s; trying user storage.",
+                relative_path,
+                exc_info=True,
+            )
+    if not session or not storage_ready(session.token):
+        return local_url
+    try:
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=relative_path,
+            raw=local_path.read_bytes(),
+            content_type=content_type,
+            upsert=True,
+        )
+        return stored.signed_url
+    except Exception:
+        logger.warning(
+            "Storage upload failed for %s; serving local URL instead.",
+            relative_path,
+            exc_info=True,
+        )
+        return local_url
+
+
+def _upload_scoped_asset_url(
+    *,
+    session: Optional[AuthSession],
+    local_path: Path,
+    relative_path: str,
+    content_type: str,
+    local_url: str,
+) -> str:
+    """Upload image/media into the parish library when possible."""
+    return _upload_saved_media_url(
+        session=session,
+        local_path=local_path,
+        relative_path=relative_path,
+        content_type=content_type,
+        local_url=local_url,
+    )
+
+
+def _ai_poster_download_urls() -> dict[str, str]:
+    """Private URLs for Hugging Face layout exports."""
+    base = _OUTPUT_DIR / "posters"
+    out: dict[str, str] = {}
+    mapping = {
+        "instagram": "mass_poster_instagram.png",
+        "story": "mass_poster_story.png",
+        "facebook": "mass_poster_facebook.png",
+    }
+    for key, fname in mapping.items():
+        p = base / fname
+        if p.is_file():
+            out[key] = media_file_url(f"posters/{fname}")
+    return out
+
+
+def _latest_pptx_path() -> Optional[Path]:
+    """Most recently modified deck in ``outputs/`` (supports stem-based filenames)."""
+    cands = [p for p in _OUTPUT_DIR.glob("*.pptx") if p.is_file()]
+    if not cands:
+        return None
+    return max(cands, key=lambda p: p.stat().st_mtime)
+
+
+def _resolve_pptx_path(name_or_stem: Optional[str] = None) -> Optional[Path]:
+    """Resolve a specific deck by filename/stem, else the newest ``outputs/*.pptx``."""
+    raw = (name_or_stem or "").strip()
+    if raw:
+        base = Path(raw).name
+        if base.lower().endswith(".pptx"):
+            candidate = _OUTPUT_DIR / base
+        else:
+            candidate = _OUTPUT_DIR / f"{base}.pptx"
+        if candidate.is_file():
+            return candidate
+    return _latest_pptx_path()
+
+
+def _pptx_identity(ppt: Optional[Path]) -> tuple[str, float]:
+    if not ppt or not ppt.is_file():
+        return ("", 0.0)
+    try:
+        return (ppt.name, float(ppt.stat().st_mtime))
+    except OSError:
+        return (ppt.name, 0.0)
+
+
+def _write_mass_bundle_zip(result: GenerationResult) -> Path:
+    """Pack generated PPT, posters, stem-based social PNGs, and optional extras.
+
+    Uses ZIP_STORED (no recompress) — .pptx/.png are already compressed, and
+    DEFLATED was slow enough to leave the Mass Builder UI stuck after the deck
+    was already written.
+    """
+    out = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
+    entries: list[tuple[Path, str]] = []
+    for attr in ("pptx_path", "poster_path", "poster_ppt_path", "leaflet_path"):
+        p = getattr(result, attr, None)
+        if p and Path(p).is_file():
+            pp = Path(p)
+            entries.append((pp, pp.name))
+    if result.include_social_exports and result.poster_path:
+        parent = Path(result.poster_path).parent
+        stem = Path(result.poster_path).stem
+        for child in sorted(parent.glob(f"{stem}_*.png")):
+            if child.is_file() and all(o[0] != child for o in entries):
+                entries.append((child, child.name))
+        post_dir = _OUTPUT_DIR / "posters"
+        if post_dir.is_dir():
+            for child in sorted(post_dir.glob("*.png")):
+                if child.is_file() and all(o[0] != child for o in entries):
+                    entries.append((child, f"posters/{child.name}"))
+    if result.include_social_exports:
+        for name in _BUNDLE_OPTIONAL:
+            p = _OUTPUT_DIR / name
+            if p.is_file() and all(o[0] != p for o in entries):
+                entries.append((p, name))
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as zf:
+        for path, arc in entries:
+            zf.write(path, arcname=arc)
+    return out
+
+
+def _finish_generation_side_effects(
+    *,
+    result: GenerationResult,
+    user_id: Optional[str],
+    access_token: Optional[str],
+    mass_date: str,
+    celebrant: str,
+    skip_ownership: bool = False,
+    parish_id: str = "",
+    habit_snapshot: Optional[dict[str, Any]] = None,
+) -> None:
+    """Zip + storage + analytics — never on the HTTP request path."""
+    try:
+        _write_mass_bundle_zip(result)
+        print(f"[generate] background zip ready stem={result.export_stem}", flush=True)
+    except Exception:
+        logger.warning("background bundle zip failed", exc_info=True)
+
+    if user_id and not skip_ownership:
+        try:
+            register_owned_files(user_id, _collect_generation_owned_paths(result))
+        except Exception:
+            logger.warning("register_owned_files failed", exc_info=True)
+
+    # Re-register zip path after it exists so the ZIP download link works.
+    if user_id and result.export_stem:
+        try:
+            bundle_name = _bundle_zip_name(result.export_stem)
+            if (_OUTPUT_DIR / bundle_name).is_file():
+                register_owned_files(user_id, [bundle_name])
+        except Exception:
+            logger.warning("register zip ownership failed", exc_info=True)
+
+    if user_id and access_token and storage_ready(access_token):
+        stem = result.export_stem or "latest"
+        upload_items: list[tuple[str, str, str]] = []
+        if result.pptx_path and result.pptx_path.is_file():
+            upload_items.append(
+                (
+                    f"generated/{stem}/{result.pptx_path.name}",
+                    str(result.pptx_path),
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
+            )
+        if result.poster_path and result.poster_path.is_file():
+            upload_items.append(
+                (f"generated/{stem}/{result.poster_path.name}", str(result.poster_path), "image/png")
+            )
+        poster_ppt = result.poster_ppt_path
+        if poster_ppt and Path(poster_ppt).is_file():
+            upload_items.append(
+                (
+                    f"generated/{stem}/{Path(poster_ppt).name}",
+                    str(Path(poster_ppt)),
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
+            )
+        bundle = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
+        if bundle.is_file():
+            upload_items.append((f"generated/{stem}/{bundle.name}", str(bundle), "application/zip"))
+        if upload_items:
+            _upload_generation_assets_best_effort(
+                user_id=user_id,
+                access_token=access_token,
+                export_stem=stem,
+                items=upload_items,
+            )
+
+    if user_id and access_token and supabase_enabled():
+        try:
+            from services.supabase_client import record_generation
+
+            summary: dict[str, Any] = {
+                "title": result.title,
+                "slide_count": result.slide_count,
+                "export_stem": result.export_stem,
+            }
+            if habit_snapshot:
+                summary["habits"] = habit_snapshot
+            record_generation(
+                user_id,
+                mass_date=mass_date,
+                celebrant=celebrant,
+                output_summary=summary,
+                access_token=access_token,
+                parish_id=(parish_id or "").strip() or None,
+            )
+            try:
+                from services.posthog_analytics import capture_mass_generated
+
+                capture_mass_generated(
+                    user_id=user_id,
+                    mass_date=mass_date,
+                    parish_id=(parish_id or "").strip() or None,
+                    slide_count=int(result.slide_count) if result.slide_count is not None else None,
+                )
+            except Exception:
+                pass
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Failed to record generation_history for user_id=%s mass_date=%s",
+                user_id,
+                mass_date,
+            )
+
+
+def _upload_generation_assets_best_effort(
+    *,
+    user_id: str,
+    access_token: str,
+    export_stem: str,
+    items: list[tuple[str, str, str]],
+) -> None:
+    """Best-effort Supabase uploads that must never block the HTTP response.
+
+    ``items`` is ``(relative_path, absolute_file_path, content_type)``.
+    """
+    for rel, file_path_s, ctype in items:
+        path = Path(file_path_s)
+        if not path.is_file():
+            continue
+        try:
+            upload_user_asset(
+                user_id=user_id,
+                access_token=access_token,
+                relative_path=rel,
+                raw=path.read_bytes(),
+                content_type=ctype,
+                upsert=True,
+            )
+        except Exception:
+            logger.warning(
+                "Background storage upload failed for %s (stem=%s).",
+                path.name,
+                export_stem or "latest",
+                exc_info=True,
+            )
+
+
+def _spawn_daemon(target, *, name: str, kwargs: dict[str, Any]) -> None:
+    """Fire-and-forget worker.
+
+    Do not use FastAPI BackgroundTasks here: with BaseHTTPMiddleware the client
+    does not receive the response until background tasks finish, which is what
+    left the Mass Builder UI stuck at ~62% after the .pptx was already written.
+    """
+    threading.Thread(target=target, kwargs=kwargs, name=name, daemon=True).start()
+
+
+# Hide OpenAPI /docs in production so the attack surface isn't advertised.
+_docs_url = None if is_production_runtime() else "/docs"
+_redoc_url = None if is_production_runtime() else "/redoc"
+_openapi_url = None if is_production_runtime() else "/openapi.json"
+app = FastAPI(
+    title="LiturgyFlow",
+    version=get_app_version(),
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
+)
+# Skip gzip for already-compressed binaries (webp/png/…); streaming FileResponse
+# + gzip otherwise triggers uvicorn "Response content longer than Content-Length".
+from services.gzip_middleware import SelectiveGZipMiddleware
+
+app.add_middleware(SelectiveGZipMiddleware, minimum_size=1000)
+templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
+_STATIC_DIR = _PROJECT / "static"
+_STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+
+def _bytes_file_response(
+    path: Path,
+    *,
+    media_type: str,
+    filename: Optional[str] = None,
+    headers: Optional[dict[str, str]] = None,
+) -> Response:
+    """Serve a file as an in-memory Response (stable Content-Length).
+
+    Prefer this over FileResponse for assets that may be rewritten concurrently
+    (e.g. Home CTA watermark WebPs) or that must not be re-gzipped mid-stream.
+    """
+    file_path = Path(path)
+    raw = file_path.read_bytes()
+    out_headers = dict(headers or {})
+    out_headers["Content-Length"] = str(len(raw))
+    name = filename or file_path.name
+    if name:
+        out_headers.setdefault(
+            "Content-Disposition",
+            f'inline; filename="{name}"',
+        )
+    return Response(content=raw, media_type=media_type, headers=out_headers)
+
+
+@app.exception_handler(Exception)
+async def _ops_unhandled_exception_handler(request: Request, exc: Exception):
+    """Alert operators on unexpected 500s.
+
+    FastAPI keeps more-specific handlers for HTTPException / validation errors;
+    this catch-all is only for truly unhandled exceptions.
+    """
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.responses import JSONResponse
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
+    # Never convert framework-handled exceptions into generic 500 alerts.
+    if isinstance(exc, RequestValidationError):
+        return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    if isinstance(exc, (HTTPException, StarletteHTTPException)):
+        status = int(getattr(exc, "status_code", 500) or 500)
+        detail = getattr(exc, "detail", "Error")
+        return JSONResponse(status_code=status, content={"detail": detail})
+
+    path = str(getattr(request.url, "path", "") or "")
+    if path not in {"/health", "/favicon.ico"} and not path.startswith("/static/"):
+        try:
+            from services.admin_alerts import alert_server_crash_bg
+
+            alert_server_crash_bg(
+                path=path,
+                method=str(getattr(request, "method", "") or ""),
+                status_code=500,
+                error=f"{type(exc).__name__}: {exc}",
+            )
+        except Exception:
+            pass
+    logger.exception("Unhandled server error on %s %s", getattr(request, "method", ""), path)
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+
+try:
+    from services.posthog_config import public_client_config as _posthog_public_config
+
+    templates.env.globals["get_posthog_config"] = _posthog_public_config
+except Exception:  # pragma: no cover - never block boot on analytics
+
+    def _posthog_disabled():  # type: ignore[misc]
+        return None
+
+    templates.env.globals["get_posthog_config"] = _posthog_disabled
+
+
+def _template_version_context() -> dict[str, str]:
+    info = get_version_info()
+    return {
+        "app_version": str(info.get("version") or "dev"),
+        "git_commit": str(info.get("git_commit") or ""),
+        "git_commit_short": str(info.get("git_commit_short") or ""),
+        "git_branch": str(info.get("git_branch") or ""),
+        "built_at": str(info.get("built_at") or ""),
+        "built_at_display": str(info.get("built_at_display") or ""),
+    }
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> FileResponse:
+    return FileResponse(
+        _STATIC_DIR / "brand" / "favicon.ico",
+        media_type="image/vnd.microsoft.icon",
+    )
+
+register_auth_routes(app, templates)
+register_admin_routes(app)
+register_distribution_routes(app)
+register_parish_routes(app)
+register_billing_routes(app)
+register_theme_marketplace_routes(app)
+register_email_job_routes(app)
+register_readings_job_routes(app)
+register_security_middleware(app)
+
+
+@app.get("/api/files/media/{file_path:path}")
+def api_serve_media_file(
+    file_path: str,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> FileResponse:
+    session_may_access_media(file_path, session)
+    path = resolve_under_root(_OUTPUT_DIR, file_path)
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
+@app.get("/api/files/uploads/{file_path:path}")
+def api_serve_upload_file(
+    file_path: str,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> Response:
+    try:
+        path = resolve_under_root(_UPLOAD_DIR, file_path)
+        return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+    # Render disk is ephemeral — catalog/parish clips live in Supabase.
+    payload = _load_upload_bytes_from_storage(session, file_path)
+    if not payload:
+        raise HTTPException(status_code=404, detail="File not found.")
+    raw, media_type, filename = payload
+    return Response(
+        content=raw,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "private, max-age=300",
+        },
+    )
+
+
+def _load_upload_bytes_from_storage(
+    session: Optional[AuthSession],
+    file_path: str,
+) -> Optional[tuple[bytes, str, str]]:
+    rel = (file_path or "").strip().replace("\\", "/").lstrip("/")
+    if not rel or ".." in rel.split("/") or not rel.startswith("saved_media/"):
+        return None
+    basename = Path(rel).name
+    if not basename or basename != Path(rel).name:
+        return None
+    media_type = media_type_for(Path(basename))
+    candidates: list[str] = []
+    if parish_storage_ready():
+        candidates.append(f"shared/{rel}")
+        parish_id = _session_parish_id(session)
+        if parish_id:
+            candidates.append(f"parishes/{parish_id}/{rel}")
+    user_id = ""
+    if session and session.user and session.user.user_id:
+        user_id = str(session.user.user_id).strip()
+        if user_id:
+            candidates.append(f"{user_id}/{rel}")
+    for key in candidates:
+        try:
+            if user_id and key.startswith(f"{user_id}/") and session and storage_ready(session.token):
+                raw = download_user_asset(access_token=session.token, path=key)
+            elif parish_storage_ready():
+                raw = download_service_asset(path=key)
+            else:
+                continue
+        except Exception:
+            continue
+        if isinstance(raw, (bytes, bytearray)) and raw:
+            return bytes(raw), media_type, basename
+    return None
+
+
+@app.get("/api/files/preview/{filename}")
+def api_serve_preview_file(
+    filename: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> FileResponse:
+    path = resolve_under_root(_PREVIEW_DIR, filename)
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
+@app.on_event("startup")
+def _bootstrap_superadmin_roles() -> None:
+    try:
+        ensure_practice_secret_configured()
+    except RuntimeError as exc:
+        if is_production_runtime():
+            raise
+        print(f"[Verbum] Practice secret check skipped: {exc}")
+    if supabase_enabled():
+        try:
+            from services.supabase_client import bootstrap_superadmin_roles_from_env
+
+            count = bootstrap_superadmin_roles_from_env()
+            if count:
+                print(f"[Verbum] Promoted {count} profile(s) to superadmin from SUPERADMIN_EMAILS.")
+        except Exception as exc:
+            print(f"[Verbum] Superadmin bootstrap skipped: {exc}")
+
+    try:
+        from services.memory_guard import (
+            cleanup_temp_profiles,
+            prune_outputs,
+            release_presentation_caches,
+            rss_mb,
+        )
+
+        n_out = prune_outputs(keep_newest=6)
+        n_tmp = cleanup_temp_profiles()
+        release_presentation_caches()
+        rss = rss_mb()
+        print(
+            f"[Verbum] Memory hygiene on startup: pruned {n_out} outputs, "
+            f"{n_tmp} temp dirs"
+            + (f", RSS={rss:.0f}MiB" if rss is not None else ""),
+            flush=True,
+        )
+    except Exception as exc:
+        print(f"[Verbum] Memory hygiene skipped: {exc}")
+
+    import threading
+    from datetime import date, timedelta
+
+    def _upcoming_sunday_iso() -> str:
+        today = date.today()
+        days = (6 - today.weekday()) % 7
+        return (today + timedelta(days=days)).isoformat()
+
+    def _warm() -> None:
+        try:
+            warm_readings_for_date(_upcoming_sunday_iso())
+        except Exception as exc:
+            print(f"[Verbum] Readings warm-up skipped: {exc}")
+        try:
+            from services.song_catalog import catalog_lite_response
+
+            catalog_lite_response()
+        except Exception as exc:
+            print(f"[Verbum] Catalog warm-up skipped: {exc}")
+
+    threading.Thread(target=_warm, daemon=True).start()
+
+
+def _sync_church_profile_to_supabase(
+    session: Optional[AuthSession],
+    *,
+    community_name: Optional[str] = None,
+    logo_path: Optional[str] = None,
+    celebrant_names: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    if not session or not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Sign in is required to save church profile.")
+    try:
+        from services.supabase_client import upsert_church_profile
+        from services.user_church_context import set_church_profile
+
+        saved = upsert_church_profile(
+            session.user.user_id,
+            community_name=community_name,
+            logo_path=logo_path,
+            celebrant_names=celebrant_names,
+            access_token=session.token,
+        )
+        set_church_profile(saved)
+        return saved
+    except HTTPException:
+        raise
+    except Exception as exc:
+        detail = str(exc).strip() or "Could not save church profile to Supabase."
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+
+def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
+    lc = p.liturgical_color
+    liturgical: Optional[dict[str, Any]] = None
+    if lc:
+        liturgical = {
+            "color_name": lc.get("color_name"),
+            "hex": lc.get("hex"),
+            "season": lc.get("season"),
+            "rgb": list(lc.get("rgb", ())),
+        }
+    return {
+        "ok": p.ok,
+        "error": p.error,
+        "title": p.title,
+        "gospel_reference": p.gospel_reference,
+        "season": p.season,
+        "lectionary_cycle": p.lectionary_cycle,
+        "liturgical_color": liturgical,
+        "gospel_text_length": p.gospel_text_length,
+        "sentences": p.sentences,
+        "sentence_count": len(p.sentences),
+        "preferred_sentence_index": int(getattr(p, "preferred_sentence_index", 0) or 0),
+        "quote_attribution": p.quote_attribution,
+        "songs_by_section": p.songs_by_section,
+        "gospel_quote": p.gospel_quote,
+        "default_song_selections": p.default_song_selections,
+        "estimated_slide_count": p.estimated_slide_count,
+        "first_reading_reference": p.first_reading_reference,
+        "first_reading_excerpt": p.first_reading_excerpt,
+        "second_reading_reference": p.second_reading_reference,
+        "second_reading_excerpt": p.second_reading_excerpt,
+        "psalm_text": p.psalm_text,
+        "psalm_verses": p.psalm_verses,
+        "psalm_reference": p.psalm_reference,
+        "psalm_refrains": p.psalm_refrains,
+        "gospel_text": p.gospel_text,
+        "gospel_acclamation": getattr(p, "gospel_acclamation", "") or "",
+        "readings_complete": p.readings_complete,
+        "readings_language": getattr(p, "readings_language", None) or "english",
+    }
+
+
+class ExtraSongSection(BaseModel):
+    label: str = Field(..., min_length=1, max_length=L.SECTION_LABEL)
+    song_id: str = Field(..., min_length=1, max_length=L.SONG_ID)
+
+
+class SongSelection(BaseModel):
+    entrance: Optional[str] = None
+    offertory: Optional[str] = None
+    communion_1: Optional[str] = None
+    communion_2: Optional[str] = None
+    communion_3: Optional[str] = None
+    communion_4: Optional[str] = None
+    communion_5: Optional[str] = None
+    recessional: Optional[str] = None
+    meditation: Optional[str] = None
+    extra_sections: Optional[list[ExtraSongSection]] = Field(
+        None,
+        max_length=L.MAX_EXTRA_SONG_SECTIONS,
+        description="User-added Mass song sections (custom labels) beyond the five defaults.",
+    )
+
+
+class DemoGenerateBody(BaseModel):
+    """Narrow guest landing payload — server forces safe defaults."""
+
+    date: str = Field(..., min_length=8, max_length=16)
+    celebrant: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+    mass_language: str = Field("english", max_length=16)
+    our_father_choice: str = Field("english", max_length=16)
+    custom_theme: Optional[dict[str, Any]] = None
+    songs: Optional[SongSelection] = None
+    include_leaflet: bool = False
+
+
+class AccessRequestBody(BaseModel):
+    name: str = Field("", max_length=120)
+    email: str = Field("", max_length=320)
+    parish: str = Field("", max_length=240)
+    message: str = Field("", max_length=1000)
+    privacy_consent: bool = False
+
+
+class ContactBody(BaseModel):
+    name: str = Field("", max_length=120)
+    email: str = Field("", max_length=320)
+    topic: str = Field("", max_length=40)
+    message: str = Field("", max_length=2000)
+    website: str = Field("", max_length=200)
+    started_at: float = 0
+    privacy_consent: bool = False
+
+
+class CommunityNameBody(BaseModel):
+    community_name: str = Field(..., min_length=1, max_length=L.CHURCH_NAME)
+
+
+class CommunityProfileBody(BaseModel):
+    community_name: Optional[str] = Field(None, min_length=1, max_length=L.CHURCH_NAME)
+    celebrant_names: Optional[list[str]] = Field(
+        None,
+        max_length=L.MAX_CELEBRANTS,
+        description="Saved Mass celebrant names for the in-app picker.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_celebrant_names(self) -> CommunityProfileBody:
+        if self.celebrant_names is not None:
+            self.celebrant_names = check_string_list(
+                self.celebrant_names,
+                field="celebrant_names",
+                max_items=L.MAX_CELEBRANTS,
+                item_max_len=L.CELEBRANT_NAME,
+            )
+        return self
+
+
+class GeminiApiKeyBody(BaseModel):
+    api_key: str = Field(..., min_length=8, max_length=L.API_KEY)
+
+
+class PreviewBody(BaseModel):
+    date: str = Field(..., min_length=8, description="YYYY-MM-DD")
+    readings_only: bool = Field(
+        False,
+        description="Skip hymn recommendations and web hymn discovery for faster readings-only UI.",
+    )
+    refresh: bool = Field(
+        False,
+        description="Bypass in-memory cache and retry live lectionary fetch.",
+    )
+    mass_language: str = Field(
+        "english",
+        description="Readings language: english | tagalog.",
+        max_length=16,
+    )
+
+
+class GenerateBody(BaseModel):
+    date: str = Field(..., min_length=8)
+    celebrant: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+    co_celebrant: str = Field(
+        "",
+        max_length=L.CELEBRANT_NAME,
+        description="Optional co-celebrant name shown on the Mass divider; omitted when blank.",
+    )
+    sentence_index: Optional[int] = Field(None, ge=0)
+    poster_template: str = Field(
+        "liturgical_color",
+        description="Deprecated — non-AI liturgical/classic poster wallpapers were removed. Ignored if set.",
+    )
+    include_social_exports: bool = Field(
+        False,
+        description="When true, also export 1080×1350 feed PNG and Instagram/Story/OG variants.",
+    )
+    include_leaflet: bool = Field(
+        False,
+        description=(
+            "When true, also export a half-fold A4 landscape Mass leaflet PDF "
+            "(duplex; fold to A5 worship aid)."
+        ),
+    )
+    leaflet_only: bool = Field(
+        False,
+        description=(
+            "When true, skip PowerPoint/poster generation and only build the half-fold A4 leaflet PDF."
+        ),
+    )
+    export_pdf: bool = Field(
+        False,
+        description="Deprecated — PDF export was removed from /api/generate. Ignored if set.",
+    )
+    include_gospel_art: bool = Field(
+        False,
+        description="Deprecated — non-AI gospel_moment PNG export was removed. Ignored if set.",
+    )
+    include_ai_mass_poster: bool = Field(
+        False,
+        description="Use AI (OpenAI or Gemini) for primary parish posters.",
+    )
+    use_premium_token: bool = Field(
+        False,
+        description=(
+            "When true and the user has a remaining one-time premium Mass token, "
+            "spend that token for curated divider posters with no free-tier watermark. "
+            "When false, prefer the monthly free-tier Mass (watermark, no curated posters)."
+        ),
+    )
+    ai_poster_backend: str = Field(
+        "openai",
+        description="Server-selected image backend (client may omit or send ai).",
+    )
+    ai_poster_style: str = Field(
+        "cinematic",
+        max_length=L.AI_POSTER_STYLE,
+        description="AI artwork style: cinematic | realistic | renaissance | stained_glass | modern | auto.",
+    )
+    ai_poster_transparency_pct: float = Field(
+        0,
+        ge=0,
+        le=10,
+        description="Mass-divider AI poster fade: 0 (opaque) … 10 (softest). Applied only in the PPTX divider.",
+    )
+    reuse_existing_poster: bool = Field(
+        False,
+        description="Server may silently reuse shared hero art for this date+style; weekly quota is still charged.",
+    )
+    community_name: Optional[str] = Field(None, max_length=L.CHURCH_NAME)
+    songs: Optional[SongSelection] = None
+    custom_theme: Optional[dict[str, Any]] = None
+    divider_poster_basename: Optional[str] = Field(
+        None,
+        max_length=L.FILE_BASENAME,
+        description="Basename of a file previously uploaded to mass_assets/.",
+    )
+    lotw_poster: str = Field(
+        "lotw1",
+        max_length=16,
+        description="Liturgy of the Word divider poster design: lotw1 | lotw2 | lotw3 | lotw4.",
+    )
+    lote_poster: str = Field(
+        "lote1",
+        max_length=16,
+        description="Liturgy of the Eucharist divider poster design: lote1 | lote2 | lote3 | lote4.",
+    )
+    divider_style: str = Field(
+        "divider3",
+        max_length=16,
+        description="Mass divider layout: divider2 | divider3 | auto. Legacy divider1 maps to divider3.",
+    )
+    announcement_basenames: list[str] = Field(default_factory=list)
+    mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
+    mass_collection_currency: Optional[str] = Field(
+        "PHP",
+        description="Mass collection currency: PHP | KRW | MYR",
+        max_length=L.CURRENCY_CODE,
+    )
+    mass_collection_date_label: Optional[str] = Field(None, max_length=L.COLLECTION_DATE_LABEL)
+    food_sponsors: list[str] = Field(default_factory=list)
+    include_mass_collection_slide: bool = Field(
+        False,
+        description="When true, include the color-coded Mass Collection announcement slide.",
+    )
+    include_food_sponsor_slide: bool = Field(
+        False,
+        description="When true, include the color-coded Today's Food Sponsor announcement slide.",
+    )
+    include_sponsorship_contact_slide: bool = Field(
+        False,
+        description="When true, include the Food/Mass Sponsorship contact-person slide.",
+    )
+    include_merienda_location_slide: bool = Field(
+        False,
+        description="When true, include the Food/Mass Sponsorship merienda-location slide.",
+    )
+    include_welcoming_newcomers_slide: bool = Field(
+        False,
+        description="When true, include the Welcoming Newcomers slide(s).",
+    )
+    sponsorship_contact: Optional[str] = Field(
+        None,
+        max_length=L.FOOD_SPONSOR,
+        description="Contact person text for the sponsorship contact slide.",
+    )
+    merienda_location: Optional[str] = Field(
+        None,
+        max_length=L.COLLECTION_DATE_LABEL,
+        description="Location text for the merienda announcement slide.",
+    )
+    announcement_bg_colors: Optional[dict[str, str]] = Field(
+        None,
+        description=(
+            "Optional hex background overrides for built-in announcement slides. "
+            "Keys: collection | food | contact | merienda."
+        ),
+    )
+    custom_announcement_slides: list[dict[str, str]] = Field(
+        default_factory=list,
+        description=(
+            "Optional custom announcement slides. Each item: "
+            "{title, content, bg_color}."
+        ),
+    )
+    psalm_text_override: Optional[str] = Field(None, max_length=L.PSALM_FULL)
+    psalm_refrain_index: Optional[int] = Field(None, ge=0)
+    psalm_response_override: Optional[str] = Field(
+        None,
+        max_length=L.PSALM_REFRAIN,
+        description="Manual responsorial-psalm refrain; used when psalm_text_override is empty.",
+    )
+    gospel_quote_override: Optional[str] = Field(
+        None,
+        max_length=L.GOSPEL_QUOTE,
+        description="Exact Gospel line for slides; overrides sentence_index when non-empty.",
+    )
+    hymn_typography: Optional[dict[str, Any]] = Field(
+        None,
+        description="Per-section hymn slide typography: entrance, communion, default, etc.",
+    )
+    include_church_logo: bool = Field(
+        False,
+        description="When false, omit parish logo from PowerPoint slides.",
+    )
+    include_church_name: bool = Field(
+        False,
+        description="When false, omit parish / community name from PowerPoint slides.",
+    )
+    include_footer: bool = Field(
+        False,
+        description="Developer option: when true, show the bottom community/section footer tag on slides.",
+    )
+    hymn_lyric_overrides: Optional[dict[str, dict[str, str]]] = Field(
+        None,
+        description="Per-section hymn lyric text overrides: { entrance: { song_id: lyrics } }.",
+    )
+    hymn_layout_overrides: Optional[dict[str, dict[str, str]]] = Field(
+        None,
+        description="Per-song hymn slide layout overrides: { entrance: { song_id: 'single'|'dual' } }.",
+    )
+    creed_choice: str = Field(
+        "nicene",
+        description="Creed for the Mass deck: nicene | apostles | none (omit Creed slides).",
+    )
+    creed_language: str = Field(
+        "english",
+        description="Language for Creed slides: english | tagalog.",
+        max_length=16,
+    )
+    penitential_language: str = Field(
+        "english",
+        description="Language for Penitential Act slides: english | tagalog.",
+        max_length=16,
+    )
+    sanctus_language: str = Field(
+        "english",
+        description="Language for Sanctus slides: english | tagalog.",
+        max_length=16,
+    )
+    gloria_choice: str = Field(
+        "english",
+        description="Gloria for the Mass deck: english | latin | none (omit Gloria slides).",
+        max_length=16,
+    )
+    our_father_choice: str = Field(
+        "english",
+        description="Our Father language: english | malay | tagalog | visaya | korean.",
+    )
+    kyrie_choice: str = Field(
+        "english",
+        description="Kyrie language: english | greek | latin | tagalog.",
+        max_length=16,
+    )
+    kyrie_tagalog_slide: int = Field(
+        1,
+        ge=1,
+        le=2,
+        description="When kyrie_choice is tagalog, which authored slide to use (1 or 2).",
+    )
+    mass_language: str = Field(
+        "english",
+        description="Order of Mass surface language: english | tagalog.",
+        max_length=16,
+    )
+    hymn_lyrics_layout: str = Field(
+        "dual",
+        description="Hymn slide layout: single (1 block/slide) | dual (2 blocks/slide).",
+    )
+    show_hymn_section_labels: bool = Field(
+        False,
+        description=(
+            "When true, hymn slides show short section markers "
+            "(Verse as Roman I/II/III, Chor., Br., Pre-C, Out., …)."
+        ),
+    )
+    video_replacements: Optional[dict[str, str]] = Field(
+        None,
+        description=(
+            "Optional MP4 basenames from the parish media library that replace lyric/prayer "
+            "slides with a single video slide. Keys: kyrie, gloria, sanctus, our_father, "
+            "lamb_of_god, entrance, offertory, communion_1–communion_5, recessional."
+        ),
+    )
+    slide_kinds: Optional[list[str]] = Field(
+        None,
+        description="Superadmin only. When set, generate only these slide kinds instead of the full Mass.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_generate_lists(self) -> GenerateBody:
+        self.food_sponsors = check_string_list(
+            self.food_sponsors,
+            field="food_sponsors",
+            max_items=L.MAX_FOOD_SPONSORS,
+            item_max_len=L.FOOD_SPONSOR,
+        ) or []
+        self.announcement_basenames = check_string_list(
+            self.announcement_basenames,
+            field="announcement_basenames",
+            max_items=L.MAX_ANNOUNCEMENT_IMAGES,
+            item_max_len=L.FILE_BASENAME,
+        ) or []
+        allowed_bg_keys = {"collection", "food", "contact", "merienda"}
+        cleaned_bgs: dict[str, str] = {}
+        if isinstance(self.announcement_bg_colors, dict):
+            for key, val in self.announcement_bg_colors.items():
+                k = str(key or "").strip().lower()
+                if k not in allowed_bg_keys:
+                    continue
+                hx = str(val or "").strip()
+                if hx and not hx.startswith("#"):
+                    hx = "#" + hx
+                if len(hx) == 4 and all(c in "0123456789abcdefABCDEF#" for c in hx):
+                    hx = "#" + "".join(ch * 2 for ch in hx[1:])
+                if len(hx) == 7 and all(c in "0123456789abcdefABCDEF#" for c in hx):
+                    cleaned_bgs[k] = hx.lower()
+        self.announcement_bg_colors = cleaned_bgs or None
+        cleaned_custom: list[dict[str, str]] = []
+        for raw in (self.custom_announcement_slides or [])[: L.MAX_CUSTOM_ANNOUNCEMENT_SLIDES]:
+            if not isinstance(raw, dict):
+                continue
+            title = check_length(
+                str(raw.get("title") or ""),
+                field="custom_announcement_slides.title",
+                max_len=L.CUSTOM_SLIDE_TITLE,
+            )
+            content = check_optional_length(
+                str(raw.get("content") or ""),
+                field="custom_announcement_slides.content",
+                max_len=L.CUSTOM_SLIDE_CONTENT,
+            ) or ""
+            if not title and not content:
+                continue
+            hx = str(raw.get("bg_color") or raw.get("bgColor") or "#394f80").strip()
+            if hx and not hx.startswith("#"):
+                hx = "#" + hx
+            if len(hx) == 4 and all(c in "0123456789abcdefABCDEF#" for c in hx):
+                hx = "#" + "".join(ch * 2 for ch in hx[1:])
+            if not (len(hx) == 7 and all(c in "0123456789abcdefABCDEF#" for c in hx)):
+                hx = "#394f80"
+            cleaned_custom.append(
+                {
+                    "title": title or "Announcement",
+                    "content": content,
+                    "bg_color": hx.lower(),
+                }
+            )
+        self.custom_announcement_slides = cleaned_custom
+        self.hymn_lyric_overrides = check_hymn_overrides(self.hymn_lyric_overrides)
+        self.hymn_layout_overrides = check_hymn_layout_overrides(self.hymn_layout_overrides)
+        lotw = str(self.lotw_poster or "").strip().lower()
+        self.lotw_poster = lotw if lotw in {"lotw1", "lotw2", "lotw3", "lotw4"} else "lotw1"
+        lote = str(self.lote_poster or "").strip().lower()
+        self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
+        div_style = str(self.divider_style or "").strip().lower()
+        if div_style == "divider1":
+            div_style = "divider3"
+        self.divider_style = div_style if div_style in {"divider2", "divider3", "auto"} else "divider3"
+        try:
+            t = float(self.ai_poster_transparency_pct)
+        except (TypeError, ValueError):
+            t = 10.0
+        self.ai_poster_transparency_pct = max(0.0, min(10.0, t))
+        if self.video_replacements:
+            allowed = {
+                "kyrie",
+                "gloria",
+                "sanctus",
+                "our_father",
+                "lamb_of_god",
+                "entrance",
+                "offertory",
+                "communion_1",
+                "communion_2",
+                "communion_3",
+                "communion_4",
+                "communion_5",
+                "recessional",
+            }
+            cleaned: dict[str, str] = {}
+            for key, val in self.video_replacements.items():
+                k = str(key or "").strip().lower()
+                base = Path(str(val or "").strip()).name
+                if k in allowed and base and base.lower().endswith(".mp4"):
+                    cleaned[k] = base
+            self.video_replacements = cleaned or None
+        return self
+
+
+class RefreshSongsBody(BaseModel):
+    date: str = Field(..., min_length=8, description="YYYY-MM-DD")
+    section: str = Field(..., min_length=3, max_length=L.SECTION_KEY)
+    current_ids: list[str] = Field(default_factory=list)
+
+
+class RefreshAllSongsBody(BaseModel):
+    date: str = Field(..., min_length=8, description="YYYY-MM-DD")
+    current_ids: dict[str, list[str]] = Field(default_factory=dict)
+
+
+class ImportSongsBody(BaseModel):
+    entrance: list[str] = Field(default_factory=list)
+    offertory: list[str] = Field(default_factory=list)
+    communion: list[str] = Field(default_factory=list)
+    recessional: list[str] = Field(default_factory=list)
+
+
+class SongRowBody(BaseModel):
+    title: str = Field(..., min_length=1, max_length=L.SONG_TITLE)
+    language: str = Field("English", max_length=L.LANGUAGE)
+    mass_part: list[str] = Field(default_factory=list)
+
+
+class ImportSongRowsBody(BaseModel):
+    songs: list[SongRowBody] = Field(default_factory=list, max_length=L.MAX_IMPORT_SONG_ROWS)
+
+
+class LyricsSelectionBody(BaseModel):
+    section: str = Field(..., min_length=3, max_length=L.SECTION_KEY)
+    id: str = Field(..., min_length=1, max_length=L.SONG_ID)
+
+
+class FetchLyricsBody(BaseModel):
+    selections: list[LyricsSelectionBody] = Field(default_factory=list)
+
+
+class SongMediaRefBody(BaseModel):
+    basename: str = Field("", max_length=180)
+    display_name: str = Field("", max_length=240)
+    source: str = Field("", max_length=16)
+    youtube_id: str = Field("", max_length=16)
+    youtube_url: str = Field("", max_length=320)
+
+    @model_validator(mode="after")
+    def _normalize_media_ref(self) -> "SongMediaRefBody":
+        ref = normalize_song_media_ref(self.model_dump())
+        if not ref:
+            raise ValueError("Link a media file or a YouTube URL.")
+        self.basename = str(ref.get("basename") or "")
+        self.display_name = str(ref.get("display_name") or "")
+        self.source = str(ref.get("source") or "")
+        self.youtube_id = str(ref.get("youtube_id") or "")
+        self.youtube_url = str(ref.get("youtube_url") or "")
+        return self
+
+
+class UserSongHistoryEntry(BaseModel):
+    t: Optional[int] = None
+    title: str = Field("", max_length=L.SONG_TITLE)
+    section: str = Field("", max_length=32)
+    id: str = Field("", max_length=256)
+    language: str = Field("", max_length=L.LANGUAGE)
+    kind: str = Field("lyrics_updated", max_length=32)
+
+
+class UserSongHistorySyncBody(BaseModel):
+    entries: list[UserSongHistoryEntry] = Field(default_factory=list, max_length=120)
+
+
+class SaveLyricsBody(BaseModel):
+    title: str = Field(..., min_length=1, max_length=L.SONG_TITLE)
+    lyrics: str = Field(..., min_length=1, max_length=L.LYRICS_FULL)
+    sections: list[str] = Field(default_factory=list)
+    language: str = Field("English", max_length=L.LANGUAGE)
+    author: str = Field("", max_length=L.SONG_AUTHOR)
+    gospel_moods: Optional[list[str]] = Field(
+        None,
+        max_length=L.MAX_GOSPEL_MOODS,
+        description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
+    )
+    audio_media: Optional[SongMediaRefBody] = None
+    video_media: Optional[SongMediaRefBody] = None
+    audio_preview: Optional[dict[str, Any]] = None
+
+
+class ImportVerbumTxtBody(BaseModel):
+    """Verbum Song Catalog .txt — one or many ===SONG=== blocks."""
+
+    text: str = Field(..., min_length=1, max_length=2_000_000)
+    save: bool = Field(
+        False,
+        description="If true, upsert all parsed songs into the catalog (superadmin).",
+    )
+    on_duplicate: str = Field(
+        "overwrite",
+        description="When a title already exists: overwrite (update) or skip.",
+        max_length=16,
+    )
+
+
+class ImportVerbumTxtUndoBody(BaseModel):
+    """Undo the last Verbum TXT/RTF catalog import (30-minute window)."""
+
+    token: str = Field(..., min_length=8, max_length=80)
+
+
+class PriestSubmissionBody(BaseModel):
+    name: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+
+
+class CatalogSongPatchBody(BaseModel):
+    title: Optional[str] = Field(None, max_length=L.SONG_TITLE)
+    author: Optional[str] = Field(None, max_length=L.SONG_AUTHOR)
+    lyrics: Optional[str] = Field(None, max_length=L.LYRICS_FULL)
+    language: Optional[str] = Field(None, max_length=L.LANGUAGE)
+    gospel_moods: Optional[list[str]] = Field(
+        None,
+        max_length=L.MAX_GOSPEL_MOODS,
+        description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
+    )
+    new_section: Optional[str] = Field(
+        None,
+        max_length=L.SECTION_KEY,
+        description="Move the song to this Mass section when set.",
+    )
+    audio_media: Optional[SongMediaRefBody] = None
+    video_media: Optional[SongMediaRefBody] = None
+    audio_preview: Optional[dict[str, Any]] = None
+    clear_audio_media: bool = False
+    clear_video_media: bool = False
+    clear_audio_preview: bool = False
+
+
+class CatalogSongBulkItem(BaseModel):
+    id: str = Field(..., min_length=1, max_length=120)
+    section: Optional[str] = Field(None, max_length=L.SECTION_KEY)
+
+
+class CatalogSongsBulkMoveBody(BaseModel):
+    songs: list[CatalogSongBulkItem] = Field(..., min_length=1, max_length=200)
+    target_section: str = Field(..., min_length=1, max_length=L.SECTION_KEY)
+
+
+class CatalogSongsBulkDeleteBody(BaseModel):
+    songs: list[CatalogSongBulkItem] = Field(..., min_length=1, max_length=200)
+
+
+class GenerateImageBody(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=L.AI_PROMPT)
+
+
+class HymnSlidePreviewChunkBody(BaseModel):
+    text: str = Field("", max_length=L.LYRICS_FULL)
+    block_kind: str = Field("verse", max_length=32)
+
+
+class HymnSlidePreviewPlanBody(BaseModel):
+    order: list[int] = Field(default_factory=list, max_length=128)
+    disabled: list[int] = Field(default_factory=list, max_length=128)
+
+
+class HymnSlidePreviewBody(BaseModel):
+    hymn_title: str = Field("Hymn", max_length=L.SONG_TITLE)
+    section: str = Field("default", max_length=L.SECTION_KEY)
+    layout: str = Field("dual", max_length=16)
+    hymn_typography: Optional[dict[str, Any]] = None
+    chunks: list[HymnSlidePreviewChunkBody] = Field(default_factory=list, max_length=128)
+    plan: Optional[HymnSlidePreviewPlanBody] = None
+    show_section_labels: bool = False
+
+
+class PracticeShareSongBody(BaseModel):
+    slot_key: str = Field("", max_length=64)
+    slot_label: str = Field("", max_length=120)
+    section: str = Field("", max_length=32)
+    hymn_id: str = Field(..., max_length=120)
+    title: str = Field(..., max_length=L.SONG_TITLE)
+    author: str = Field("", max_length=240)
+    language: str = Field("", max_length=32)
+    lyrics: str = Field("", max_length=L.LYRICS_FULL)
+    youtube_id: str = Field("", max_length=16)
+    youtube_url: str = Field("", max_length=320)
+
+
+class PracticeShareBody(BaseModel):
+    mass_date: str = Field(..., max_length=16)
+    mass_title: str = Field("", max_length=240)
+    parish_name: str = Field("", max_length=L.CHURCH_NAME)
+    celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
+    songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
+    ttl_days: int = Field(0, ge=0, le=7)
+    # Optional legacy choir PIN — ignored for new open-link shares.
+    optional_pin: str = Field("", max_length=6)
+
+
+class PracticeUnlockBody(BaseModel):
+    pin: str = Field("", min_length=6, max_length=6)
+    force: bool = False
+
+
+class PracticeLeadBody(BaseModel):
+    lead_token: str = Field(..., min_length=16, max_length=512)
+    force: bool = False
+
+
+class PracticeLyricBlockBody(BaseModel):
+    id: str = Field("", max_length=64)
+    kind: str = Field("verse", max_length=32)
+    label: str = Field("", max_length=80)
+    body: str = Field("", max_length=L.LYRICS_FULL)
+    enabled: bool = True
+    # Per-line voice color codes for choir practice: "man" | "woman" | "".
+    voices: list[str] = Field(default_factory=list, max_length=400)
+
+
+class PracticeLyricSongUpdateBody(BaseModel):
+    hymn_id: str = Field(..., max_length=120)
+    slot_key: str = Field("", max_length=64)
+    title: str = Field("", max_length=240)
+    author: str = Field("", max_length=240)
+    language: str = Field("", max_length=64)
+    section: str = Field("", max_length=64)
+    blocks: list[PracticeLyricBlockBody] = Field(default_factory=list, max_length=48)
+    youtube_id: str = Field("", max_length=16)
+    youtube_url: str = Field("", max_length=320)
+
+
+class PracticeLyricsUpdateBody(BaseModel):
+    lead_token: str = Field(..., min_length=16, max_length=512)
+    songs: list[PracticeLyricSongUpdateBody] = Field(default_factory=list, max_length=24)
+
+
+class PracticeSendToMemberBody(BaseModel):
+    lead_token: str = Field(..., min_length=16, max_length=512)
+    user_id: str = Field(..., min_length=8, max_length=128)
+
+
+class GenerateImageResponse(BaseModel):
+    image: str
+    path: str
+
+
+def _resolve_soffice_bin() -> Optional[str]:
+    for name in ("soffice", "libreoffice"):
+        custom = shutil.which(name)
+    if custom:
+        return custom
+    mac_bin = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+    if Path(mac_bin).is_file():
+        return mac_bin
+    linux_bins = (
+        "/usr/bin/soffice",
+        "/usr/bin/libreoffice",
+        "/usr/lib/libreoffice/program/soffice",
+    )
+    for path in linux_bins:
+        if Path(path).is_file():
+            return path
+    return None
+
+
+def _extract_ppt_text_slides(ppt: Path) -> list[dict[str, Any]]:
+    try:
+        from pptx import Presentation
+    except ImportError:
+        return []
+    prs = Presentation(str(ppt))
+    slides: list[dict[str, Any]] = []
+    for idx, slide in enumerate(prs.slides):
+        lines: list[str] = []
+        for shape in slide.shapes:
+            if getattr(shape, "has_text_frame", False):
+                txt = (shape.text or "").strip()
+                if txt:
+                    lines.append(txt)
+        slides.append({"index": idx + 1, "text": "\n\n".join(lines)[:2000]})
+    return slides
+
+
+@app.post("/api/hymn-slide-preview")
+def api_hymn_slide_preview(
+    body: HymnSlidePreviewBody,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Return hymn slide typography specs using the same fit logic as PPTX generation."""
+    chunks = [{"text": c.text, "block_kind": c.block_kind} for c in body.chunks]
+    plan = body.plan.model_dump() if body.plan else None
+    return build_hymn_slide_preview(
+        hymn_title=body.hymn_title,
+        section=body.section.strip().lower(),
+        layout=body.layout,
+        hymn_typography=body.hymn_typography,
+        chunks=chunks,
+        plan=plan,
+        show_section_labels=bool(body.show_section_labels),
+    )
+
+
+class PptPreviewRefreshBody(BaseModel):
+    """Optional knobs for deck rasterization."""
+
+    quality: str = "preview"  # "preview" | "presentation"
+    pptx_name: str = ""  # optional filename or export stem — binds preview to that deck
+
+
+_slideshow_job_lock = threading.Lock()
+_slideshow_job: dict[str, Any] = {
+    "generation": 0,
+    "status": "idle",  # idle | converting | rendering | done | error
+    "total": 0,
+    "ready": 0,
+    "complete": True,
+    "mode": "image",
+    "message": "",
+    "error": "",
+    "scale": 1.25,
+    "image_format": "jpeg",
+    "pptx_name": "",
+    "pptx_mtime": 0.0,
+}
+
+
+def _preview_slide_payload(paths: list[Path]) -> list[dict[str, Any]]:
+    slides: list[dict[str, Any]] = []
+    for i, f in enumerate(paths):
+        try:
+            ts = int(f.stat().st_mtime)
+        except OSError:
+            ts = 0
+        slides.append(
+            {
+                "index": i + 1,
+                "image_url": preview_file_url(f.name) + f"?t={ts}&v={i}",
+            }
+        )
+    return slides
+
+
+def _slideshow_job_snapshot() -> dict[str, Any]:
+    with _slideshow_job_lock:
+        job = dict(_slideshow_job)
+    paths = list_slide_images(_PREVIEW_DIR)
+    ready = len(paths)
+    total = int(job.get("total") or ready)
+    status = str(job.get("status") or "idle")
+    complete = status in {"done", "error", "idle"} and (
+        status != "rendering" and status != "converting"
+    )
+    if status == "done":
+        complete = True
+    elif status in {"converting", "rendering"}:
+        complete = False
+    elif ready >= total > 0 and status != "error":
+        complete = True
+    job_name = str(job.get("pptx_name") or "")
+    job_mtime = float(job.get("pptx_mtime") or 0.0)
+    ppt = _resolve_pptx_path(job_name) if job_name else _latest_pptx_path()
+    live_name, live_mtime = _pptx_identity(ppt)
+    # Preview cache is stale when a newer/different deck exists than the one we rasterized.
+    stale = False
+    if ready > 0 and job_name:
+        stale = (live_name != job_name) or (
+            live_mtime and job_mtime and abs(live_mtime - job_mtime) > 0.5
+        )
+    elif ready > 0 and not job_name and live_name:
+        # Legacy job with no identity — treat as stale so Present re-binds to the latest deck.
+        stale = True
+    cues = _load_slideshow_cues_for_ppt(ppt) if ppt and not stale else (
+        _load_slideshow_cues_for_ppt(ppt) if ppt else []
+    )
+    return {
+        "ok": True,
+        "mode": job.get("mode") or "image",
+        "status": status,
+        "complete": complete,
+        "ready": ready,
+        "total": total,
+        "slides": [] if stale else _preview_slide_payload(paths),
+        "cues": cues,
+        "message": ("Deck changed — re-open Present to refresh." if stale else (job.get("message") or "")),
+        "error": job.get("error") or "",
+        "generation": job.get("generation") or 0,
+        "pptx_name": job_name or live_name,
+        "pptx_mtime": job_mtime or live_mtime,
+        "stale": stale,
+    }
+
+
+def _continue_slideshow_render(
+    *,
+    generation: int,
+    pdf_path: Path,
+    start: int,
+    total: int,
+    scale: float,
+    image_format: str,
+) -> None:
+    try:
+        def _on_page(index_1based: int, _dest: Path) -> None:
+            with _slideshow_job_lock:
+                if _slideshow_job.get("generation") != generation:
+                    return
+                _slideshow_job["ready"] = max(int(_slideshow_job.get("ready") or 0), index_1based)
+
+        render_pdf_page_range(
+            pdf_path,
+            _PREVIEW_DIR,
+            start=start,
+            end=None,
+            scale=scale,
+            image_format=image_format,
+            on_page=_on_page,
+        )
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") != generation:
+                return
+            ready = len(list_slide_images(_PREVIEW_DIR))
+            _slideshow_job["ready"] = ready
+            _slideshow_job["total"] = max(int(_slideshow_job.get("total") or 0), ready, total)
+            _slideshow_job["status"] = "done"
+            _slideshow_job["complete"] = True
+            if not (_slideshow_job.get("message") or "").strip():
+                _slideshow_job["message"] = "Slideshow ready."
+    except Exception as exc:
+        logger.warning("slideshow background render failed", exc_info=True)
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") != generation:
+                return
+            _slideshow_job["status"] = "error"
+            _slideshow_job["complete"] = True
+            _slideshow_job["error"] = str(exc) or "Slideshow render failed."
+    finally:
+        try:
+            from services.memory_guard import release_after_heavy_job
+
+            release_after_heavy_job("ppt-slideshow-bg")
+        except Exception:
+            pass
+
+
+@app.post("/api/ppt-preview/refresh")
+def api_ppt_preview_refresh(
+    body: Optional[PptPreviewRefreshBody] = None,
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Render PPT slides to images for in-app visual preview (full deck, blocking)."""
+    ppt = _resolve_pptx_path((body.pptx_name if body else None) or "")
+    if not ppt or not ppt.is_file():
+        return {"ok": True, "mode": "text", "slides": [], "message": "Generate deck first."}
+    soffice = _resolve_soffice_bin()
+    if not soffice:
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": _extract_ppt_text_slides(ppt),
+            "message": "Install LibreOffice for exact image preview. Showing text fallback.",
+        }
+
+    for p in _PREVIEW_DIR.glob("*"):
+        if p.is_file():
+            p.unlink(missing_ok=True)
+
+    quality = ((body.quality if body else None) or "preview").strip().lower()
+    from services.memory_guard import heavy_job, preview_raster_scale
+
+    # 1.25 ≈ projector-friendly; constrained hosts use a lower scale to avoid OOM.
+    scale = preview_raster_scale(1.25)
+    try:
+        with heavy_job("ppt-preview-refresh"):
+            png_paths, pdf_msg = render_ppt_preview_pngs(
+                ppt, _PREVIEW_DIR, soffice_bin=soffice, scale=scale, image_format="png"
+            )
+    except TimeoutError as exc:
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": _extract_ppt_text_slides(ppt),
+            "message": str(exc),
+        }
+    if not png_paths:
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": _extract_ppt_text_slides(ppt),
+            "message": (pdf_msg or "Could not render slide images.") + " Showing text fallback.",
+        }
+
+    slides = _preview_slide_payload(png_paths)
+    msg = pdf_msg or "Full-deck preview (PDF rasterization)."
+    name, mtime = _pptx_identity(ppt)
+    with _slideshow_job_lock:
+        _slideshow_job["pptx_name"] = name
+        _slideshow_job["pptx_mtime"] = mtime
+    return {
+        "ok": True,
+        "mode": "image",
+        "slides": slides,
+        "message": msg,
+        "quality": quality,
+        "pptx_name": name,
+        "pptx_mtime": mtime,
+    }
+
+
+@app.post("/api/ppt-preview/slideshow/start")
+def api_ppt_preview_slideshow_start(
+    body: Optional[PptPreviewRefreshBody] = None,
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """
+    Start a progressive slideshow render: convert PPTX→PDF, return the first slides
+    immediately, and keep rasterizing the rest in the background.
+    """
+    ppt = _resolve_pptx_path((body.pptx_name if body else None) or "")
+    if not ppt or not ppt.is_file():
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": [],
+            "ready": 0,
+            "total": 0,
+            "complete": True,
+            "status": "error",
+            "message": "Generate deck first.",
+        }
+
+    ppt_name, ppt_mtime = _pptx_identity(ppt)
+    soffice = _resolve_soffice_bin()
+    if not soffice:
+        text_slides = _extract_ppt_text_slides(ppt)
+        with _slideshow_job_lock:
+            _slideshow_job.update(
+                {
+                    "generation": int(_slideshow_job.get("generation") or 0) + 1,
+                    "status": "done",
+                    "total": len(text_slides),
+                    "ready": len(text_slides),
+                    "complete": True,
+                    "mode": "text",
+                    "message": "Install LibreOffice for exact image slideshow. Showing text fallback.",
+                    "error": "",
+                    "pptx_name": ppt_name,
+                    "pptx_mtime": ppt_mtime,
+                }
+            )
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": text_slides,
+            "ready": len(text_slides),
+            "total": len(text_slides),
+            "complete": True,
+            "status": "done",
+            "message": "Install LibreOffice for exact image slideshow. Showing text fallback.",
+            "pptx_name": ppt_name,
+            "pptx_mtime": ppt_mtime,
+            "stale": False,
+        }
+
+    quality = ((body.quality if body else None) or "presentation").strip().lower()
+    from services.memory_guard import preview_raster_scale
+
+    scale = preview_raster_scale(1.25)
+    image_format = "jpeg"
+    first_batch = 2
+
+    with _slideshow_job_lock:
+        generation = int(_slideshow_job.get("generation") or 0) + 1
+        _slideshow_job.update(
+            {
+                "generation": generation,
+                "status": "converting",
+                "total": 0,
+                "ready": 0,
+                "complete": False,
+                "mode": "image",
+                "message": "Converting deck for projection…",
+                "error": "",
+                "scale": scale,
+                "image_format": image_format,
+                "pptx_name": ppt_name,
+                "pptx_mtime": ppt_mtime,
+            }
+        )
+
+    first_paths, pdf_path, total, pdf_msg = (None, None, 0, "")
+    from services.memory_guard import heavy_job
+
+    try:
+        with heavy_job("ppt-preview-slideshow"):
+            first_paths, pdf_path, total, pdf_msg = begin_progressive_ppt_preview(
+                ppt,
+                _PREVIEW_DIR,
+                soffice_bin=soffice,
+                scale=scale,
+                image_format=image_format,
+                first_batch=first_batch,
+            )
+    except TimeoutError as exc:
+        text_slides = _extract_ppt_text_slides(ppt)
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") == generation:
+                _slideshow_job.update(
+                    {
+                        "status": "done",
+                        "mode": "text",
+                        "total": len(text_slides),
+                        "ready": len(text_slides),
+                        "complete": True,
+                        "message": str(exc),
+                        "pptx_name": ppt_name,
+                        "pptx_mtime": ppt_mtime,
+                    }
+                )
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": text_slides,
+            "ready": len(text_slides),
+            "total": len(text_slides),
+            "complete": True,
+            "status": "done",
+            "message": str(exc),
+            "pptx_name": ppt_name,
+            "pptx_mtime": ppt_mtime,
+            "stale": False,
+        }
+
+    if not first_paths or pdf_path is None:
+        text_slides = _extract_ppt_text_slides(ppt)
+        lo_err = (get_last_convert_error() or "").strip()
+        fail_msg = (pdf_msg or "Could not render slide images.").strip()
+        if lo_err and lo_err not in fail_msg:
+            fail_msg = f"{fail_msg} ({lo_err[:240]})"
+        fail_msg = fail_msg + " Showing text fallback."
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") == generation:
+                _slideshow_job.update(
+                    {
+                        "status": "done",
+                        "mode": "text",
+                        "total": len(text_slides),
+                        "ready": len(text_slides),
+                        "complete": True,
+                        "message": fail_msg,
+                        "pptx_name": ppt_name,
+                        "pptx_mtime": ppt_mtime,
+                    }
+                )
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": text_slides,
+            "ready": len(text_slides),
+            "total": len(text_slides),
+            "complete": True,
+            "status": "done",
+            "message": fail_msg,
+            "quality": quality,
+            "pptx_name": ppt_name,
+            "pptx_mtime": ppt_mtime,
+            "stale": False,
+        }
+
+    ready = len(first_paths)
+    complete = ready >= total
+    with _slideshow_job_lock:
+        if _slideshow_job.get("generation") == generation:
+            _slideshow_job.update(
+                {
+                    "status": "done" if complete else "rendering",
+                    "total": total,
+                    "ready": ready,
+                    "complete": complete,
+                    "mode": "image",
+                    "message": pdf_msg or ("Slideshow ready." if complete else "Loading remaining slides…"),
+                    "error": "",
+                    "pptx_name": ppt_name,
+                    "pptx_mtime": ppt_mtime,
+                }
+            )
+
+    if not complete:
+        threading.Thread(
+            target=_continue_slideshow_render,
+            kwargs={
+                "generation": generation,
+                "pdf_path": pdf_path,
+                "start": ready,
+                "total": total,
+                "scale": scale,
+                "image_format": image_format,
+            },
+            daemon=True,
+            name="ppt-slideshow-render",
+        ).start()
+
+    return {
+        "ok": True,
+        "mode": "image",
+        "slides": _preview_slide_payload(first_paths),
+        "ready": ready,
+        "total": total,
+        "complete": complete,
+        "status": "done" if complete else "rendering",
+        "message": pdf_msg or ("Slideshow ready." if complete else "Opening slideshow…"),
+        "quality": quality,
+        "generation": generation,
+        "cues": _load_slideshow_cues_for_ppt(ppt),
+        "pptx_name": ppt_name,
+        "pptx_mtime": ppt_mtime,
+        "stale": False,
+    }
+
+
+@app.get("/api/ppt-preview/slideshow/status")
+def api_ppt_preview_slideshow_status(
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Poll progressive slideshow render progress."""
+    return _slideshow_job_snapshot()
+
+
+class ProjectionCreateBody(BaseModel):
+    total: int = 0
+    index: int = 0
+    pptx_name: str = ""
+    slide_names: list[str] = Field(default_factory=list)
+
+
+class ProjectionStateBody(BaseModel):
+    index: Optional[int] = None
+    total: Optional[int] = None
+    blank: Optional[bool] = None
+    frozen: Optional[bool] = None
+    fullscreen: Optional[bool] = None
+    preview_index: Optional[int] = None
+    pptx_name: Optional[str] = None
+    slide_names: Optional[list[str]] = None
+
+
+class ProjectionCommandBody(BaseModel):
+    action: str
+    index: Optional[int] = None
+
+
+def _projection_deck_path(token: str) -> Path:
+    safe = "".join(ch for ch in (token or "") if ch.isalnum() or ch in "-_")
+    if not safe:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return _PROJECTION_DECK_DIR / f"{safe}.pptx"
+
+
+def _cleanup_projection_decks() -> None:
+    now = time.time()
+    for path in _PROJECTION_DECK_DIR.glob("*.pptx"):
+        try:
+            if now - path.stat().st_mtime > _PROJECTION_DECK_TTL_S:
+                path.unlink(missing_ok=True)
+        except OSError:
+            continue
+
+
+def _projection_has_deck(token: str, pptx_name: str = "") -> bool:
+    stored = _projection_deck_path(token)
+    if stored.is_file() and stored.stat().st_size > 32:
+        return True
+    resolved = _resolve_pptx_path(pptx_name)
+    return bool(resolved and resolved.is_file())
+
+
+def _projection_public(session: Any, request: Optional[Request] = None) -> dict[str, Any]:
+    token = session.token
+    payload = session.to_public()
+    payload["has_deck"] = _projection_has_deck(token, session.pptx_name)
+    payload["deck_url"] = f"/api/projection/{token}/deck.pptx"
+    if request is not None:
+        payload["remote_url"] = _projection_public_url(request, token)
+        payload["qr_url"] = f"/api/projection/{token}/qr.png"
+    return payload
+
+
+def _store_projection_deck(token: str, source: Path) -> None:
+    dest = _projection_deck_path(token)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if source.resolve() != dest.resolve():
+        shutil.copy2(source, dest)
+
+
+def _projection_public_url(request: Request, token: str) -> str:
+    # Prefer explicit public origin (LAN/tunnel) so phone QR works off localhost.
+    configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
+    base = configured or str(request.base_url).rstrip("/")
+    return f"{base}/projection/{token}"
+
+
+@app.post("/api/projection/session")
+def api_projection_create(
+    body: ProjectionCreateBody,
+    request: Request,
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Create a phone remote session for the open projector slideshow."""
+    from services.projection_session import create_session
+
+    _cleanup_projection_decks()
+    paths = list_slide_images(_PREVIEW_DIR)
+    names = [str(n).strip() for n in (body.slide_names or []) if str(n).strip()]
+    if not names:
+        names = [p.name for p in paths]
+    total = max(int(body.total or 0), len(names), len(paths))
+    pptx_name = (body.pptx_name or "").strip()
+    session = create_session(
+        total=total,
+        index=int(body.index or 0),
+        slide_names=names,
+        pptx_name=pptx_name,
+    )
+    local_ppt = _resolve_pptx_path(pptx_name)
+    if local_ppt and local_ppt.is_file():
+        try:
+            _store_projection_deck(session.token, local_ppt)
+        except OSError:
+            logger.warning("Could not cache projection deck for remote.", exc_info=True)
+    return {"ok": True, **_projection_public(session, request)}
+
+
+@app.get("/api/projection/{token}")
+def api_projection_state(token: str) -> dict[str, Any]:
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return {"ok": True, **_projection_public(session)}
+
+
+@app.post("/api/projection/{token}/state")
+def api_projection_push_state(token: str, body: ProjectionStateBody) -> dict[str, Any]:
+    """Projector pushes local slide/blank/freeze state to the remote session."""
+    from services.projection_session import update_projector_state
+
+    session = update_projector_state(
+        token,
+        index=body.index,
+        total=body.total,
+        blank=body.blank,
+        frozen=body.frozen,
+        fullscreen=body.fullscreen,
+        preview_index=body.preview_index,
+        slide_names=body.slide_names,
+        pptx_name=body.pptx_name,
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return {"ok": True, **_projection_public(session)}
+
+
+@app.post("/api/projection/{token}/command")
+def api_projection_command(token: str, body: ProjectionCommandBody) -> dict[str, Any]:
+    """Phone remote sends prev/next/blank/freeze commands."""
+    from services.projection_session import enqueue_command
+
+    payload: dict[str, Any] = {}
+    if body.index is not None:
+        payload["index"] = body.index
+    session = enqueue_command(token, body.action, **payload)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return {"ok": True, **_projection_public(session)}
+
+
+@app.get("/api/projection/{token}/poll")
+def api_projection_poll(token: str, after: int = 0) -> dict[str, Any]:
+    """Projector polls for pending remote commands."""
+    from services.projection_session import drain_commands, get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    commands = drain_commands(token, after_seq=int(after or 0))
+    return {"ok": True, "state": _projection_public(session), "commands": commands}
+
+
+@app.put("/api/projection/{token}/deck")
+async def api_projection_put_deck(token: str, request: Request) -> dict[str, Any]:
+    """Presenter uploads the live PPTX so the phone remote can paint the same slides."""
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    data = await request.body()
+    if len(data) < 32 or len(data) > _PROJECTION_DECK_MAX_BYTES or data[:2] != b"PK":
+        raise HTTPException(status_code=400, detail="That file is not a usable PPTX deck.")
+    dest = _projection_deck_path(token)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    return {"ok": True, **_projection_public(session)}
+
+
+@app.get("/api/projection/{token}/deck.pptx")
+def api_projection_get_deck(token: str) -> FileResponse:
+    """Public deck for the phone remote (token-gated)."""
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    stored = _projection_deck_path(token)
+    path = stored if stored.is_file() else _resolve_pptx_path(session.pptx_name)
+    if not path or not path.is_file():
+        raise HTTPException(status_code=404, detail="Deck is not ready for the remote yet.")
+    return FileResponse(
+        path,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        filename=path.name or "mass_presentation.pptx",
+    )
+
+
+@app.get("/api/projection/{token}/slide/{index}")
+def api_projection_slide(token: str, index: int) -> FileResponse:
+    """Public slide image for the phone remote (token-gated)."""
+    from services.projection_session import get_session, slide_filename
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    idx0 = int(index)
+    total = int(session.total or 0)
+    # Prefer 0-based; accept 1-based when value equals total or is out of 0-based range.
+    if total and idx0 >= total and 1 <= idx0 <= total:
+        idx0 = idx0 - 1
+    elif idx0 < 0:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+    name = slide_filename(token, idx0) or f"slide_{idx0 + 1:04d}.jpg"
+    candidates = [
+        _PREVIEW_DIR / Path(name).name,
+        _PREVIEW_DIR / f"slide_{idx0 + 1:04d}.jpg",
+        _PREVIEW_DIR / f"slide_{idx0 + 1:04d}.jpeg",
+        _PREVIEW_DIR / f"slide_{idx0 + 1:04d}.png",
+    ]
+    path = next((p for p in candidates if p.is_file()), None)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Slide image not ready.")
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
+@app.get("/api/projection/{token}/qr.png")
+def api_projection_qr(token: str, request: Request) -> Response:
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    try:
+        import qrcode
+    except ImportError as exc:
+        raise HTTPException(status_code=503, detail="QR library not installed.") from exc
+    url = _projection_public_url(request, token)
+    img = qrcode.make(url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(content=buf.getvalue(), media_type="image/png")
+
+
+@app.get("/projection/{token}", response_class=HTMLResponse)
+def projection_remote_page(request: Request, token: str) -> Any:
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        return HTMLResponse(
+            "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
+            "<body style='font-family:system-ui;background:#111;color:#eee;padding:2rem'>"
+            "<h1>Session ended</h1><p>Open Present again on the projector and scan a new QR.</p></body>",
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "projection_remote.html",
+        {
+            "token": token,
+            "title": "LiturgyFlow Remote",
+            **_template_version_context(),
+        },
+    )
+
+
+@app.get("/api/input-limits")
+def api_input_limits() -> dict[str, int]:
+    return public_limits()
+
+
+@app.get("/api/platform/announcement")
+def api_platform_announcement() -> dict[str, Any]:
+    from services.platform_announcements import get_active_announcement
+
+    return get_active_announcement()
+
+
+@app.get("/api/feature-flags")
+def api_feature_flags(
+    session: Optional[AuthSession] = Depends(optional_session),
+) -> dict[str, Any]:
+    from services.feature_flags import flags_payload
+    from services.parish_store import get_user_parish_context
+
+    parish_id: Optional[str] = None
+    if session:
+        try:
+            ctx = get_user_parish_context(session.user.user_id)
+            pid = (ctx or {}).get("parish_id")
+            parish_id = str(pid).strip() if pid else None
+        except Exception:
+            parish_id = None
+    return flags_payload(parish_id=parish_id)
+
+
+@app.get("/health")
+async def health() -> dict[str, str | bool | None]:
+    # Async so a wedged sync thread pool (e.g. hung Supabase/httpx) cannot
+    # make the health check itself hang.
+    info = get_version_info()
+    soffice = _resolve_soffice_bin()
+    return {
+        "status": "ok",
+        "version": str(info.get("version") or "dev"),
+        "git_commit": info.get("git_commit_short") or info.get("git_commit"),
+        "git_branch": info.get("git_branch"),
+        "built_at": info.get("built_at"),
+        "soffice": bool(soffice),
+    }
+
+
+@app.get("/go/google-search", response_class=HTMLResponse)
+def go_google_search(q: str = "") -> HTMLResponse:
+    """Open Google search via a same-origin page so mobile stays in the browser.
+
+    Direct links to google.com often trigger the Google app (Universal Links /
+    App Links). Loading this LiturgyFlow URL in a new tab, then navigating with
+    location.replace, keeps the search in Safari/Chrome.
+    """
+    query = " ".join(str(q or "").split())[:500]
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing search query.")
+    google_url = "https://www.google.com/search?" + urlencode({"q": query, "hl": "en"})
+    # Escape for HTML attribute + JS string
+    href = google_url.replace("&", "&amp;").replace('"', "&quot;")
+    js_url = json.dumps(google_url)
+    html = (
+        "<!DOCTYPE html><html lang=\"en\"><head>"
+        "<meta charset=\"utf-8\"/>"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>"
+        "<meta name=\"referrer\" content=\"no-referrer\"/>"
+        "<title>Opening Google search…</title>"
+        f"<script>location.replace({js_url});</script>"
+        "</head><body style=\"font:16px/1.4 system-ui,sans-serif;padding:24px;color:#1f2937\">"
+        "<p>Opening Google search in this tab…</p>"
+        f"<p><a href=\"{href}\" rel=\"noopener noreferrer\">Continue to Google</a></p>"
+        "</body></html>"
+    )
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store",
+            "Referrer-Policy": "no-referrer",
+        },
+    )
+
+
+@app.get("/api/image-quota")
+def api_image_quota(
+    request: Request,
+    session: Optional[AuthSession] = Depends(optional_session),
+) -> dict[str, Any]:
+    return quota_status_payload(session, request)
+
+
+@app.get("/api/poster-exists")
+def api_poster_exists(date: str, style: str = "cinematic") -> dict[str, Any]:
+    """Report whether a cached AI hero already exists for this date + style.
+
+    Checks local disk then the shared Supabase Sunday cache so the server can silently reuse art without another paid image-API call
+    (weekly product quota is still charged).
+    """
+    from services.ai_hero_cache import shared_hero_exists
+    from services.ai_styles import resolve_ai_image_style
+
+    iso = (date or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", iso):
+        return {"exists": False, "source": None}
+    resolved_style = resolve_ai_image_style((style or "cinematic").strip())
+    hero_path = _OUTPUT_DIR / "images" / f"{iso}_{resolved_style}_hero.png"
+    if hero_path.is_file():
+        return {"exists": True, "source": "local"}
+    if shared_hero_exists(date=iso, style=resolved_style):
+        return {"exists": True, "source": "shared"}
+    return {"exists": False, "source": None}
+
+
+@app.get("/api/weekly-style-posters")
+def api_weekly_style_posters(
+    date: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Catalog of the 5 shared weekly AI style heroes for the Mass Sunday."""
+    from services.weekly_style_posters import catalog_for_date
+
+    payload = catalog_for_date(date, output_dir=_OUTPUT_DIR)
+    if not payload.get("ok"):
+        raise HTTPException(status_code=400, detail=payload.get("error") or "invalid_date")
+    return payload
+
+
+@app.get("/api/weekly-style-posters/image")
+def api_weekly_style_poster_image(
+    date: str,
+    style: str = "cinematic",
+    variant: str = "full",
+    version: Optional[int] = None,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> Response:
+    """Serve a shared weekly style hero (local or downloaded from shared cache).
+
+    ``variant=thumb`` returns a small WebP for the Mass Builder carousel/picker.
+    Optional ``version`` serves an archived ``*_hero_vN`` set (instant version preview).
+    Full PNG stays used for PPTX generation.
+    """
+    from services.ai_styles import resolve_ai_image_style
+    from services.weekly_style_posters import (
+        ensure_ui_thumb,
+        normalize_mass_date,
+        resolve_hero_file,
+        resolve_ui_card_file,
+        resolve_ui_thumb_file,
+        sunday_for_mass_date,
+        ui_thumb_path,
+    )
+
+    mass = normalize_mass_date(date)
+    if not mass:
+        raise HTTPException(status_code=400, detail="invalid_date")
+    sunday = sunday_for_mass_date(mass)
+    resolved = resolve_ai_image_style((style or "cinematic").strip())
+    variant_key = str(variant or "full").strip().lower()
+    want_thumb = variant_key in {"thumb", "ui", "preview"}
+    want_card = variant_key in {"card", "cta", "home"}
+    media = "image/png"
+    headers = {"Cache-Control": "public, max-age=86400"}
+    version_no = 0
+    try:
+        if version is not None:
+            version_no = int(version)
+    except (TypeError, ValueError):
+        version_no = 0
+    if version_no > 0:
+        from services.weekly_poster_versions import versioned_hero_path
+
+        hero = versioned_hero_path(
+            _OUTPUT_DIR, sunday=sunday, style=resolved, version=version_no
+        )
+        # Archives can be missing after local regenerations that only write the
+        # active ``*_hero.png``. Fall back so Extras/SA preview still works.
+        if not hero.is_file():
+            active = resolve_hero_file(
+                sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR
+            )
+            if active is not None and Path(active).is_file():
+                hero = Path(active)
+            else:
+                raise HTTPException(status_code=404, detail="poster_not_ready")
+        if want_thumb or want_card:
+            if want_card:
+                from services.weekly_style_posters import ensure_ui_card_watermarked
+
+                path = ensure_ui_card_watermarked(
+                    hero, sunday=sunday, style=resolved
+                )
+            else:
+                path = ui_thumb_path(hero, max_w=720)
+                if not path.is_file():
+                    path = ensure_ui_thumb(
+                        hero, sunday=sunday, style=resolved, max_w=720, quality=70
+                    )
+            if path is None or not path.is_file():
+                # Active UI derivatives may already exist even when the versioned
+                # archive slot does not.
+                path = (
+                    resolve_ui_card_file(
+                        sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR
+                    )
+                    if want_card
+                    else resolve_ui_thumb_file(
+                        sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR
+                    )
+                )
+            if path is None or not path.is_file():
+                raise HTTPException(status_code=404, detail="poster_not_ready")
+            if path.suffix.lower() == ".webp":
+                media = "image/webp"
+            headers = {"Cache-Control": "public, max-age=604800, immutable"}
+            return _bytes_file_response(
+                path, media_type=media, filename=path.name, headers=headers
+            )
+        return _bytes_file_response(
+            hero, media_type=media, filename=hero.name, headers=headers
+        )
+    if want_thumb or want_card:
+        path = (
+            resolve_ui_card_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+            if want_card
+            else resolve_ui_thumb_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+        )
+        if path is None or not path.is_file():
+            raise HTTPException(status_code=404, detail="poster_not_ready")
+        if path.suffix.lower() == ".webp":
+            media = "image/webp"
+        headers = {"Cache-Control": "public, max-age=604800, immutable"}
+        return _bytes_file_response(
+            path, media_type=media, filename=path.name, headers=headers
+        )
+    path = resolve_hero_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="poster_not_ready")
+    return _bytes_file_response(
+        path, media_type=media, filename=path.name, headers=headers
+    )
+
+
+@app.post("/api/weekly-style-posters/ensure")
+async def api_weekly_style_posters_ensure(
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    """Superadmin-only: generate shared weekly style heroes for ``date``.
+
+    Shared across parishes via Supabase hero cache. Not auto-run for parish users yet.
+    Body/query: ``date``, optional ``force`` / ``regenerate``, optional ``style`` or
+    ``styles`` (one or more of the weekly set) for 1/N progress from the client.
+    """
+    from services.ai_styles import resolve_ai_image_style
+    from services.weekly_style_posters import ensure_weekly_heroes, normalize_mass_date, weekly_style_ids
+
+    def _truthy(raw: object) -> bool:
+        if isinstance(raw, bool):
+            return raw
+        return str(raw or "").strip().lower() in {"1", "true", "yes", "on", "force", "regenerate"}
+
+    def _styles_from(raw: object) -> list[str]:
+        if raw is None:
+            return []
+        if isinstance(raw, str):
+            parts = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+        elif isinstance(raw, (list, tuple)):
+            parts = [str(p).strip() for p in raw if str(p).strip()]
+        else:
+            parts = []
+        allowed = set(weekly_style_ids())
+        out: list[str] = []
+        for part in parts:
+            key = resolve_ai_image_style(part)
+            if key in allowed and key not in out:
+                out.append(key)
+        return out
+
+    iso = normalize_mass_date(str(request.query_params.get("date") or ""))
+    force = _truthy(request.query_params.get("force") or request.query_params.get("regenerate"))
+    new_version = _truthy(request.query_params.get("new_version"))
+    style_filter = _styles_from(request.query_params.get("style") or request.query_params.get("styles"))
+    version_raw = request.query_params.get("version")
+    body: dict[str, Any] = {}
+    try:
+        parsed = await request.json()
+        if isinstance(parsed, dict):
+            body = parsed
+    except Exception:
+        body = {}
+    if not iso:
+        iso = normalize_mass_date(str(body.get("date") or ""))
+    if not force:
+        force = _truthy(body.get("force") if "force" in body else body.get("regenerate"))
+    if not new_version:
+        new_version = _truthy(body.get("new_version"))
+    overwrite_only = _truthy(request.query_params.get("overwrite_only") or request.query_params.get("test"))
+    if not overwrite_only:
+        overwrite_only = _truthy(body.get("overwrite_only") if "overwrite_only" in body else body.get("test"))
+    if not style_filter:
+        style_filter = _styles_from(body.get("styles") if body.get("styles") is not None else body.get("style"))
+    if version_raw is None and body.get("version") is not None:
+        version_raw = body.get("version")
+    version_no: Optional[int] = None
+    try:
+        if version_raw is not None and str(version_raw).strip() != "":
+            version_no = int(version_raw)
+    except (TypeError, ValueError):
+        version_no = None
+    prompt_iteration = str(
+        request.query_params.get("prompt_iteration")
+        or request.query_params.get("iteration")
+        or body.get("prompt_iteration")
+        or body.get("iteration")
+        or ""
+    ).strip()
+    if new_version:
+        force = True
+        overwrite_only = False
+    if overwrite_only:
+        force = True
+    if not iso:
+        raise HTTPException(status_code=400, detail="date is required (YYYY-MM-DD)")
+    if not (os.getenv("OPENAI_API_KEY") or "").strip():
+        raise HTTPException(
+            status_code=503,
+            detail="Poster creation is temporarily unavailable. Please try again later.",
+        )
+    actor = ""
+    try:
+        actor = ((session.user.email if session and session.user else "") or "").strip()
+    except Exception:
+        actor = ""
+    logger.info(
+        "[weekly-ensure] start date=%s force=%s new_version=%s overwrite_only=%s version=%s "
+        "iteration=%s styles=%s actor=%s",
+        iso,
+        force,
+        new_version,
+        overwrite_only,
+        version_no,
+        prompt_iteration or "og",
+        style_filter or "all",
+        actor or "unknown",
+    )
+    print(
+        f"[weekly-ensure] start date={iso!r} force={force} new_version={new_version} "
+        f"overwrite_only={overwrite_only} version={version_no!r} "
+        f"iteration={prompt_iteration or 'og'!r} styles={style_filter or 'all'!r} "
+        f"actor={actor or 'unknown'!r}",
+        flush=True,
+    )
+    # Prefer one style per request when the client drives 1/N progress.
+    max_gen = 1 if style_filter else max(1, len(weekly_style_ids()))
+    if style_filter:
+        max_gen = max(1, len(style_filter))
+    result = ensure_weekly_heroes(
+        iso,
+        output_dir=_OUTPUT_DIR,
+        max_generate=max_gen,
+        force=force,
+        styles=style_filter or None,
+        version=version_no,
+        new_version=new_version,
+        overwrite_only=overwrite_only,
+        prompt_iteration=prompt_iteration or None,
+    )
+    sunday = str((result or {}).get("sunday") or iso)
+    generated = list((result or {}).get("generated") or [])
+    skipped = list((result or {}).get("skipped") or [])
+    errors = list((result or {}).get("errors") or [])
+    logger.info(
+        "[weekly-ensure] done sunday=%s force=%s styles=%s actor=%s generated=%s skipped=%s errors=%s",
+        sunday,
+        force,
+        style_filter or "all",
+        actor or "unknown",
+        generated,
+        skipped,
+        len(errors),
+    )
+    print(
+        f"[weekly-ensure] done sunday={sunday!r} force={force} styles={style_filter or 'all'!r} "
+        f"actor={actor or 'unknown'!r} generated={generated} skipped={len(skipped)} errors={len(errors)}",
+        flush=True,
+    )
+    return result
+
+
+@app.get("/api/weekly-style-posters/versions")
+def api_weekly_style_poster_versions(
+    date: str = "",
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """List poster versions (v1/v2…) for a Mass Sunday, plus Sundays that have posters."""
+    from services.weekly_poster_versions import list_sundays_with_posters, versions_payload
+    from services.weekly_style_posters import normalize_mass_date, sunday_for_mass_date
+
+    iso = normalize_mass_date(date)
+    if iso:
+        sunday = sunday_for_mass_date(iso)
+        return versions_payload(_OUTPUT_DIR, sunday=sunday)
+    return {"ok": True, "sunday": "", "active_version": 0, "versions": [], "sundays": list_sundays_with_posters(_OUTPUT_DIR)}
+
+
+@app.post("/api/weekly-style-posters/activate")
+async def api_weekly_style_poster_activate(
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    """Superadmin: switch the active weekly poster version for a Mass Sunday."""
+    from services.weekly_poster_versions import (
+        format_version_label,
+        load_manifest,
+        promote_version_to_active,
+        version_complete,
+        version_styles_on_disk,
+        versioned_hero_path,
+    )
+    from services.weekly_style_posters import (
+        normalize_mass_date,
+        sunday_for_mass_date,
+        weekly_style_ids,
+        weekly_style_label,
+    )
+
+    iso = normalize_mass_date(str(request.query_params.get("date") or ""))
+    version_raw = request.query_params.get("version")
+    try:
+        body = await request.json()
+        if isinstance(body, dict):
+            if not iso:
+                iso = normalize_mass_date(str(body.get("date") or ""))
+            if version_raw is None:
+                version_raw = body.get("version")
+    except Exception:
+        pass
+    if not iso:
+        raise HTTPException(status_code=400, detail="date is required (YYYY-MM-DD)")
+    try:
+        version_no = int(version_raw)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="version is required")
+    sunday = sunday_for_mass_date(iso)
+    # Local copy only — no shared uploads / PIL re-encodes / catalog reconcile.
+    result = promote_version_to_active(
+        _OUTPUT_DIR, sunday=sunday, version=version_no, sync_shared=False
+    )
+    if not result.get("promoted"):
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Version archive not found on disk. Re-generate this week’s styles "
+                "to create a new version, then switch again."
+            ),
+        )
+    actor = ""
+    try:
+        actor = ((session.user.email if session and session.user else "") or "").strip()
+    except Exception:
+        actor = ""
+    logger.info(
+        "[weekly-activate] sunday=%s version=%s actor=%s promoted=%s soft=%s",
+        sunday,
+        version_no,
+        actor or "unknown",
+        result.get("promoted"),
+        bool(result.get("soft")),
+    )
+    # Point UI at archived version URLs — only styles that exist for this version.
+    owned = set(version_styles_on_disk(_OUTPUT_DIR, sunday=sunday, version=version_no))
+    if not owned:
+        # Soft activate with no archives: fall back to active hero readiness.
+        from services.weekly_style_posters import local_hero_path as _local_hero
+
+        owned = {
+            sid
+            for sid in weekly_style_ids()
+            if _local_hero(_OUTPUT_DIR, sunday=sunday, style=sid).is_file()
+        }
+    items: list[dict[str, Any]] = []
+    for sid in weekly_style_ids():
+        versioned = versioned_hero_path(
+            _OUTPUT_DIR, sunday=sunday, style=sid, version=version_no
+        )
+        ready = sid in owned and (
+            versioned.is_file() or bool(result.get("soft"))
+        )
+        base = (
+            f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
+            f"&version={version_no}"
+        )
+        items.append(
+            {
+                "id": sid,
+                "label": weekly_style_label(sid),
+                "ready": ready,
+                "thumb_url": f"{base}&variant=thumb" if ready else "",
+                "card_url": f"{base}&variant=card&mark=3" if ready else "",
+                "proxy_url": f"{base}&variant=thumb",
+                "full_url": base if ready else "",
+            }
+        )
+    manifest = result.get("manifest") or load_manifest(_OUTPUT_DIR, sunday=sunday)
+    versions = {
+        "ok": True,
+        "sunday": sunday,
+        "active_version": int(manifest.get("active_version") or version_no),
+        "versions": [
+            {
+                "version": int(v.get("version") or 0),
+                "label": format_version_label(
+                    int(v.get("version") or 0),
+                    version_styles_on_disk(
+                        _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                    )
+                    or list(v.get("styles") or []),
+                ),
+                "created_at": str(v.get("created_at") or ""),
+                "status": (
+                    "ready"
+                    if version_complete(
+                        _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                    )
+                    else (
+                        "partial"
+                        if version_styles_on_disk(
+                            _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                        )
+                        else "generating"
+                    )
+                ),
+                "styles": version_styles_on_disk(
+                    _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                )
+                or list(v.get("styles") or []),
+                "style_count": len(
+                    version_styles_on_disk(
+                        _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                    )
+                    or list(v.get("styles") or [])
+                ),
+                "active": int(v.get("version") or 0)
+                == int(manifest.get("active_version") or version_no),
+                "complete": version_complete(
+                    _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                ),
+            }
+            for v in (manifest.get("versions") or [])
+            if isinstance(v, dict) and int(v.get("version") or 0) > 0
+        ],
+        # Client already has the Sundays list; skip disk scan on the hot path.
+        "sundays": [],
+    }
+    return {
+        "ok": True,
+        "sunday": sunday,
+        "version": version_no,
+        "promoted": result.get("promoted") or [],
+        "catalog": {
+            "ok": True,
+            "date": iso,
+            "sunday": sunday,
+            "items": items,
+            "ready_count": len(items),
+            "total": len(items),
+        },
+        "versions": versions,
+    }
+
+
+def _enforce_ai_image_quota(
+    session: Optional[AuthSession],
+    request: Request,
+    *,
+    source: str,
+) -> dict[str, Any]:
+    from services.image_generation_quota import session_has_unlimited_image_quota
+
+    subject = resolve_subject(session, request)
+    unlimited = session_has_unlimited_image_quota(session)
+    return reserve_daily_image_generation(subject, source=source, unlimited=unlimited)
+
+
+@app.post("/generate-image", response_model=GenerateImageResponse)
+def generate_image(
+    body: GenerateImageBody,
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> GenerateImageResponse:
+    import base64
+
+    from generators.ai_image_generator import generate_openai_poster
+
+    if not (os.getenv("OPENAI_API_KEY") or "").strip():
+        raise HTTPException(
+            status_code=503,
+            detail="Poster creation is temporarily unavailable. Please try again later.",
+        )
+
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="prompt is required.")
+
+    _enforce_ai_image_quota(session, request, source="generate-image")
+
+    poster_path = _OUTPUT_DIR / "poster.png"
+    try:
+        saved = generate_openai_poster(prompt, output_path=poster_path)
+    except RuntimeError as exc:
+        logger.exception("Poster create failed (runtime)")
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't create that poster right now. Please try again.",
+        ) from exc
+    except Exception as exc:
+        logger.exception("Poster create failed")
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't create that poster right now. Please try again.",
+        ) from exc
+
+    raw = saved.read_bytes()
+    return GenerateImageResponse(
+        image=base64.b64encode(raw).decode("ascii"),
+        path=str(saved),
+    )
+
+
+def _community_api_payload(session: Optional[AuthSession] = None) -> dict[str, Any]:
+    profile = load_community()
+    logo_exists = logo_file_absolute().is_file()
+    celebrants = profile.get("celebrant_names")
+    if not isinstance(celebrants, list):
+        celebrants = get_celebrant_names()
+    church_ctx = get_church_profile_context()
+    user = session.user if session else None
+    user_profile: Optional[dict[str, Any]] = None
+    if session and session.user and session.user.user_id and supabase_enabled():
+        try:
+            from services.supabase_client import get_profile
+
+            user_profile = get_profile(
+                session.user.user_id, access_token=session.token
+            )
+        except Exception:
+            user_profile = None
+    membership = membership_payload(church_ctx, user=user, profile=user_profile)
+    logo_url: Optional[str] = None
+    storage_logo = str((church_ctx or {}).get("logo_path") or "").strip()
+    if session and storage_logo:
+        try:
+            # Parish-scoped logos live under parishes/… and require the service role
+            # to sign (user RLS only covers {user_id}/… paths).
+            if storage_logo.startswith("parishes/"):
+                logo_url = signed_service_asset_url(path=storage_logo)
+            elif storage_ready(session.token):
+                logo_url = signed_asset_url(access_token=session.token, path=storage_logo)
+        except Exception:
+            logo_url = None
+    if not logo_url and logo_exists:
+        logo_url = upload_file_url("community_logo.png")
+    return {
+        "ok": True,
+        "community_name": get_community_name(),
+        "celebrant_names": celebrants,
+        "logo_url": logo_url,
+        **membership,
+    }
+
+
+@app.get("/api/community")
+def api_community(
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    return _community_api_payload(session)
+
+
+@app.post("/api/community")
+def api_set_community_name(
+    body: CommunityNameBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    return api_submit_parish_name(body, session)
+
+
+@app.post("/api/community/submit-parish")
+def api_submit_parish_name(
+    body: CommunityNameBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if not session or not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Sign in is required to submit parish name.")
+    from services.supabase_client import submit_parish_name
+
+    saved = submit_parish_name(
+        session.user.user_id,
+        body.community_name.strip(),
+        access_token=session.token,
+    )
+    from services.user_church_context import set_church_profile
+
+    set_church_profile(saved)
+    return _community_api_payload(session)
+
+
+@app.post("/api/community/profile")
+def api_set_community_profile(
+    body: CommunityProfileBody,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    church_ctx = get_church_profile_context()
+    if body.community_name is not None and not parish_name_is_locked(church_ctx):
+        kwargs["community_name"] = body.community_name.strip()
+    if body.celebrant_names is not None:
+        kwargs["celebrant_names"] = body.celebrant_names
+    if not kwargs:
+        raise HTTPException(status_code=400, detail="No profile fields to update.")
+    if session and supabase_enabled():
+        _sync_church_profile_to_supabase(
+            session,
+            community_name=kwargs.get("community_name"),
+            celebrant_names=kwargs.get("celebrant_names"),
+        )
+    else:
+        update_community(**kwargs)
+    return _community_api_payload(session)
+
+
+@app.get("/api/settings/gemini-api-key")
+def api_get_gemini_api_key_status(
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    """Status only — never return the key (or a suffix) to the browser."""
+    from services.env_config import gemini_api_key_configured
+
+    return {"configured": gemini_api_key_configured(), "key_hint": None}
+
+
+@app.post("/api/settings/gemini-api-key")
+def api_save_gemini_api_key(
+    body: GeminiApiKeyBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    from services.env_config import save_gemini_api_key
+
+    try:
+        save_gemini_api_key(body.api_key.strip())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "ok": True,
+        "configured": True,
+        # Do not echo any fragment of the key back over the wire.
+        "key_hint": None,
+        "key_format_warning": (
+            None
+            if body.api_key.strip().startswith("AIza")
+            else (
+                "This key does not look like a standard Google AI Studio key (AIza…). "
+                "Image generation may fail with quota errors."
+            )
+        ),
+    }
+
+
+@app.post("/api/upload-logo")
+async def api_upload_logo(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if session and supabase_enabled():
+        church_ctx = get_church_profile_context()
+        if not can_edit_logo(church_ctx):
+            raise HTTPException(
+                status_code=409,
+                detail="Parish logo is locked and cannot be changed.",
+            )
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in _ALLOWED_LOGO_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Use a PNG, JPEG, WebP, or GIF image.",
+        )
+    raw = await file.read()
+    if len(raw) > _MAX_LOGO_BYTES:
+        raise HTTPException(status_code=400, detail="Image must be at most about 2.5 MB.")
+
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="Pillow is required for image upload.") from exc
+
+    try:
+        im = Image.open(io.BytesIO(raw))
+        im.load()
+    except OSError as exc:
+        raise HTTPException(status_code=400, detail="Could not read image file.") from exc
+
+    if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in getattr(im, "info", {})):
+        im = im.convert("RGBA")
+    else:
+        im = im.convert("RGB")
+
+    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = logo_file_absolute()
+    im.save(out_path, format="PNG", optimize=True)
+
+    logo_url = upload_file_url("community_logo.png")
+    if session and supabase_enabled():
+        raw_png = out_path.read_bytes()
+        parish_id = _session_parish_id(session)
+        if parish_id and parish_storage_ready():
+            stored = upload_parish_asset(
+                parish_id=parish_id,
+                relative_path="logo/community_logo.png",
+                raw=raw_png,
+                content_type="image/png",
+                upsert=True,
+            )
+        elif storage_ready(session.token):
+            stored = upload_user_asset(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                relative_path="logo/community_logo.png",
+                raw=raw_png,
+                content_type="image/png",
+                upsert=True,
+            )
+        else:
+            stored = None
+        if stored:
+            _sync_church_profile_to_supabase(session, logo_path=stored.path)
+            logo_url = stored.signed_url
+            church_ctx = get_church_profile_context()
+            if parish_name_is_locked(church_ctx) and not (church_ctx or {}).get("logo_locked_at"):
+                from services.supabase_client import lock_church_logo
+
+                lock_church_logo(session.user.user_id, access_token=session.token)
+        else:
+            update_community(logo_path=LOGO_RELATIVE)
+    else:
+        update_community(logo_path=LOGO_RELATIVE)
+    out: dict[str, Any] = {
+        "ok": True,
+        "logo_url": logo_url,
+        "message": "Logo saved. It will appear on the next generated poster.",
+    }
+    if session:
+        out.update(membership_payload(get_church_profile_context(), user=session.user))
+    return out
+
+
+class ApostleAvatarBody(BaseModel):
+    apostle_id: str = Field(..., min_length=2, max_length=40)
+
+
+@app.get("/api/profile/apostle-avatars")
+def api_list_apostle_avatars() -> dict[str, Any]:
+    from services.apostle_avatars import list_apostle_avatars
+
+    return {"ok": True, "avatars": list_apostle_avatars()}
+
+
+@app.post("/api/profile/apostle-avatar")
+def api_set_apostle_avatar(
+    body: ApostleAvatarBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Set the user's profile pill to a cartoon apostle face."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Profile photos require sign-in.")
+    from services.apostle_avatars import apostle_by_id, random_apostle_for_user
+    from services.supabase_client import update_profile_avatar
+
+    key = (body.apostle_id or "").strip().lower()
+    if key in {"random", "surprise", "auto"}:
+        chosen = random_apostle_for_user(session.user.user_id + ":" + str(uuid.uuid4())[:8])
+    else:
+        chosen = apostle_by_id(key)
+    if not chosen:
+        raise HTTPException(status_code=400, detail="Unknown apostle avatar.")
+    update_profile_avatar(
+        session.user.user_id,
+        chosen["token"],
+        access_token=session.token,
+    )
+    return {
+        "ok": True,
+        "avatar_url": chosen["path"],
+        "apostle_id": chosen["id"],
+        "apostle_name": chosen["name"],
+        "message": f"Profile picture set to {chosen['name']}.",
+    }
+
+
+@app.post("/api/upload-avatar")
+async def api_upload_avatar(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Upload the signed-in user's personal profile photo (not the parish logo)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Profile photos require sign-in.")
+
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in _ALLOWED_LOGO_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Use a PNG, JPEG, WebP, or GIF image.",
+        )
+    raw = await file.read()
+    if len(raw) > _MAX_LOGO_BYTES:
+        raise HTTPException(status_code=400, detail="Image must be at most about 2.5 MB.")
+
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="Pillow is required for image upload.") from exc
+
+    try:
+        im = Image.open(io.BytesIO(raw))
+        im.load()
+    except OSError as exc:
+        raise HTTPException(status_code=400, detail="Could not read image file.") from exc
+
+    # Square-crop to center for a clean circular avatar.
+    w, h = im.size
+    side = min(w, h)
+    left = (w - side) // 2
+    top = (h - side) // 2
+    im = im.crop((left, top, left + side, top + side))
+    if side > 512:
+        try:
+            resample = Image.Resampling.LANCZOS
+        except AttributeError:
+            resample = Image.LANCZOS
+        im = im.resize((512, 512), resample)
+
+    if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in getattr(im, "info", {})):
+        im = im.convert("RGBA")
+    else:
+        im = im.convert("RGB")
+
+    buf = io.BytesIO()
+    im.save(buf, format="PNG", optimize=True)
+    raw_png = buf.getvalue()
+
+    if not storage_ready(session.token):
+        raise HTTPException(status_code=503, detail="Storage is not available.")
+
+    stored = upload_user_asset(
+        user_id=session.user.user_id,
+        access_token=session.token,
+        relative_path="avatar/profile.png",
+        raw=raw_png,
+        content_type="image/png",
+        upsert=True,
+    )
+    from services.supabase_client import update_profile_avatar
+
+    update_profile_avatar(
+        session.user.user_id,
+        stored.path,
+        access_token=session.token,
+    )
+    return {
+        "ok": True,
+        "avatar_url": stored.signed_url,
+        "message": "Profile photo saved.",
+    }
+
+
+@app.post("/api/upload/mass-divider")
+async def api_upload_mass_divider(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="divider")
+    url = upload_file_url(f"mass_assets/{name}")
+    url = _upload_scoped_asset_url(
+        session=session,
+        local_path=_MASS_ASSET_DIR / name,
+        relative_path=f"mass_assets/{name}",
+        content_type=(file.content_type or "image/png"),
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url}
+
+
+@app.post("/api/upload/announcement-slide")
+async def api_upload_announcement_slide(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="announce")
+    url = upload_file_url(f"mass_assets/{name}")
+    url = _upload_scoped_asset_url(
+        session=session,
+        local_path=_MASS_ASSET_DIR / name,
+        relative_path=f"mass_assets/{name}",
+        content_type=(file.content_type or "image/png"),
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url}
+
+
+@app.post("/api/upload/saved-poster")
+async def api_upload_saved_poster(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_image(file, _SAVED_POSTER_DIR, prefix="poster")
+    url = upload_file_url(f"saved_posters/{name}")
+    url = _upload_scoped_asset_url(
+        session=session,
+        local_path=_SAVED_POSTER_DIR / name,
+        relative_path=f"saved_posters/{name}",
+        content_type=(file.content_type or "image/png"),
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url}
+
+
+@app.get("/api/saved-posters")
+def api_list_saved_posters(
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+    local_items: list[dict[str, str]] = []
+    if _SAVED_POSTER_DIR.is_dir():
+        for p in sorted(_SAVED_POSTER_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+            if p.is_file() and p.suffix.lower() in allowed:
+                local_items.append({"basename": p.name, "url": upload_file_url(f"saved_posters/{p.name}")})
+    remote_items: list[dict[str, str]] = []
+    parish_id = _session_parish_id(session)
+    if session and storage_ready(session.token):
+        try:
+            for row in list_user_assets(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                prefix="saved_posters",
+            ):
+                if Path(str(row.get("name") or "")).suffix.lower() in allowed:
+                    remote_items.append({"basename": row["name"], "url": row["url"] or ""})
+        except Exception:
+            logger.warning("Could not list saved posters from user storage.", exc_info=True)
+    if parish_id and parish_storage_ready():
+        try:
+            for row in list_parish_assets(parish_id=parish_id, prefix="saved_posters"):
+                if Path(str(row.get("name") or "")).suffix.lower() in allowed:
+                    remote_items.append({"basename": row["name"], "url": row["url"] or ""})
+        except Exception:
+            logger.warning("Could not list saved posters from parish storage.", exc_info=True)
+    merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
+    for item in remote_items:
+        merged[item["basename"]] = item
+    posters = list(merged.values())
+    posters.sort(key=lambda r: r["basename"], reverse=True)
+    return {"ok": True, "posters": posters}
+
+
+@app.delete("/api/saved-posters/{basename}")
+def api_delete_saved_poster(
+    basename: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        raise HTTPException(status_code=400, detail="Invalid asset name.")
+    ext = Path(base).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        raise HTTPException(status_code=400, detail="Invalid poster type.")
+    return _delete_saved_media_item(
+        session,
+        basename=base,
+        local_dir=_SAVED_POSTER_DIR,
+        storage_folder="saved_posters",
+        allowed_ext=ext,
+        not_found_detail="Poster not found.",
+    )
+
+
+@app.post("/api/upload/saved-media/music")
+async def api_upload_saved_media_music(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_media(
+        file,
+        _SAVED_MEDIA_MUSIC_DIR,
+        prefix="music",
+        allowed_ext=".mp3",
+        allowed_types=_ALLOWED_MUSIC_TYPES,
+        max_bytes=_MAX_MUSIC_BYTES,
+    )
+    display_name = Path(file.filename or "upload").name
+    _register_saved_media_meta(session, name, display_name, "music")
+    url = upload_file_url(f"saved_media/music/{name}")
+    url = _upload_saved_media_url(
+        session=session,
+        local_path=_SAVED_MEDIA_MUSIC_DIR / name,
+        relative_path=f"saved_media/music/{name}",
+        content_type="audio/mpeg",
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url, "display_name": display_name}
+
+
+@app.post("/api/upload/saved-media/video")
+async def api_upload_saved_media_video(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_media(
+        file,
+        _SAVED_MEDIA_VIDEO_DIR,
+        prefix="video",
+        allowed_ext=".mp4",
+        allowed_types=_ALLOWED_VIDEO_TYPES,
+        max_bytes=_MAX_VIDEO_BYTES,
+    )
+    display_name = Path(file.filename or "upload").name
+    _register_saved_media_meta(session, name, display_name, "video")
+    url = upload_file_url(f"saved_media/video/{name}")
+    url = _upload_saved_media_url(
+        session=session,
+        local_path=_SAVED_MEDIA_VIDEO_DIR / name,
+        relative_path=f"saved_media/video/{name}",
+        content_type="video/mp4",
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url, "display_name": display_name}
+
+
+@app.get("/api/saved-media")
+def api_list_saved_media(
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    music = _list_saved_media_rows(
+        _SAVED_MEDIA_MUSIC_DIR,
+        folder="saved_media/music",
+        allowed_ext=".mp3",
+        session=session,
+    )
+    video = _list_saved_media_rows(
+        _SAVED_MEDIA_VIDEO_DIR,
+        folder="saved_media/video",
+        allowed_ext=".mp4",
+        session=session,
+    )
+    return {
+        "ok": True,
+        "music": _enrich_saved_media_rows(music, session=session, kind="music"),
+        "video": _enrich_saved_media_rows(video, session=session, kind="video"),
+    }
+
+
+@app.get("/api/rite-preview-text")
+def api_rite_preview_text(
+    section: str,
+    option: str = "",
+) -> dict[str, Any]:
+    """Return authored PPTX slide text for a Mass Builder rite option preview."""
+    sec = str(section or "").strip().lower()
+    opt = str(option or "").strip().lower()
+    allowed = {
+        "penitential",
+        "creed",
+        "kyrie",
+        "gloria",
+        "sanctus",
+        "our_father",
+        "lamb_of_god",
+    }
+    if sec not in allowed:
+        raise HTTPException(status_code=400, detail="Unknown rite section.")
+    payload = build_rite_slide_preview(sec, opt)
+    if not payload.get("ok"):
+        raise HTTPException(status_code=404, detail="No slide text found for that option.")
+    return payload
+
+
+@app.delete("/api/saved-media/music/{basename}")
+def api_delete_saved_media_music(
+    basename: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    return _delete_saved_media_item(
+        session,
+        basename=basename,
+        local_dir=_SAVED_MEDIA_MUSIC_DIR,
+        storage_folder="saved_media/music",
+        allowed_ext=".mp3",
+        not_found_detail="Audio file not found.",
+    )
+
+
+@app.delete("/api/saved-media/video/{basename}")
+def api_delete_saved_media_video(
+    basename: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    return _delete_saved_media_item(
+        session,
+        basename=basename,
+        local_dir=_SAVED_MEDIA_VIDEO_DIR,
+        storage_folder="saved_media/video",
+        allowed_ext=".mp4",
+        not_found_detail="Video file not found.",
+    )
+
+
+@app.get("/api/catalog/songs")
+def api_catalog_songs(
+    lite: bool = True,
+    if_none_match: Optional[str] = Header(None, alias="If-None-Match"),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> Response:
+    parish_id: Optional[str] = None
+    if session and session.user and session.user.user_id:
+        try:
+            from services.parish_store import get_user_parish_context
+
+            parish_ctx = get_user_parish_context(session.user.user_id) or {}
+            parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
+        except Exception:
+            parish_id = None
+
+    if lite and not parish_id:
+        body, etag = catalog_lite_response()
+        headers = {
+            "Cache-Control": "private, no-cache",
+            "ETag": etag,
+            "Vary": "Authorization",
+        }
+        if if_none_match and if_none_match.strip() == etag:
+            return Response(status_code=304, headers=headers)
+        return Response(content=body, media_type="application/json", headers=headers)
+
+    catalog = catalog_for_api(include_inferred_moods=True)
+    if parish_id:
+        try:
+            from services.parish_hymn_overrides import merge_parish_songs_into_catalog
+
+            catalog = merge_parish_songs_into_catalog(catalog, parish_id)
+        except Exception:
+            logger.warning("Could not merge parish songs into catalog", exc_info=True)
+    payload = {"ok": True, "catalog": catalog}
+    return JSONResponse(
+        payload,
+        headers={
+            "Cache-Control": "private, no-cache" if parish_id else "private, max-age=120",
+            "Vary": "Authorization",
+        },
+    )
+
+
+@app.get("/api/catalog/songs/whats-new")
+def api_catalog_songs_whats_new(
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Songs added this month + updates from the last 7 days (for post-login modal)."""
+    return catalog_whats_new()
+
+
+@app.get("/api/user/song-history")
+def api_get_user_song_history(
+    scope: str = "parish",
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Recent Song Library activity: global (superadmin) or parish team."""
+    if not session:
+        return {"ok": True, "entries": [], "synced": False, "scope": scope}
+    from services.membership_config import is_superadmin_user
+    from services.parish_store import get_user_parish_context
+    from services.user_song_history import list_global_song_history, list_parish_song_history
+
+    parish_ctx = get_user_parish_context(session.user.user_id, access_token=session.token) or {}
+    parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
+    mode = (scope or "parish").strip().lower()
+    if mode in {"mine", "global"}:
+        entries = list_global_song_history(access_token=session.token)
+        return {
+            "ok": True,
+            "entries": entries,
+            "synced": True,
+            "scope": "global",
+            "parish_id": parish_id,
+            "is_superadmin": is_superadmin_user(session.user),
+        }
+    if not parish_id:
+        return {
+            "ok": True,
+            "entries": [],
+            "synced": True,
+            "scope": "parish",
+            "parish_id": None,
+            "is_superadmin": is_superadmin_user(session.user),
+        }
+    entries = list_parish_song_history(
+        session.user.user_id,
+        access_token=session.token,
+        parish_id=parish_id,
+    )
+    return {
+        "ok": True,
+        "entries": entries,
+        "synced": True,
+        "scope": "parish",
+        "parish_id": parish_id,
+        "is_superadmin": is_superadmin_user(session.user),
+    }
+
+
+@app.post("/api/user/song-history")
+def api_sync_user_song_history(
+    body: UserSongHistorySyncBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Upsert recent Song Library activity (global for superadmin, else parish)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    from services.membership_config import is_superadmin_user
+    from services.parish_store import get_user_parish_context
+    from services.user_song_history import sync_user_song_history, user_is_superadmin
+
+    parish_ctx = get_user_parish_context(session.user.user_id, access_token=session.token) or {}
+    parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
+    payload = [entry.model_dump() for entry in body.entries]
+    is_sa = is_superadmin_user(session.user) or user_is_superadmin(
+        session.user.user_id, access_token=session.token
+    )
+    result = sync_user_song_history(
+        session.user.user_id,
+        payload,
+        access_token=session.token,
+        parish_id=parish_id,
+        is_superadmin=is_sa,
+    )
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=503,
+            detail=result.get("error") or "Could not sync song history.",
+        )
+    return result
+
+
+@app.get("/api/catalog/songs/{section}/{hymn_id:path}")
+def api_get_catalog_song(
+    section: str,
+    hymn_id: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> JSONResponse:
+    uid = session.user.user_id if session else None
+    hid = (hymn_id or "").strip()
+    requested_sec = (section or "").strip().lower()
+    allowed, retry_after = check_catalog_lyric_fetch_allowed(uid, hid)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many hymn lyric requests. Please slow down.",
+            headers={"Retry-After": str(max(1, retry_after))},
+        )
+    row = get_hymn(requested_sec, hid)
+    resolved_section = requested_sec
+    by_id_sec, by_id_row = find_catalog_row_by_id(hid)
+    if by_id_row is not None and by_id_sec:
+        row = by_id_row
+        resolved_section = by_id_sec
+    if not row:
+        normalized = fetch_song_from_normalized(hid)
+        if normalized:
+            row = normalized
+            resolved_section = str(normalized.get("section") or requested_sec).strip().lower() or requested_sec
+    parish_only = False
+    parish_version = False
+    lyrics = ""
+    catalog_lyrics = ""
+    if not row and session and session.user and session.user.user_id:
+        # Parish-original song (not yet in global catalog).
+        try:
+            from services.parish_hymn_overrides import get_parish_song_by_id
+            from services.parish_store import get_user_parish_context
+
+            parish_ctx = get_user_parish_context(session.user.user_id) or {}
+            parish_id = str(parish_ctx.get("parish_id") or "").strip()
+            if parish_id:
+                ov = get_parish_song_by_id(parish_id, hymn_id=hid, section=requested_sec)
+                if not ov:
+                    ov = get_parish_song_by_id(parish_id, hymn_id=hid)
+                if ov and str(ov.get("lyrics") or "").strip():
+                    parish_only = True
+                    parish_version = True
+                    resolved_section = str(ov.get("section") or requested_sec).strip().lower() or requested_sec
+                    lyrics = str(ov.get("lyrics") or "")
+                    catalog_lyrics = ""
+                    moods = ov.get("gospel_moods") if isinstance(ov.get("gospel_moods"), list) else []
+                    row = {
+                        "id": hid,
+                        "title": str(ov.get("title") or ""),
+                        "author": str(ov.get("author") or ""),
+                        "language": str(ov.get("language") or "").strip(),
+                        "lyrics": lyrics,
+                        "gospel_moods": moods,
+                    }
+        except Exception:
+            pass
+    if not row:
+        raise HTTPException(status_code=404, detail="Song not found.")
+    if not parish_only:
+        lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
+        catalog_lyrics = lyrics
+        # Superadmins edit the global catalog — never shadow with parish copies.
+        apply_parish = bool(
+            session
+            and session.user
+            and session.user.user_id
+            and not is_superadmin_user(session.user)
+        )
+        if apply_parish:
+            try:
+                from services.parish_hymn_overrides import get_override, override_is_newer_than
+                from services.parish_store import get_user_parish_context
+
+                parish_ctx = get_user_parish_context(session.user.user_id) or {}
+                parish_id = str(parish_ctx.get("parish_id") or "").strip()
+                if parish_id:
+                    ov = get_override(parish_id, hymn_id=hid, section=resolved_section)
+                    if not ov:
+                        ov = get_override(parish_id, hymn_id=hid)
+                    catalog_updated = str(row.get("updated_at") or "").strip()
+                    if ov and override_is_newer_than(ov, catalog_updated):
+                        lyrics = str(ov.get("lyrics") or "")
+                        parish_version = True
+                        if ov.get("section"):
+                            resolved_section = str(ov.get("section") or resolved_section)
+            except Exception:
+                pass
+    log_lyric_read(
+        user_id=uid,
+        hymn_id=hid,
+        section=resolved_section,
+        source="catalog_api",
+    )
+    payload = {
+        "ok": True,
+        "section": resolved_section,
+        "song": {
+            "id": str(row.get("id") or hid),
+            "title": str(row.get("title") or ""),
+            "author": str(row.get("author") or ""),
+            "language": str(row.get("language") or "").strip(),
+            "lyrics": lyrics,
+            "catalog_lyrics": catalog_lyrics,
+            "parish_version": parish_version,
+            "parish_only": parish_only,
+            "updated_at": str(row.get("updated_at") or "").strip(),
+            "gospel_moods": gospel_moods_for_song(row),
+            "audio_media": row.get("audio_media") if isinstance(row.get("audio_media"), dict) else None,
+            "video_media": row.get("video_media") if isinstance(row.get("video_media"), dict) else None,
+            "audio_preview": normalize_audio_preview_ref(row.get("audio_preview")),
+        },
+    }
+    return JSONResponse(payload, headers={"Cache-Control": "private, no-store"})
+
+
+@app.patch("/api/catalog/songs/{section}/{hymn_id:path}")
+def api_patch_catalog_song(
+    section: str,
+    hymn_id: str,
+    body: CatalogSongPatchBody,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    audio_media: Any = ...
+    video_media: Any = ...
+    audio_preview: Any = ...
+    if body.clear_audio_media:
+        audio_media = None
+    elif body.audio_media is not None:
+        audio_media = body.audio_media.model_dump()
+    if body.clear_video_media:
+        video_media = None
+    elif body.video_media is not None:
+        video_media = body.video_media.model_dump()
+    if body.clear_audio_preview:
+        audio_preview = None
+    elif body.audio_preview is not None:
+        audio_preview = body.audio_preview
+    res = update_catalog_song(
+        section=section,
+        hymn_id=hymn_id,
+        title=body.title,
+        author=body.author,
+        lyrics=body.lyrics,
+        language=body.language,
+        gospel_moods=body.gospel_moods,
+        audio_media=audio_media,
+        video_media=video_media,
+        audio_preview=audio_preview,
+        new_section=body.new_section,
+        updated_by=session.user.user_id if session else None,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Update failed.")
+    return res
+
+
+@app.post("/api/catalog/songs/bulk-move")
+def api_bulk_move_catalog_songs(
+    body: CatalogSongsBulkMoveBody,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    res = move_catalog_songs(
+        [item.model_dump() for item in body.songs],
+        target_section=body.target_section,
+        updated_by=session.user.user_id if session else None,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Move failed.")
+    return res
+
+
+@app.post("/api/catalog/songs/bulk-delete")
+def api_bulk_delete_catalog_songs(
+    body: CatalogSongsBulkDeleteBody,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    res = delete_catalog_songs(
+        [item.model_dump() for item in body.songs],
+        updated_by=session.user.user_id if session else None,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Delete failed.")
+    return res
+
+
+@app.delete("/api/catalog/songs/{section}/{hymn_id:path}")
+def api_delete_catalog_song(
+    section: str,
+    hymn_id: str,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    res = delete_catalog_song(
+        section=section,
+        hymn_id=hymn_id,
+        updated_by=session.user.user_id if session else None,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Delete failed.")
+    return res
+
+
+@app.post("/api/design/analyze-template")
+async def api_design_analyze_template(
+    file: UploadFile = File(...),
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in {
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/octet-stream",
+    } and not (file.filename or "").lower().endswith(".pptx"):
+        raise HTTPException(status_code=400, detail="Upload a .pptx file.")
+    raw = await file.read()
+    if len(raw) > 25_000_000:
+        raise HTTPException(status_code=400, detail="Presentation too large.")
+    tmp = _UPLOAD_DIR / f"_analyze_{uuid.uuid4().hex}.pptx"
+    try:
+        tmp.write_bytes(raw)
+        result = analyze_pptx_theme(tmp)
+    finally:
+        tmp.unlink(missing_ok=True)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Analysis failed.")
+    return result
+
+
+def _public_billing_page_context(request: Request) -> dict[str, Any]:
+    """Shared context for landing + /pricing (billing flags + local currency)."""
+    configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
+    public_base_url = configured or str(request.base_url).rstrip("/")
+    billing_on = False
+    try:
+        from services.stripe_billing import billing_enabled as _billing_enabled
+
+        billing_on = bool(_billing_enabled())
+    except Exception:
+        billing_on = False
+    country = ""
+    try:
+        from services.user_presence import country_from_request_headers
+
+        country = (country_from_request_headers(request.headers) or "").strip().upper()
+    except Exception:
+        country = ""
+    # Local currency from CDN country, else Accept-Language hints (no geo IP lookup).
+    accept_lang = (request.headers.get("accept-language") or "").lower()
+
+    def _lang_hints(*needles: str) -> bool:
+        for needle in needles:
+            if (
+                accept_lang.startswith(needle)
+                or f",{needle}" in accept_lang
+                or f";{needle}" in accept_lang
+            ):
+                return True
+        return False
+
+    if country == "KR" or (not country and _lang_hints("ko")):
+        pricing_currency = "krw"
+    elif country == "PH" or (not country and _lang_hints("fil", "tl", "en-ph")):
+        pricing_currency = "php"
+    elif country == "MY" or (not country and _lang_hints("ms", "en-my")):
+        pricing_currency = "myr"
+    else:
+        pricing_currency = "usd"
+    return {
+        "auth_enabled": auth_enabled(),
+        "invite_contact_email": invite_contact_email(),
+        "public_base_url": public_base_url,
+        "billing_enabled": billing_on,
+        "pricing_country": country,
+        "pricing_currency": pricing_currency,
+        **_template_version_context(),
+    }
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request) -> Any:
+    # Public marketing landing page. Signed-in visitors are bounced to /home
+    # client-side (see landing.html); the app itself lives at /home and friends.
+    ctx = _public_billing_page_context(request)
+    return templates.TemplateResponse(
+        request,
+        "landing.html",
+        {
+            "title": "LiturgyFlow",
+            "canonical_url": f"{ctx['public_base_url']}/",
+            **ctx,
+        },
+    )
+
+
+@app.get("/pricing", response_class=HTMLResponse)
+def pricing_page(request: Request) -> Any:
+    """Public parish pricing — separate from the landing hero."""
+    ctx = _public_billing_page_context(request)
+    return templates.TemplateResponse(
+        request,
+        "pricing.html",
+        {
+            "title": "Pricing · LiturgyFlow",
+            "canonical_url": f"{ctx['public_base_url']}/pricing",
+            **ctx,
+        },
+    )
+
+
+@app.get("/legal", response_class=HTMLResponse)
+@app.get("/legal/{page}", response_class=HTMLResponse)
+def legal_page(request: Request, page: str = "privacy") -> Any:
+    """Public legal / compliance documents (privacy, terms, cookies, etc.)."""
+    from datetime import datetime
+
+    from services.legal_config import LEGAL_SLUGS, legal_config
+
+    slug = (page or "privacy").strip().lower()
+    if slug not in LEGAL_SLUGS:
+        raise HTTPException(status_code=404, detail="Legal page not found.")
+    cfg = legal_config()
+    title_map = {s: label for s, label in cfg["pages"]}
+    return templates.TemplateResponse(
+        request,
+        "legal.html",
+        {
+            "page": slug,
+            "page_title": title_map.get(slug, "Legal"),
+            "legal": cfg,
+            "year": datetime.now().year,
+            **_template_version_context(),
+        },
+    )
+
+
+@app.get("/privacy", include_in_schema=False)
+def privacy_redirect() -> Any:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/legal/privacy", status_code=301)
+
+
+@app.get("/terms", include_in_schema=False)
+def terms_redirect() -> Any:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/legal/terms", status_code=301)
+
+
+@app.get("/cookies", include_in_schema=False)
+def cookies_redirect() -> Any:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/legal/cookies", status_code=301)
+
+
+@app.get("/home", response_class=HTMLResponse)
+@app.get("/notifications", response_class=HTMLResponse)
+@app.get("/today", response_class=HTMLResponse)
+@app.get("/radio", response_class=HTMLResponse)
+@app.get("/mass/builder", response_class=HTMLResponse)
+@app.get("/mass/calendar", response_class=HTMLResponse)
+@app.get("/media/posters", response_class=HTMLResponse)
+@app.get("/media/presentation", response_class=HTMLResponse)
+@app.get("/media/history", response_class=HTMLResponse)
+@app.get("/library/songs", response_class=HTMLResponse)
+@app.get("/library/practice", response_class=HTMLResponse)
+@app.get("/library/collections", response_class=HTMLResponse)
+@app.get("/themes", response_class=HTMLResponse)
+@app.get("/design/theme-lab", response_class=HTMLResponse)
+@app.get("/design/templates", response_class=HTMLResponse)
+@app.get("/settings/account", response_class=HTMLResponse)
+@app.get("/settings/church", response_class=HTMLResponse)
+@app.get("/settings/billing", response_class=HTMLResponse)
+@app.get("/settings/app", response_class=HTMLResponse)
+@app.get("/settings/preferences", response_class=HTMLResponse)
+@app.get("/settings/privacy", response_class=HTMLResponse)
+@app.get("/settings/team", response_class=HTMLResponse)
+@app.get("/superadmin", response_class=HTMLResponse)
+@app.get("/lyrics-dashboard", response_class=HTMLResponse)
+@app.get("/theme-dashboard", response_class=HTMLResponse)
+@app.get("/mass-flow-dashboard", response_class=HTMLResponse)
+def dashboard(request: Request) -> Any:
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"title": "LiturgyFlow", "auth_enabled": auth_enabled(), **_template_version_context()},
+    )
+
+
+def _practice_share_url(request: Request, token: str) -> str:
+    base = str(request.base_url).rstrip("/")
+    return f"{base}/practice/{token}"
+
+
+@app.get("/practice/{token}", response_class=HTMLResponse)
+def practice_page(request: Request, token: str) -> Any:
+    allowed, retry_after = check_practice_page_allowed(request)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    lead = (request.query_params.get("lead") or "").strip()
+    return templates.TemplateResponse(
+        request,
+        "practice.html",
+        {
+            "title": "Choir practice",
+            "token": (token or "").strip(),
+            "lead_token": lead,
+            **_template_version_context(),
+        },
+    )
+
+
+@app.get("/api/practice/qr/{token}")
+def api_practice_qr(token: str, request: Request) -> Response:
+    """QR code image for a valid practice share link."""
+    row = get_practice_share_by_token(token)
+    if not row:
+        raise HTTPException(status_code=404, detail="Practice link not found.")
+    url = _practice_share_url(request, token.strip())
+    data_url = practice_qr_data_url(url)
+    if not data_url:
+        raise HTTPException(status_code=503, detail="QR generation unavailable.")
+    header, encoded = data_url.split(",", 1)
+    raw = base64.b64decode(encoded)
+    media = "image/svg+xml" if "svg" in header else "image/png"
+    return Response(content=raw, media_type=media, headers={"Cache-Control": "private, max-age=3600"})
+
+
+def _practice_rate_limit_response(retry_after: int) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please slow down."},
+        headers={"Retry-After": str(max(1, retry_after)), **practice_no_store_headers()},
+    )
+
+
+def _enrich_practice_share_urls(
+    request: Request,
+    share: dict[str, Any],
+    *,
+    device_id: Optional[str] = None,
+) -> dict[str, Any]:
+    token = str(share.get("token") or "").strip()
+    if not token:
+        return dict(share)
+    out = dict(share)
+    share_url = _practice_share_url(request, token)
+    out["url"] = share_url
+    out["qr_url"] = f"/api/practice/qr/{token}"
+    out["qr_data_url"] = None
+    if str(share.get("status") or "active") == "active":
+        device = (device_id or practice_device_id_from_request(request) or "").strip()
+        if device:
+            try:
+                lead = issue_lead_token(token, share.get("expires_at"), device_id=device)
+                out["lead_token"] = lead
+                out["lead_url"] = f"{share_url}?lead={quote(lead, safe='')}"
+            except ValueError:
+                out["lead_token"] = None
+                out["lead_url"] = None
+                out["lead_requires_device"] = True
+        else:
+            out["lead_token"] = None
+            out["lead_url"] = None
+            out["lead_requires_device"] = True
+    return out
+
+
+def _require_practice_lead(
+    request: Request,
+    token: str,
+    lead: str,
+    share_expires_at: Any,
+    *,
+    song_resolve: bool = False,
+) -> str:
+    """Validate device-bound lead token + rate limits. Returns device_id."""
+    device_id = practice_device_id_from_request(request)
+    if not device_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Open Leader mode on this device with your leader password.",
+        )
+    if not verify_lead_token(token, lead, share_expires_at, device_id=device_id):
+        raise HTTPException(
+            status_code=401,
+            detail="Leader session is invalid, expired, or from another device. Enter Leader mode again.",
+        )
+    if not renew_practice_leader_seat(token, device_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Another leader is logged in. Re-enter Leader mode to take over.",
+        )
+    allowed, retry_after = check_practice_lead_allowed(request, token, device_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many leader requests. Please slow down.",
+            headers={"Retry-After": str(max(1, retry_after))},
+        )
+    if song_resolve:
+        ok_song, retry_song = check_practice_lead_song_allowed(request, token, device_id)
+        if not ok_song:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many song lookups. Please slow down.",
+                headers={"Retry-After": str(max(1, retry_song))},
+            )
+    return device_id
+
+
+def _claim_leader_seat_or_busy(
+    request: Request,
+    token: str,
+    *,
+    force: bool = False,
+) -> tuple[Optional[str], Optional[JSONResponse]]:
+    """Claim exclusive leader seat. Returns (device_id, error_response)."""
+    device = practice_device_id_from_request(request)
+    if not device:
+        return None, JSONResponse(
+            {
+                "ok": False,
+                "error": "This browser could not start leader mode. Refresh and try again.",
+                "requires_pin": True,
+            },
+            status_code=400,
+            headers=practice_no_store_headers(),
+        )
+    seat = claim_practice_leader_seat(token, device, force=force)
+    if not seat.get("ok"):
+        status = 409 if seat.get("leader_busy") else 400
+        return None, JSONResponse(
+            {
+                "ok": False,
+                "error": seat.get("error") or "Could not start leader mode.",
+                "leader_busy": bool(seat.get("leader_busy")),
+                "requires_pin": True,
+            },
+            status_code=status,
+            headers=practice_no_store_headers(),
+        )
+    return device, None
+
+
+@app.get("/api/practice/shares/recent")
+def api_list_recent_practice_shares(
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Creator history: active + expired shares (titles only; no plaintext PIN)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    parish_id: Optional[str] = None
+    church_ctx: Optional[dict[str, Any]] = None
+    try:
+        from services.parish_store import get_user_parish_context
+
+        ctx = get_user_parish_context(session.user.user_id)
+        church_ctx = ctx if isinstance(ctx, dict) else None
+        pid = (ctx or {}).get("parish_id")
+        parish_id = str(pid).strip() if pid else None
+    except Exception:
+        parish_id = None
+
+    device_id = practice_device_id_from_request(request)
+    shares = list_recent_practice_shares(
+        created_by_user_id=session.user.user_id,
+        parish_id=parish_id,
+    )
+    stats_map = get_practice_visit_stats_batch(
+        [str(s.get("token") or "") for s in shares if isinstance(s, dict)]
+    )
+    enriched = []
+    for share in shares:
+        item = (
+            _enrich_practice_share_urls(request, share, device_id=device_id)
+            if share.get("status") == "active"
+            else dict(share)
+        )
+        tok = str(item.get("token") or "").strip()
+        st = stats_map.get(tok) or {}
+        item["unique_visitors"] = int(st.get("unique_visitors") or 0)
+        item["active_now"] = int(st.get("active_now") or 0)
+        enriched.append(item)
+
+    from services.choir_practice_shares import count_active_practice_shares
+    from services.free_tier import is_free_tier_account, practice_share_quota_payload
+
+    active_count = count_active_practice_shares(
+        parish_id=parish_id,
+        created_by_user_id=session.user.user_id,
+    )
+    free_tier = is_free_tier_account(church_ctx, user=session.user)
+    quota = practice_share_quota_payload(is_free_tier=free_tier, active_count=active_count)
+    return {"ok": True, "shares": enriched, "is_free_tier": free_tier, **quota}
+
+
+@app.get("/api/practice/{token}")
+def api_practice_share(
+    token: str,
+    request: Request,
+) -> Any:
+    """Public read-only lyrics snapshot for choir rehearsal (token is the secret)."""
+    if token.strip().lower() in {"qr", "shares"}:
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    allowed_tok, retry_tok = check_practice_token_allowed(tok)
+    if not allowed_tok:
+        return _practice_rate_limit_response(retry_tok)
+
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    can_edit = False
+    if lead:
+        device_id = practice_device_id_from_request(request)
+        can_edit = bool(device_id) and verify_lead_token(
+            tok, lead, row.get("expires_at"), device_id=device_id
+        )
+        # Do not count GET polls against the leader mutation budget.
+        # Polling every few seconds would exhaust it in minutes.
+    unlocked = is_unlocked(request, tok, row.get("expires_at")) or can_edit
+    # Count unique openers (upsert); polls only refresh last_seen.
+    try:
+        record_practice_visit(request, tok)
+    except Exception:
+        logger.exception("practice visit record failed token=%s", tok[:8])
+    payload = fetch_practice_share(tok, unlocked=unlocked, can_edit=can_edit)
+    if not payload.get("ok"):
+        raise HTTPException(status_code=404, detail=payload.get("error") or "Not found.")
+    try:
+        payload["active_now"] = int(count_practice_active_now(tok))
+    except Exception:
+        payload["active_now"] = 0
+    return JSONResponse(payload, headers=practice_no_store_headers())
+
+
+@app.get("/api/practice/{token}/stats")
+def api_practice_share_stats(
+    token: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Creator-only: unique visitors and who is active on this practice link."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if token.strip().lower() in {"qr", "shares"}:
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    if str(row.get("created_by") or "").strip() != session.user.user_id:
+        raise HTTPException(status_code=403, detail="Only the creator can view practice stats.")
+    stats = get_practice_visit_stats(tok)
+    if not stats.get("ok"):
+        raise HTTPException(status_code=400, detail=stats.get("error") or "Could not load stats.")
+    return stats
+
+
+@app.post("/api/practice/{token}/unlock")
+def api_practice_unlock(
+    token: str,
+    body: PracticeUnlockBody,
+    request: Request,
+) -> Any:
+    """Verify leader password → device-bound lead token (edit mode).
+
+    Choir lyrics are open without a PIN. Only the leader password unlocks edit mode.
+    Only one leader device at a time; pass force=true to take over.
+    """
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_pin_unlock_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    if not try_acquire_unlock_slot():
+        return _practice_rate_limit_response(2)
+    try:
+        result = verify_practice_share_pin(tok, body.pin or "")
+    finally:
+        release_unlock_slot()
+    if not result.get("ok"):
+        status = 401 if result.get("requires_pin") else 404
+        return JSONResponse(
+            result,
+            status_code=status,
+            headers=practice_no_store_headers(),
+        )
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+
+    if not result.get("is_leader"):
+        # Guest PIN path removed — lyrics are open; unlock is leader-only.
+        return JSONResponse(
+            {"ok": False, "error": "Enter the leader password to edit.", "requires_pin": True},
+            status_code=401,
+            headers=practice_no_store_headers(),
+        )
+
+    device, busy = _claim_leader_seat_or_busy(request, tok, force=bool(body.force))
+    if busy is not None:
+        return busy
+    assert device is not None
+    try:
+        lead = issue_lead_token(tok, row.get("expires_at"), device_id=device)
+    except ValueError as exc:
+        return JSONResponse(
+            {"ok": False, "error": str(exc), "requires_pin": True},
+            status_code=400,
+            headers=practice_no_store_headers(),
+        )
+    out = dict(result)
+    out["lead_token"] = lead
+    out["can_edit"] = True
+    try:
+        record_practice_visit(request, tok)
+        out["active_now"] = int(count_practice_active_now(tok))
+    except Exception:
+        out["active_now"] = int(out.get("active_now") or 0)
+    return JSONResponse(out, headers=practice_no_store_headers())
+
+
+@app.post("/api/practice/{token}/lead")
+def api_practice_lead(
+    token: str,
+    body: PracticeLeadBody,
+    request: Request,
+) -> Any:
+    """Leader entry — edit mode via signed lead token. One leader at a time."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    device_id = practice_device_id_from_request(request)
+    if not device_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Open Leader mode on this device with your leader password.",
+        )
+    if not verify_lead_token(tok, body.lead_token, row.get("expires_at"), device_id=device_id):
+        raise HTTPException(
+            status_code=401,
+            detail="Leader session is invalid, expired, or from another device. Enter Leader mode again.",
+        )
+    seat = claim_practice_leader_seat(tok, device_id, force=bool(body.force))
+    if not seat.get("ok"):
+        return JSONResponse(
+            {
+                "ok": False,
+                "error": seat.get("error") or "A leader is already logged in.",
+                "leader_busy": bool(seat.get("leader_busy")),
+            },
+            status_code=409 if seat.get("leader_busy") else 400,
+            headers=practice_no_store_headers(),
+        )
+    allowed, retry_after = check_practice_lead_allowed(request, tok, device_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many leader requests. Please slow down.",
+            headers={"Retry-After": str(max(1, retry_after))},
+        )
+    payload = fetch_practice_share(tok, unlocked=True, can_edit=True)
+    try:
+        record_practice_visit(request, tok)
+        payload["active_now"] = int(count_practice_active_now(tok))
+    except Exception:
+        payload["active_now"] = int(payload.get("active_now") or 0)
+    return JSONResponse(payload, headers=practice_no_store_headers())
+
+
+@app.post("/api/practice/{token}/lyrics")
+def api_practice_lyrics_update(
+    token: str,
+    body: PracticeLyricsUpdateBody,
+    request: Request,
+) -> Any:
+    """Practice-only lyric edits for the share leader. Never writes to the hymn catalog."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    _require_practice_lead(request, tok, body.lead_token, row.get("expires_at"))
+    songs = [s.model_dump() for s in body.songs]
+    result = update_practice_share_lyrics(tok, songs_update=songs)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not save.")
+    return JSONResponse(result, headers=practice_no_store_headers())
+
+
+@app.get("/api/practice/{token}/parish-members")
+def api_practice_parish_members(
+    token: str,
+    request: Request,
+) -> Any:
+    """Leader-only: parish media team members who can receive a lyrics handoff email."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    _require_practice_lead(request, tok, lead, row.get("expires_at"))
+    parish_id = str(row.get("parish_id") or "").strip()
+    if not parish_id:
+        raise HTTPException(
+            status_code=400,
+            detail="This practice share is not linked to a parish team.",
+        )
+    from services.parish_store import list_team_members
+
+    members = []
+    for m in list_team_members(parish_id):
+        email = str(m.get("email") or "").strip()
+        if not email:
+            continue
+        members.append(
+            {
+                "user_id": str(m.get("user_id") or ""),
+                "email": email,
+                "first_name": str(m.get("first_name") or "").strip(),
+                "last_name": str(m.get("last_name") or "").strip(),
+                "role": str(m.get("role") or "").strip(),
+            }
+        )
+    return JSONResponse(
+        {"ok": True, "parish_id": parish_id, "members": members},
+        headers=practice_no_store_headers(),
+    )
+
+
+@app.post("/api/practice/{token}/send-to-member")
+def api_practice_send_to_member(
+    token: str,
+    body: PracticeSendToMemberBody,
+    request: Request,
+) -> Any:
+    """Email the current practice lyric configuration to a parish team member."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    _require_practice_lead(request, tok, body.lead_token, row.get("expires_at"))
+    parish_id = str(row.get("parish_id") or "").strip()
+    if not parish_id:
+        raise HTTPException(
+            status_code=400,
+            detail="This practice share is not linked to a parish team.",
+        )
+    from services.email_notifications import notify_practice_lyrics_handoff, safe_send
+    from services.parish_store import list_team_members
+
+    uid = (body.user_id or "").strip()
+    target = None
+    for m in list_team_members(parish_id):
+        if str(m.get("user_id") or "") == uid:
+            target = m
+            break
+    if not target:
+        raise HTTPException(status_code=404, detail="Member not found on this parish team.")
+    email = str(target.get("email") or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="That member has no email on file.")
+
+    first = str(target.get("first_name") or "").strip()
+    last = str(target.get("last_name") or "").strip()
+    name = (first + " " + last).strip() or email
+    handoff = create_lyrics_handoff(
+        practice_token=tok,
+        recipient_user_id=uid,
+        recipient_email=email,
+        recipient_name=name,
+        sender_label="Choir leader",
+    )
+    if not handoff.get("ok"):
+        raise HTTPException(status_code=400, detail=handoff.get("error") or "Could not prepare lyrics.")
+
+    result = safe_send(
+        "practice_lyrics_handoff",
+        notify_practice_lyrics_handoff,
+        email=email,
+        first_name=first,
+        mass_date=str(handoff.get("mass_date") or ""),
+        mass_title=str(handoff.get("mass_title") or ""),
+        parish_name=str(handoff.get("parish_name") or ""),
+        sender_label=str(handoff.get("sender_label") or "Choir leader"),
+        song_count=int(handoff.get("song_count") or 0),
+        handoff=str(handoff.get("id") or ""),
+    )
+    if not result.ok:
+        raise HTTPException(
+            status_code=503,
+            detail=result.error or "Email could not be sent. Check email configuration.",
+        )
+    return JSONResponse(
+        {
+            "ok": True,
+            "sent_to": email,
+            "member_name": name,
+            "handoff_id": handoff.get("id"),
+            "song_count": handoff.get("song_count"),
+        },
+        headers=practice_no_store_headers(),
+    )
+
+
+@app.get("/api/practice/lyrics-handoff/{handoff_id}")
+def api_practice_lyrics_handoff_get(
+    handoff_id: str,
+    session: AuthSession = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Fetch a practice→Mass lyrics handoff for the signed-in parish member."""
+    row = get_lyrics_handoff(handoff_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="This lyrics link is invalid or has expired.")
+    ctx = get_church_profile_context() or {}
+    parish_id = str(ctx.get("parish_id") or "").strip()
+    handoff_parish = str(row.get("parish_id") or "").strip()
+    if not parish_id or parish_id != handoff_parish:
+        raise HTTPException(status_code=403, detail="This lyrics handoff belongs to another parish.")
+    return public_handoff_payload(row)
+
+
+@app.get("/api/practice/{token}/catalog")
+def api_practice_catalog(
+    token: str,
+    request: Request,
+) -> Any:
+    """Leader-only song directory for replacing practice songs (no lyric bodies)."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    _require_practice_lead(request, tok, lead, row.get("expires_at"))
+    return JSONResponse(
+        {"ok": True, "songs": practice_catalog_index()},
+        headers=practice_no_store_headers(),
+    )
+
+
+@app.get("/api/practice/{token}/song")
+def api_practice_resolve_song(
+    token: str,
+    request: Request,
+) -> Any:
+    """Leader-only: resolve a catalog song with parish lyrics for this practice share."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    _require_practice_lead(request, tok, lead, row.get("expires_at"), song_resolve=True)
+    hymn_id = (request.query_params.get("hymn_id") or "").strip()
+    section = (request.query_params.get("section") or "").strip().lower()
+    if not hymn_id:
+        raise HTTPException(status_code=400, detail="hymn_id is required.")
+    parish_id = str(row.get("parish_id") or "").strip() or None
+    song = resolve_practice_song(parish_id=parish_id, hymn_id=hymn_id, section=section)
+    if not song:
+        raise HTTPException(status_code=404, detail="Song not found or has no lyrics.")
+    return JSONResponse({"ok": True, "song": song}, headers=practice_no_store_headers())
+
+
+@app.post("/api/practice/share")
+def api_create_practice_share(
+    body: PracticeShareBody,
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    parish_id: Optional[str] = None
+    created_by: Optional[str] = None
+    if session:
+        created_by = session.user.user_id
+        try:
+            from services.parish_store import get_user_parish_context
+
+            ctx = get_user_parish_context(session.user.user_id)
+            pid = (ctx or {}).get("parish_id")
+            parish_id = str(pid).strip() if pid else None
+        except Exception:
+            parish_id = None
+
+    parish_name = (body.parish_name or "").strip()
+    if not parish_name:
+        parish_name = get_community_name()
+
+    actor_key = session.user.user_id if session else "anon"
+    allowed, retry_after = check_practice_share_create_allowed(request, actor_key)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+
+    from services.feature_flags import resolve_flags
+
+    if not resolve_flags(parish_id=parish_id).get("choir_practice_shares", True):
+        raise HTTPException(
+            status_code=403,
+            detail="Choir practice shares are temporarily disabled.",
+        )
+
+    # Free tier: max N concurrent active choir lyric shares.
+    try:
+        from services.choir_practice_shares import count_active_practice_shares
+        from services.free_tier import (
+            FREE_TIER_ACTIVE_PRACTICE_SHARES,
+            free_tier_practice_share_blocked_detail,
+            is_free_tier_account,
+        )
+        from services.user_church_context import get_church_profile_context
+
+        church_ctx = get_church_profile_context()
+        if session and is_free_tier_account(church_ctx, user=session.user):
+            active = count_active_practice_shares(
+                parish_id=parish_id,
+                created_by_user_id=created_by,
+            )
+            if active >= FREE_TIER_ACTIVE_PRACTICE_SHARES:
+                raise HTTPException(
+                    status_code=403,
+                    detail=free_tier_practice_share_blocked_detail(),
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning("practice share free-tier check failed", exc_info=True)
+
+    songs = [s.model_dump() for s in body.songs]
+    try:
+        result = create_practice_share(
+            created_by_user_id=created_by,
+            parish_id=parish_id,
+            mass_date=body.mass_date.strip(),
+            mass_title=body.mass_title,
+            parish_name=parish_name,
+            celebrant=body.celebrant,
+            songs=songs,
+            ttl_days=body.ttl_days,
+            optional_pin=body.optional_pin,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    device_id = practice_device_id_from_request(request)
+    if not device_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing device id. Refresh LiturgyFlow and try again.",
+        )
+    enriched = _enrich_practice_share_urls(request, result, device_id=device_id)
+
+    # Email the auto-generated leader password to the creator (never to the choir).
+    leader_plain = str(result.get("leader_pin") or "").strip()
+    creator_email = str(getattr(session.user, "email", "") or "").strip() if session else ""
+    if leader_plain and creator_email:
+        from services.email_notifications import notify_practice_leader_password, safe_send
+
+        first_name = str(getattr(session.user, "first_name", "") or "").strip() if session else ""
+        mail = safe_send(
+            "practice_leader_password",
+            notify_practice_leader_password,
+            email=creator_email,
+            first_name=first_name,
+            mass_date=str(result.get("mass_date") or body.mass_date or ""),
+            mass_title=str(result.get("mass_title") or body.mass_title or ""),
+            parish_name=parish_name,
+            leader_pin=leader_plain,
+            practice_url=str(enriched.get("url") or ""),
+        )
+        enriched["leader_pin_emailed"] = bool(mail.ok)
+        if not mail.ok:
+            enriched["leader_pin_email_error"] = mail.error or "email not sent"
+    else:
+        enriched["leader_pin_emailed"] = False
+
+    return enriched
+
+
+@app.post("/api/practice/{token}/revoke")
+def api_revoke_practice_share(
+    token: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Owner-only: expire an active practice share immediately."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    result = revoke_practice_share(
+        token.strip(),
+        actor_user_id=session.user.user_id,
+    )
+    if not result.get("ok"):
+        detail = str(result.get("error") or "Could not expire share.")
+        status = 403 if "creator" in detail.lower() else 404
+        raise HTTPException(status_code=status, detail=detail)
+    return result
+
+
+@app.post("/api/practice/{token}/reset-pin")
+def api_reset_practice_share_pin(
+    token: str,
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Owner-only: issue a new PIN (returned once in plaintext)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    try:
+        result = reset_practice_share_pin(
+            token.strip(),
+            actor_user_id=session.user.user_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    if not result.get("ok"):
+        detail = str(result.get("error") or "Could not reset PIN.")
+        status = 403 if "creator" in detail.lower() else 404
+        raise HTTPException(status_code=status, detail=detail)
+    return _enrich_practice_share_urls(
+        request,
+        result,
+        device_id=practice_device_id_from_request(request),
+    )
+
+
+@app.get("/api/catholic-news")
+def api_catholic_news(
+    vatican: bool = True,
+    cna: bool = True,
+    limit: int = 6,
+    offset: int = 0,
+    max_age_days: int = 3,
+) -> Any:
+    """Headlines from Vatican News and Catholic News Agency RSS (fresh each request)."""
+    cap = max(1, min(int(limit), 15))
+    off = max(0, int(offset))
+    age = max(0, min(int(max_age_days), 14))
+    return fetch_catholic_headlines(
+        include_vatican=vatican,
+        include_cna=cna,
+        max_items=cap,
+        offset=off,
+        max_age_days=age,
+    )
+
+
+@app.get("/api/wyd-news")
+def api_wyd_news(limit: int = 6) -> Any:
+    """World Youth Day Seoul 2027 announcements (official site) plus countdown metadata."""
+    from datetime import date
+
+    from services.wyd_news import fetch_wyd_announcements
+
+    cap = max(1, min(int(limit), 15))
+    errors: list[str] = []
+
+    # Primary source: the official WYD announcement board (server-rendered).
+    items: list[Any] = []
+    try:
+        items = fetch_wyd_announcements(limit=cap)
+    except Exception as exc:  # pragma: no cover - defensive
+        errors.append(f"WYD site: {exc}")
+
+    # Fallback: keyword-filtered Catholic news if the official board is empty.
+    if not items:
+        feed = fetch_catholic_headlines(
+            include_vatican=True,
+            include_cna=True,
+            max_items=cap,
+            offset=0,
+            max_age_days=0,
+            keywords=["world youth day", "wyd", "seoul 2027", "jornada mundial"],
+        )
+        items = feed.get("items", [])
+        errors.extend(feed.get("errors", []))
+
+    event_start = date(2027, 8, 3)
+    event_end = date(2027, 8, 8)
+    days_until = (event_start - date.today()).days
+    return {
+        "ok": bool(items) or not errors,
+        "items": items,
+        "errors": errors,
+        "event_start": event_start.isoformat(),
+        "event_end": event_end.isoformat(),
+        "location": "Seoul, South Korea",
+        "days_until": days_until,
+        "official_url": "https://wydseoul.org/en",
+    }
+
+
+@app.get("/api/ewtn/radio")
+def api_ewtn_radio() -> Any:
+    """Catholic live radio stations (EWTN feeds + curated networks)."""
+    return radio_catalog()
+
+
+@app.get("/api/calendar/month")
+def api_calendar_month(
+    year: int,
+    month: int,
+    lang: str = "english",
+) -> Any:
+    """Lightweight per-day summaries for the liturgical calendar grid.
+
+    ``lang=tagalog`` uses Tagalog titles/snippets; ``english`` uses the
+    English lectionary cache plus Philippines Proper day titles.
+    """
+    try:
+        return fetch_calendar_month(year, month, language=lang)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/readings/{date}")
+def api_readings(
+    date: str,
+    refresh: bool = False,
+    lang: str = "english",
+    _session: Optional[AuthSession] = Depends(optional_session),
+) -> JSONResponse:
+    """Fast lectionary readings for dashboard cards (no song discovery).
+
+    Public liturgical data — anonymous-friendly, mirroring ``POST /api/preview``
+    so the home dashboard loads readings before/without sign-in.
+    ``lang=tagalog`` pulls Tagalog reading texts.
+    """
+    payload, from_cache = readings_snapshot(
+        date.strip(), force_refresh=refresh, language=lang
+    )
+    if not payload.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=payload.get("error") or "Unable to load readings.",
+        )
+    complete = bool(payload.get("readings_complete"))
+    max_age = 3600 if from_cache and complete else 15
+    return JSONResponse(
+        payload,
+        headers={"Cache-Control": f"private, max-age={max_age}"},
+    )
+
+
+@app.get("/api/gospel-image/{date}")
+def api_gospel_image(date: str) -> JSONResponse:
+    """Gospel-matched background image (Openverse / Creative Commons) for the home card."""
+    from services.gospel_image_search import fetch_gospel_background
+
+    payload = fetch_gospel_background(date.strip())
+    max_age = 21600 if payload.get("ok") else 300
+    return JSONResponse(payload, headers={"Cache-Control": f"public, max-age={max_age}"})
+
+
+@app.post("/api/preview")
+async def api_preview(
+    body: PreviewBody,
+    _session: Optional[AuthSession] = Depends(optional_session),
+) -> Any:
+    """Lectionary + hymn preview for Mass Builder and public landing try-flow."""
+    p = await run_in_threadpool(
+        fetch_preview,
+        body.date.strip(),
+        readings_only=body.readings_only,
+        force_refresh=body.refresh,
+        language=body.mass_language,
+    )
+    return _preview_to_json(p)
+
+
+@app.get("/api/mass/smart-defaults")
+def api_mass_smart_defaults(
+    date: str = "",
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> Any:
+    """Return habit-based Mass Builder defaults for the signed-in parish user."""
+    from services.feature_flags import resolve_flags
+    from services.gospel_mood import infer_gospel_mood_key_from_preview
+    from services.liturgical_calendar import get_liturgical_color
+    from services.mass_habits import smart_defaults_for_session
+    from services.song_selection import default_song_selections_for_preview
+
+    mass_date = (date or "").strip()
+    if len(mass_date) < 8:
+        raise HTTPException(status_code=400, detail="Provide date as YYYY-MM-DD.")
+
+    parish_id = _session_parish_id(session)
+    flags = resolve_flags(parish_id=parish_id or None)
+    if flags.get("mass_habits") is False:
+        return {
+            "ok": True,
+            "has_habits": False,
+            "disabled": True,
+            "suggestions": {},
+            "confidence": {},
+            "hint": "Mass habit smart defaults are turned off.",
+        }
+
+    if not session or not session.user or not session.user.user_id:
+        return {
+            "ok": True,
+            "has_habits": False,
+            "suggestions": {},
+            "confidence": {},
+            "hint": "Sign in to unlock habit-based Mass defaults.",
+        }
+
+    season_key = "ordinary_time"
+    gospel_mood = "reverent"
+    seasonal_songs: dict[str, str] = {}
+    try:
+        color = get_liturgical_color(mass_date)
+        season_key = str((color or {}).get("season") or "ordinary_time")
+    except Exception:
+        season_key = "ordinary_time"
+    try:
+        preview = fetch_preview(mass_date, readings_only=True)
+        preview_dict = {
+            "season": season_key or preview.season or "",
+            "title": preview.title or "",
+            "gospel_reference": preview.gospel_reference or "",
+            "gospel_text": preview.gospel_text or "",
+            "gospel_quote": preview.gospel_quote or "",
+        }
+        gospel_mood = infer_gospel_mood_key_from_preview(preview_dict)
+        seasonal_songs = default_song_selections_for_preview(season_key, preview_dict)
+    except Exception:
+        logger.debug("smart-defaults preview/mood failed", exc_info=True)
+
+    return smart_defaults_for_session(
+        user_id=session.user.user_id,
+        parish_id=parish_id,
+        access_token=session.token,
+        mass_date=mass_date,
+        season=season_key,
+        gospel_mood=gospel_mood,
+        seasonal_songs=seasonal_songs or None,
+    )
+
+
+@app.post("/api/generate")
+def api_generate(
+    body: GenerateBody,
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> Any:
+    """Build Mass media and return local download URLs.
+
+    Sync ``def`` (not async): FastAPI runs this in a worker thread so
+    BaseHTTPMiddleware cannot deadlock against ``run_in_threadpool`` while the
+    UI sits at ~62%. Optional half-fold A4 leaflet PDF via ``include_leaflet``.
+    """
+    print(f"[generate] start date={body.date!r}", flush=True)
+    from services.membership_config import is_superadmin_user
+    from services.slide_kinds import normalize_slide_kinds
+
+    wanted_kinds = normalize_slide_kinds(body.slide_kinds)
+    if body.slide_kinds:
+        if not session or not is_superadmin_user(session.user):
+            raise HTTPException(status_code=403, detail="Partial slide generate is limited to superadmin.")
+        if not wanted_kinds:
+            raise HTTPException(status_code=400, detail="Choose at least one valid slide to generate.")
+    slide_kinds_payload = sorted(wanted_kinds) if wanted_kinds else None
+    song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    temp_assets: list[Path] = []
+    divider_path = None
+    if body.divider_poster_basename and str(body.divider_poster_basename).strip():
+        divider_path = _resolve_mass_asset_path(
+            session, str(body.divider_poster_basename).strip(), temp_assets=temp_assets
+        )
+    ann_paths: list[Path] = []
+    for raw in body.announcement_basenames or []:
+        bn = str(raw).strip()
+        if not bn:
+            continue
+        p = _resolve_mass_asset_path(session, bn, temp_assets=temp_assets)
+        if p:
+            ann_paths.append(p)
+        if len(ann_paths) >= 24:
+            break
+    sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
+    psalm_override = (body.psalm_text_override or "").strip() or None
+    gospel_override = (body.gospel_quote_override or "").strip() or None
+
+    from services.parish_hymn_overrides import merge_parish_lyric_overrides
+
+    hymn_overrides = merge_parish_lyric_overrides(
+        _session_parish_id(session),
+        song_selections=song_map,
+        existing=body.hymn_lyric_overrides,
+    ) or None
+
+    video_paths = _materialize_video_replacements(
+        session, body.video_replacements, temp_assets=temp_assets
+    )
+
+    # Resolve credit tier before building media so free-tier gens skip curated posters.
+    # Premium tokens are opt-in via body.use_premium_token (Unlock on poster picker).
+    generation_tier = "paid"
+    if session and session.user and session.user.user_id:
+        try:
+            from services.free_mass_credit import (
+                free_mass_status_for_user,
+                resolve_generation_tier,
+            )
+            from services.membership_config import membership_allows_full_access
+            from services.stripe_billing import billing_enabled as _billing_on
+
+            church_ctx = get_church_profile_context()
+            has_full = membership_allows_full_access(church_ctx, user=session.user)
+            if _billing_on() and not has_full:
+                want_premium = bool(getattr(body, "use_premium_token", False))
+                generation_tier = resolve_generation_tier(
+                    session.user.user_id,
+                    has_full_access=False,
+                    billing_on=True,
+                    use_premium_token=want_premium,
+                )
+                if generation_tier == "none":
+                    credit = free_mass_status_for_user(
+                        session.user.user_id,
+                        has_full_access=False,
+                        billing_on=True,
+                    )
+                    premium_left = int(credit.get("premium_mass_remaining") or 0)
+                    if premium_left > 0 and not want_premium:
+                        raise HTTPException(
+                            status_code=403,
+                            detail=(
+                                "You've used this month's free Masses. "
+                                "Unlock curated posters with a premium Mass credit, "
+                                "or start a 14-day trial under Settings → Billing."
+                            ),
+                        )
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You've used this month's free Masses. Start a 14-day trial under Settings → Billing.",
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            logger.warning("generation tier resolve failed", exc_info=True)
+            generation_tier = "paid"
+
+    # Prefer shared weekly heroes only — never generate a one-off poster here.
+    # Partial weeks are fine: reuse the requested style when ready, else any ready
+    # style. If nothing is ready, fall back to non-AI dividers (no quota burn).
+    # Monthly free-tier Masses never get curated AI divider posters.
+    # Unlocked premium tokens always try curated posters (client may omit include_ai).
+    reuse_poster = False
+    free_tier_footer_brand = ""
+    include_footer = bool(body.include_footer)
+    if generation_tier == "free":
+        # Soft product mark on monthly free decks only (not premium tokens / paid).
+        from services.free_tier import FREE_TIER_MASS_FOOTER_BRAND
+
+        free_tier_footer_brand = FREE_TIER_MASS_FOOTER_BRAND
+        include_footer = True
+    if bool(body.leaflet_only):
+        include_ai = False
+    elif generation_tier == "free":
+        include_ai = False
+    elif generation_tier == "premium":
+        include_ai = True
+    else:
+        include_ai = bool(body.include_ai_mass_poster)
+    resolved_ai_style = (body.ai_poster_style or "cinematic").strip() or "cinematic"
+    if include_ai:
+        from services.ai_styles import resolve_ai_image_style
+        from services.weekly_style_posters import (
+            catalog_for_date,
+            normalize_mass_date,
+            style_ready,
+            sunday_for_mass_date,
+        )
+
+        mass = normalize_mass_date(body.date.strip())
+        style_key = resolve_ai_image_style(resolved_ai_style)
+        sunday = sunday_for_mass_date(mass) if mass else ""
+        catalog = catalog_for_date(mass or body.date.strip(), output_dir=_OUTPUT_DIR) if mass else {}
+        ready_ids = [
+            str(item.get("id") or "").strip()
+            for item in (catalog.get("items") or [])
+            if item.get("ready") and str(item.get("id") or "").strip()
+        ]
+        style_ok = bool(sunday and style_ready(sunday=sunday, style=style_key, output_dir=_OUTPUT_DIR))
+        if style_ok:
+            resolved_ai_style = style_key
+            reuse_poster = True
+            # One-time premium Mass tokens include curated posters without the
+            # unpaid poster meter (monthly free tier has no curated posters).
+            if generation_tier != "premium":
+                _enforce_ai_image_quota(
+                    session,
+                    request,
+                    source="mass-poster:weekly",
+                )
+        elif ready_ids and sunday:
+            # Requested style (often cinematic default) not ready yet — use a ready one.
+            fallback = ready_ids[0]
+            resolved_ai_style = fallback
+            reuse_poster = True
+            if generation_tier != "premium":
+                _enforce_ai_image_quota(
+                    session,
+                    request,
+                    source="mass-poster:weekly",
+                )
+        else:
+            include_ai = False
+
+    # No curated weekly hero available → classic green-gradient Mass dividers.
+    if not include_ai and not bool(body.leaflet_only):
+        try:
+            body.divider_style = "divider3"
+        except Exception:
+            pass
+
+    try:
+        print("[generate] building media…", flush=True)
+        parish_id = _session_parish_id(session) or "local"
+        parish_dna = None
+        try:
+            from services.parish_deck_dna import materialize_dna_for_generate
+
+            parish_dna = materialize_dna_for_generate(parish_id)
+        except Exception:
+            parish_dna = None
+        from services.memory_guard import heavy_job
+
+        try:
+            with heavy_job("api-generate"):
+                result = generate_mass_media(
+                    body.date.strip(),
+                    body.celebrant.strip(),
+                    co_celebrant=(body.co_celebrant or "").strip(),
+                    sentence_index=body.sentence_index,
+                    poster_template=body.poster_template,
+                    include_social_exports=body.include_social_exports,
+                    include_leaflet=bool(body.include_leaflet) or bool(body.leaflet_only),
+                    leaflet_only=bool(body.leaflet_only),
+                    include_gospel_art=False,
+                    include_ai_mass_poster=False
+                    if body.leaflet_only
+                    else include_ai,
+                    ai_poster_backend=(
+                        "openai"
+                        if (body.ai_poster_backend or "").strip().lower() in ("", "ai", "auto", "default")
+                        else (body.ai_poster_backend or "openai").strip().lower()
+                    ),
+                    ai_poster_style=resolved_ai_style,
+                    ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
+                    reuse_existing_poster=reuse_poster,
+                    community_name=body.community_name.strip() if body.community_name else None,
+                    song_selections=song_map,
+                    custom_theme=body.custom_theme,
+                    divider_poster_path=divider_path,
+                    divider_style=body.divider_style,
+                    lotw_poster=body.lotw_poster,
+                    lote_poster=body.lote_poster,
+                    announcement_image_paths=ann_paths or None,
+                    mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
+                    mass_collection_date_label=body.mass_collection_date_label.strip()
+                    if body.mass_collection_date_label
+                    else None,
+                    mass_collection_currency=body.mass_collection_currency.strip().upper()
+                    if body.mass_collection_currency
+                    else "PHP",
+                    food_sponsors=sponsors or None,
+                    include_mass_collection_slide=bool(body.include_mass_collection_slide),
+                    include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
+                    include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
+                    include_merienda_location_slide=bool(body.include_merienda_location_slide),
+                    include_welcoming_newcomers_slide=bool(body.include_welcoming_newcomers_slide),
+                    sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
+                    merienda_location=(body.merienda_location or "").strip() or None,
+                    announcement_bg_colors=body.announcement_bg_colors,
+                    custom_announcement_slides=body.custom_announcement_slides or None,
+                    psalm_text_override=psalm_override,
+                    psalm_refrain_index=body.psalm_refrain_index,
+                    psalm_response_override=(body.psalm_response_override or "").strip() or None,
+                    gospel_quote_override=gospel_override,
+                    hymn_typography=body.hymn_typography,
+                    include_church_logo=body.include_church_logo,
+                    include_church_name=body.include_church_name,
+                    include_footer=include_footer,
+                    footer_brand=free_tier_footer_brand or None,
+                    hymn_lyric_overrides=hymn_overrides,
+                    creed_choice=body.creed_choice,
+                    creed_language=body.creed_language,
+                    penitential_language=body.penitential_language,
+                    sanctus_language=body.sanctus_language,
+                    gloria_choice=body.gloria_choice,
+                    our_father_choice=body.our_father_choice,
+                    kyrie_choice=body.kyrie_choice,
+                    kyrie_tagalog_slide=body.kyrie_tagalog_slide,
+                    hymn_lyrics_layout=body.hymn_lyrics_layout,
+                    hymn_layout_overrides=body.hymn_layout_overrides,
+                    video_replacements=video_paths or None,
+                    mass_language=body.mass_language,
+                    show_hymn_section_labels=bool(body.show_hymn_section_labels),
+                    slide_kinds=slide_kinds_payload,
+                    parish_deck_dna=parish_dna,
+                )
+        except TimeoutError as exc:
+            try:
+                from services.admin_alerts import alert_mass_generate_failed_bg
+
+                alert_mass_generate_failed_bg(
+                    email=(session.user.email if session else "") or "",
+                    parish=(body.community_name or "").strip(),
+                    mass_date=body.date.strip(),
+                    error=str(exc),
+                    source="app",
+                )
+            except Exception:
+                pass
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except Exception as exc:
+            try:
+                from services.admin_alerts import alert_mass_generate_failed_bg
+
+                alert_mass_generate_failed_bg(
+                    email=(session.user.email if session else "") or "",
+                    parish=(body.community_name or "").strip(),
+                    mass_date=body.date.strip(),
+                    error=str(exc),
+                    source="app",
+                )
+            except Exception:
+                pass
+            raise
+    finally:
+        for p in temp_assets:
+            p.unlink(missing_ok=True)
+    if not result.ok:
+        try:
+            from services.admin_alerts import alert_mass_generate_failed_bg
+
+            alert_mass_generate_failed_bg(
+                email=(session.user.email if session else "") or "",
+                parish=(body.community_name or "").strip(),
+                mass_date=body.date.strip(),
+                error=result.error or "Generation failed.",
+                source="app",
+            )
+        except Exception:
+            pass
+        raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
+
+    print("[generate] ppt ready — returning URLs (zip/upload in background)", flush=True)
+
+    credit_status: Optional[dict[str, Any]] = None
+    if session and session.user and session.user.user_id and generation_tier in {"premium", "free"}:
+        try:
+            from services.free_mass_credit import (
+                consume_generation_credit,
+                free_mass_status_for_user,
+            )
+
+            consume_generation_credit(session.user.user_id, generation_tier)  # type: ignore[arg-type]
+            credit_status = free_mass_status_for_user(
+                session.user.user_id,
+                has_full_access=False,
+                billing_on=True,
+            )
+        except Exception:
+            logger.warning("mass generation credit update failed", exc_info=True)
+
+    bundle_rel = _bundle_zip_name(result.export_stem)
+    # Prefer an existing zip from a prior run; never block the response on zipping.
+    zip_ready = (_OUTPUT_DIR / bundle_rel).is_file()
+
+    lc = result.liturgical_color
+    liturgical_payload: Optional[dict[str, Any]] = None
+    if lc:
+        liturgical_payload = {
+            "color_name": lc.get("color_name"),
+            "hex": lc.get("hex"),
+            "season": lc.get("season"),
+            "rgb": list(lc.get("rgb", ())),
+        }
+    poster_ppt = result.poster_ppt_path
+    ppt_url = media_file_url(result.pptx_path.name) if result.pptx_path and result.pptx_path.is_file() else None
+    poster_url = media_file_url(result.poster_path.name) if result.poster_path and result.poster_path.is_file() else None
+    poster_ppt_url = (
+        media_file_url(poster_ppt.name) if poster_ppt and Path(poster_ppt).is_file() else None
+    )
+    leaflet_path = getattr(result, "leaflet_path", None)
+    leaflet_url = (
+        media_file_url(Path(leaflet_path).name)
+        if leaflet_path and Path(leaflet_path).is_file()
+        else None
+    )
+    zip_url = media_file_url(bundle_rel) if zip_ready else None
+
+    # Ownership must be registered before the response — the browser downloads
+    # immediately and /api/files/media/* 404s without it (UI stuck at 100%).
+    if session:
+        try:
+            print("[generate] registering ownership…", flush=True)
+            register_owned_files(session.user.user_id, _collect_generation_owned_paths(result))
+            print("[generate] ownership ok", flush=True)
+        except Exception:
+            logger.warning("register_owned_files failed", exc_info=True)
+
+    uid = session.user.user_id if session else None
+    token = session.token if session else None
+    parish_id = _session_parish_id(session)
+    habit_snapshot: Optional[dict[str, Any]] = None
+    try:
+        from services.gospel_mood import infer_gospel_mood_key_from_preview
+        from services.mass_habits import snapshot_from_generate
+
+        season_key = ""
+        if liturgical_payload:
+            season_key = str(liturgical_payload.get("season") or "").strip()
+        mood_key = ""
+        try:
+            mood_key = infer_gospel_mood_key_from_preview(
+                {
+                    "gospel_text": result.gospel_quote or "",
+                    "gospel_quote": result.gospel_quote or "",
+                    "gospel_reference": result.gospel_reference or "",
+                    "title": result.title or "",
+                    "season": season_key,
+                }
+            )
+        except Exception:
+            mood_key = ""
+        habit_snapshot = snapshot_from_generate(
+            songs=song_map or result.selected_songs,
+            creed_choice=body.creed_choice,
+            our_father_choice=body.our_father_choice,
+            mass_language=body.mass_language,
+            hymn_lyrics_layout=body.hymn_lyrics_layout,
+            include_church_logo=body.include_church_logo,
+            include_church_name=body.include_church_name,
+            include_footer=body.include_footer,
+            lotw_poster=body.lotw_poster,
+            lote_poster=body.lote_poster,
+            divider_style=body.divider_style,
+            poster_template=body.poster_template,
+            celebrant=body.celebrant.strip(),
+            season=season_key,
+            gospel_mood=mood_key,
+        )
+    except Exception:
+        habit_snapshot = None
+
+    _spawn_daemon(
+        _finish_generation_side_effects,
+        name="mass-gen-finish",
+        kwargs={
+            "result": result,
+            "user_id": uid,
+            "access_token": token,
+            "mass_date": body.date.strip(),
+            "celebrant": body.celebrant.strip(),
+            "skip_ownership": True,
+            "parish_id": parish_id,
+            "habit_snapshot": habit_snapshot,
+        },
+    )
+
+    try:
+        from services.admin_alerts import alert_mass_generated_bg
+
+        parish_label = (body.community_name or "").strip()
+        if not parish_label and parish_id:
+            try:
+                from services.parish_store import get_parish_by_id
+
+                parish_row = get_parish_by_id(parish_id) or {}
+                parish_label = str(
+                    parish_row.get("community_name") or parish_row.get("name") or ""
+                ).strip()
+            except Exception:
+                parish_label = ""
+        alert_mass_generated_bg(
+            email=(session.user.email if session else "") or "",
+            name=(
+                " ".join(
+                    p
+                    for p in (
+                        getattr(session.user, "first_name", "") if session else "",
+                        getattr(session.user, "last_name", "") if session else "",
+                    )
+                    if p
+                ).strip()
+                if session
+                else ""
+            ),
+            parish=parish_label,
+            mass_date=body.date.strip(),
+            slide_count=int(result.slide_count) if result.slide_count is not None else None,
+            title=str(result.title or ""),
+            source="app",
+        )
+    except Exception:
+        logger.warning("Mass generate ops alert failed", exc_info=True)
+
+    out: dict[str, Any] = {
+        "ok": True,
+        "title": result.title,
+        "gospel_reference": result.gospel_reference,
+        "slide_excerpt": result.slide_line_preview,
+        "gospel_quote": result.gospel_quote,
+        "liturgical_color": liturgical_payload,
+        "selected_songs": result.selected_songs,
+        "slide_count": result.slide_count,
+        "export_stem": result.export_stem,
+        "ai_poster_urls": _ai_poster_download_urls(),
+    }
+    if credit_status is not None:
+        out["generation_tier_used"] = generation_tier
+        out["premium_mass_limit"] = int(credit_status.get("premium_mass_limit") or 0)
+        out["premium_mass_remaining"] = int(credit_status.get("premium_mass_remaining") or 0)
+        out["premium_mass_used"] = bool(credit_status.get("premium_mass_used"))
+        out["free_tier_mass_limit"] = int(credit_status.get("free_tier_mass_limit") or 0)
+        out["free_tier_mass_remaining"] = int(credit_status.get("free_tier_mass_remaining") or 0)
+        out["free_tier_mass_used"] = bool(credit_status.get("free_tier_mass_used"))
+        out["next_generation_tier"] = credit_status.get("next_generation_tier") or "none"
+        out["can_use_premium_posters"] = bool(credit_status.get("can_use_premium_posters"))
+        # Legacy aliases (= premium one-time).
+        out["free_mass_limit"] = int(credit_status.get("free_mass_limit") or 0)
+        out["free_mass_remaining"] = int(credit_status.get("free_mass_remaining") or 0)
+        out["free_mass_used"] = bool(credit_status.get("free_mass_used"))
+    if ppt_url:
+        out["pptx_url"] = ppt_url
+    if poster_url:
+        out["poster_url"] = poster_url
+    if poster_ppt_url:
+        out["poster_ppt_url"] = poster_ppt_url
+    if leaflet_url:
+        out["leaflet_url"] = leaflet_url
+    if zip_url:
+        out["zip_url"] = zip_url
+    cues = _slideshow_cues_payload(getattr(result, "slideshow_cues", None))
+    if cues:
+        out["slideshow_cues"] = cues
+    print(
+        f"[generate] done stem={result.export_stem} slides={result.slide_count} pptx={bool(ppt_url)}",
+        flush=True,
+    )
+    return out
+
+
+@app.post("/api/access-request")
+def api_access_request(body: AccessRequestBody, request: Request) -> Any:
+    """Public landing registration interest form — emailed to admin for review."""
+    from services.access_request import (
+        submit_access_request,
+        validate_access_request,
+    )
+
+    if not body.privacy_consent:
+        raise HTTPException(
+            status_code=400,
+            detail="Please agree to the Privacy Policy and Terms before submitting.",
+        )
+    row = validate_access_request(
+        name=body.name,
+        email=body.email,
+        parish=body.parish,
+        message=body.message,
+        request=request,
+    )
+    return submit_access_request(row)
+
+
+@app.post("/api/contact")
+def api_contact(body: ContactBody, request: Request) -> Any:
+    """Public landing contact form — emailed to SUPERADMIN_EMAILS."""
+    from services.contact import (
+        enforce_contact_limits,
+        is_honeypot,
+        submit_contact,
+        validate_contact,
+    )
+
+    if is_honeypot(body.website):
+        return {"ok": True, "emailed": True}
+    if not body.privacy_consent:
+        raise HTTPException(
+            status_code=400,
+            detail="Please agree to the Privacy Policy before sending your message.",
+        )
+    row = validate_contact(
+        name=body.name,
+        email=body.email,
+        topic=body.topic,
+        message=body.message,
+        request=request,
+        started_at=body.started_at,
+    )
+    enforce_contact_limits(request=request, email=row.email)
+    return submit_contact(row)
+
+
+@app.post("/api/demo-generate")
+def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
+    """Guest one-click Mass PPTX from the marketing landing page.
+
+    Rate-limited per IP (1/day + burst + global ceiling). No uploads / parish
+    branding. Slides carry a Liturgyflow.com watermark. Reuses a random weekly
+    SA AI poster when one already exists for the Sunday; otherwise gradient dividers.
+    """
+    from random import choice as random_choice
+
+    from services.demo_access import (
+        DEMO_WATERMARK,
+        demo_download_url,
+        enforce_demo_rate_limits,
+        remaining_hint_after_consume,
+        validate_demo_date,
+        validate_mass_language,
+        validate_our_father,
+        validate_theme_id,
+    )
+    from services.mass_language import defaults_for_mass_language
+    from services.weekly_style_posters import catalog_for_date
+
+    enforce_demo_rate_limits(request)
+    mass_date = validate_demo_date(body.date)
+    celebrant = body.celebrant.strip()
+    if not celebrant:
+        raise HTTPException(status_code=400, detail="Enter the celebrant name.")
+
+    # Prefer explicit mass_language; fall back to Our Father language for older clients.
+    mass_lang = validate_mass_language(body.mass_language or body.our_father_choice)
+    lang_defaults = defaults_for_mass_language(mass_lang)
+    of_choice = validate_our_father(
+        body.our_father_choice
+        if (body.our_father_choice or "").strip()
+        else lang_defaults.get("our_father_choice", "english")
+    )
+    if mass_lang == "tagalog":
+        of_choice = "tagalog"
+    creed_choice = lang_defaults.get("creed_choice", "nicene")
+    rite_lang = "tagalog" if mass_lang == "tagalog" else "english"
+    kyrie_choice = "tagalog" if mass_lang == "tagalog" else "english"
+
+    theme = validate_theme_id(body.custom_theme)
+    song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    if song_map:
+        song_map.pop("extra_sections", None)
+        song_map.pop("meditation", None)
+
+    include_ai = False
+    ai_style = "cinematic"
+    try:
+        catalog = catalog_for_date(mass_date, output_dir=_OUTPUT_DIR)
+        ready = [
+            str(item.get("id") or "").strip()
+            for item in (catalog.get("items") or [])
+            if item.get("ready") and str(item.get("id") or "").strip()
+        ]
+        if ready:
+            ai_style = random_choice(ready)
+            include_ai = True
+    except Exception:
+        logger.exception("Demo weekly AI poster catalog failed; using gradient dividers")
+        include_ai = False
+
+    print(
+        f"[demo-generate] start date={mass_date!r} lang={mass_lang!r} "
+        f"ai_poster={include_ai} style={ai_style!r}",
+        flush=True,
+    )
+    from services.memory_guard import heavy_job
+
+    try:
+        with heavy_job("demo-generate"):
+            result = generate_mass_media(
+                mass_date,
+                celebrant,
+                co_celebrant="",
+                poster_template="liturgical_color",
+                include_social_exports=False,
+                include_gospel_art=False,
+                include_ai_mass_poster=include_ai,
+                ai_poster_style=ai_style,
+                reuse_existing_poster=True,
+                song_selections=song_map,
+                custom_theme=theme,
+                include_church_logo=False,
+                include_church_name=False,
+                include_footer=True,
+                footer_brand=DEMO_WATERMARK,
+                creed_choice=creed_choice,
+                creed_language=rite_lang,
+                penitential_language=rite_lang,
+                sanctus_language=rite_lang,
+                kyrie_choice=kyrie_choice,
+                kyrie_tagalog_slide=1,
+                our_father_choice=of_choice,
+                mass_language=mass_lang,
+                divider_style="divider3",
+                lotw_poster="lotw3",
+                lote_poster="lote3",
+                hymn_lyrics_layout="dual",
+                include_leaflet=bool(body.include_leaflet),
+            )
+    except TimeoutError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
+    if not result.pptx_path or not result.pptx_path.is_file():
+        raise HTTPException(status_code=500, detail="PowerPoint was not created.")
+
+    pptx_name = result.pptx_path.name
+    out = {
+        "ok": True,
+        "demo": True,
+        "title": result.title,
+        "gospel_reference": result.gospel_reference,
+        "slide_count": result.slide_count,
+        "export_stem": result.export_stem,
+        "selected_songs": result.selected_songs,
+        "watermark": DEMO_WATERMARK,
+        "pptx_url": demo_download_url(pptx_name),
+        "mass_language": mass_lang,
+        "divider_style": "divider3",
+        "ai_poster_used": include_ai,
+        "ai_poster_style": ai_style if include_ai else None,
+        **remaining_hint_after_consume(),
+    }
+    leaflet_path = getattr(result, "leaflet_path", None)
+    if leaflet_path and Path(leaflet_path).is_file():
+        try:
+            out["leaflet_url"] = demo_download_url(Path(leaflet_path).name)
+        except HTTPException:
+            pass
+    print(
+        f"[demo-generate] done stem={result.export_stem} slides={result.slide_count} "
+        f"ai={include_ai}",
+        flush=True,
+    )
+    try:
+        from services.demo_analytics import record_demo_generation
+
+        record_demo_generation(
+            request,
+            mass_date=mass_date,
+            mass_language=mass_lang,
+            celebrant=celebrant,
+            slide_count=int(result.slide_count or 0),
+            include_leaflet=bool(body.include_leaflet),
+            ai_poster_used=include_ai,
+            export_stem=str(result.export_stem or ""),
+        )
+    except Exception:
+        logger.exception("Demo analytics recording failed")
+    return out
+
+
+@app.get("/api/demo-download/{token}")
+def api_demo_download(token: str) -> FileResponse:
+    """Short-lived signed download for guest demo PPTX/PDF files."""
+    from services.demo_access import resolve_demo_download_token
+
+    name = resolve_demo_download_token(token)
+    path = resolve_under_root(_OUTPUT_DIR, name)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found or expired.")
+    lower = name.lower()
+    if lower.endswith(".pdf"):
+        media_type = "application/pdf"
+    else:
+        media_type = (
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
+    return FileResponse(
+        path,
+        media_type=media_type,
+        filename=name,
+    )
+
+
+@app.post("/api/regenerate-pptx")
+async def api_regenerate_pptx(
+    body: GenerateBody,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> Any:
+    """Rebuild the Mass PowerPoint with current hymn typography (overwrites existing .pptx)."""
+    song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    temp_assets: list[Path] = []
+    divider_path = None
+    if body.divider_poster_basename and str(body.divider_poster_basename).strip():
+        divider_path = _resolve_mass_asset_path(
+            session, str(body.divider_poster_basename).strip(), temp_assets=temp_assets
+        )
+    ann_paths: list[Path] = []
+    for raw in body.announcement_basenames or []:
+        bn = str(raw).strip()
+        if not bn:
+            continue
+        p = _resolve_mass_asset_path(session, bn, temp_assets=temp_assets)
+        if p:
+            ann_paths.append(p)
+        if len(ann_paths) >= 24:
+            break
+    sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
+    psalm_override = (body.psalm_text_override or "").strip() or None
+    gospel_override = (body.gospel_quote_override or "").strip() or None
+    from services.parish_hymn_overrides import merge_parish_lyric_overrides
+
+    hymn_overrides = merge_parish_lyric_overrides(
+        _session_parish_id(session),
+        song_selections=song_map,
+        existing=body.hymn_lyric_overrides,
+    ) or None
+    video_paths = _materialize_video_replacements(
+        session, body.video_replacements, temp_assets=temp_assets
+    )
+    parish_dna = None
+    try:
+        from services.parish_deck_dna import materialize_dna_for_generate
+
+        parish_dna = materialize_dna_for_generate(_session_parish_id(session) or "local")
+    except Exception:
+        parish_dna = None
+    try:
+        result = await run_in_threadpool(
+            regenerate_mass_pptx,
+            body.date.strip(),
+            body.celebrant.strip(),
+            co_celebrant=(body.co_celebrant or "").strip(),
+            sentence_index=body.sentence_index,
+            song_selections=song_map,
+            custom_theme=body.custom_theme,
+            hymn_typography=body.hymn_typography,
+            divider_poster_path=divider_path,
+            divider_style=body.divider_style,
+            lotw_poster=body.lotw_poster,
+            lote_poster=body.lote_poster,
+            announcement_image_paths=ann_paths or None,
+            mass_collection_amount=body.mass_collection_amount.strip()
+            if body.mass_collection_amount
+            else None,
+            mass_collection_date_label=body.mass_collection_date_label.strip()
+            if body.mass_collection_date_label
+            else None,
+            mass_collection_currency=body.mass_collection_currency.strip().upper()
+            if body.mass_collection_currency
+            else "PHP",
+            food_sponsors=sponsors or None,
+            include_mass_collection_slide=bool(body.include_mass_collection_slide),
+            include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
+            include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
+            include_merienda_location_slide=bool(body.include_merienda_location_slide),
+            include_welcoming_newcomers_slide=bool(body.include_welcoming_newcomers_slide),
+            sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
+            merienda_location=(body.merienda_location or "").strip() or None,
+            announcement_bg_colors=body.announcement_bg_colors,
+            custom_announcement_slides=body.custom_announcement_slides or None,
+            psalm_text_override=psalm_override,
+            psalm_refrain_index=body.psalm_refrain_index,
+            psalm_response_override=(body.psalm_response_override or "").strip() or None,
+            gospel_quote_override=gospel_override,
+            include_church_logo=body.include_church_logo,
+            include_church_name=body.include_church_name,
+            include_footer=body.include_footer,
+            hymn_lyric_overrides=hymn_overrides,
+            creed_choice=body.creed_choice,
+            creed_language=body.creed_language,
+            penitential_language=body.penitential_language,
+            sanctus_language=body.sanctus_language,
+            gloria_choice=body.gloria_choice,
+            our_father_choice=body.our_father_choice,
+            kyrie_choice=body.kyrie_choice,
+            kyrie_tagalog_slide=body.kyrie_tagalog_slide,
+            hymn_lyrics_layout=body.hymn_lyrics_layout,
+            hymn_layout_overrides=body.hymn_layout_overrides,
+            video_replacements=video_paths or None,
+            mass_language=body.mass_language,
+            show_hymn_section_labels=bool(body.show_hymn_section_labels),
+            parish_deck_dna=parish_dna,
+        )
+    finally:
+        for p in temp_assets:
+            p.unlink(missing_ok=True)
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.error or "PowerPoint rebuild failed.")
+    ppt_url = (
+        media_file_url(result.pptx_path.name)
+        if result.pptx_path and result.pptx_path.is_file()
+        else None
+    )
+    if session and storage_ready(session.token) and result.pptx_path and result.pptx_path.is_file():
+        stem = result.export_stem or "latest"
+        _spawn_daemon(
+            _upload_generation_assets_best_effort,
+            name="mass-regen-upload",
+            kwargs={
+                "user_id": session.user.user_id,
+                "access_token": session.token,
+                "export_stem": stem,
+                "items": [
+                    (
+                        f"generated/{stem}/{result.pptx_path.name}",
+                        str(result.pptx_path),
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    )
+                ],
+            },
+        )
+    if session and result.pptx_path and result.pptx_path.is_file():
+        register_owned_files(session.user.user_id, [result.pptx_path.name])
+    return {
+        "ok": True,
+        "slide_count": result.slide_count,
+        "export_stem": result.export_stem,
+        "pptx_url": ppt_url,
+        "title": result.title,
+        "slideshow_cues": _slideshow_cues_payload(getattr(result, "slideshow_cues", None)),
+    }
+
+
+@app.post("/api/songs/refresh")
+def api_refresh_songs(
+    body: RefreshSongsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    sec = body.section.strip().lower()
+    if sec not in {"entrance", "offertory", "communion", "recessional", "meditation"}:
+        raise HTTPException(status_code=400, detail="Invalid section.")
+    songs = refresh_song_section(
+        date=body.date.strip(),
+        section=sec,
+        current_ids=[str(x) for x in (body.current_ids or [])],
+        limit=10,
+    )
+    return {"ok": True, "section": sec, "songs": songs}
+
+
+@app.post("/api/songs/refresh-all")
+def api_refresh_all_songs(
+    body: RefreshAllSongsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    songs = refresh_all_song_sections(
+        date=body.date.strip(),
+        current_ids=body.current_ids or {},
+        limit=10,
+    )
+    return {"ok": True, "songs_by_section": songs}
+
+
+@app.post("/api/songs/import")
+def api_import_songs(
+    body: ImportSongsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    summary = import_titles(
+        {
+            "entrance": body.entrance,
+            "offertory": body.offertory,
+            "communion": body.communion,
+            "recessional": body.recessional,
+        }
+    )
+    return {"ok": True, **summary}
+
+
+@app.post("/api/songs/import-list")
+def api_import_song_rows(
+    body: ImportSongRowsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    summary = import_song_rows([s.model_dump() for s in body.songs])
+    return {"ok": True, **summary}
+
+
+@app.post("/api/songs/fetch-lyrics")
+def api_fetch_lyrics(
+    body: FetchLyricsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    if not body.selections:
+        return {"ok": True, "updated": 0, "skipped": 0, "results": []}
+    results = [fetch_and_store_for_selection({"section": s.section, "id": s.id}) for s in body.selections]
+    updated = sum(1 for r in results if r.get("ok") and r.get("reason") == "fetched")
+    skipped = len(results) - updated
+    return {"ok": True, "updated": updated, "skipped": skipped, "results": results}
+
+
+@app.post("/api/lyrics/import-txt")
+def api_import_verbum_lyrics_txt(
+    body: ImportVerbumTxtBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Parse Verbum .txt song format; optionally save all songs to the catalog."""
+    want_save = bool(body.save)
+    if want_save:
+        if auth_enabled() and (not session or not is_superadmin_user(session.user)):
+            raise HTTPException(
+                status_code=403,
+                detail="Only superadmins can bulk-import songs from a .txt file.",
+            )
+    result = import_verbum_songs_from_txt(
+        body.text,
+        save=want_save,
+        on_duplicate=str(body.on_duplicate or "overwrite"),
+        updated_by=session.user.user_id if session and want_save else None,
+    )
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("error") or "Could not parse Verbum song .txt.",
+        )
+    return result
+
+
+@app.post("/api/lyrics/import-txt/undo")
+def api_undo_verbum_lyrics_import(
+    body: ImportVerbumTxtUndoBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Undo the last TXT/RTF import (restores overwrites, removes newly created songs)."""
+    if auth_enabled() and (not session or not is_superadmin_user(session.user)):
+        raise HTTPException(
+            status_code=403,
+            detail="Only superadmins can undo a bulk song import.",
+        )
+    result = undo_verbum_song_import(
+        body.token,
+        updated_by=session.user.user_id if session else None,
+    )
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("error") or "Could not undo import.",
+        )
+    return result
+
+
+@app.post("/api/lyrics/save")
+def api_save_lyrics(
+    body: SaveLyricsBody,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    # YouTube practice links on catalog songs are superadmin-only.
+    if (
+        auth_enabled()
+        and session
+        and not is_superadmin_user(session.user)
+        and body.audio_media is not None
+    ):
+        yt_ref = normalize_song_media_ref(body.audio_media.model_dump())
+        if yt_ref and str(yt_ref.get("source") or "") == "youtube":
+            raise HTTPException(
+                status_code=403,
+                detail="Only superadmins can link YouTube on songs.",
+            )
+    if auth_enabled() and session and not is_superadmin_user(session.user):
+        from services.parish_hymn_overrides import save_override, save_parish_original_song
+        from services.parish_store import get_user_parish_context
+        from services.song_catalog import find_catalog_matches_by_title, format_song_title_case
+
+        clean_title = format_song_title_case(body.title or "")
+        exact = [
+            m
+            for m in find_catalog_matches_by_title(clean_title)
+            if m.get("match") == "exact"
+        ]
+        parish_ctx = get_user_parish_context(session.user.user_id) or {}
+        parish_id = str(parish_ctx.get("parish_id") or "").strip()
+        if not parish_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Join a parish to save songs. New songs stay in your parish catalog until a superadmin approves them for the global catalog.",
+            )
+        # Free tier may submit new songs only — never edit/override existing catalog entries.
+        if exact:
+            try:
+                from services.free_tier import (
+                    free_tier_song_edit_existing_blocked_detail,
+                    is_free_tier_account,
+                )
+                from services.user_church_context import get_church_profile_context
+
+                church_row = get_church_profile_context() or parish_ctx
+                if is_free_tier_account(church_row, user=session.user):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=free_tier_song_edit_existing_blocked_detail(),
+                    )
+            except HTTPException:
+                raise
+            except Exception:
+                pass
+        # Existing catalog song → parish short version (does not change global SoT).
+        if exact:
+            hit = exact[0]
+            result = save_override(
+                parish_id,
+                hymn_id=str(hit.get("id") or ""),
+                section=str((body.sections or [hit.get("section") or "meditation"])[0]),
+                lyrics=body.lyrics,
+                title=clean_title,
+                updated_by=session.user.user_id,
+                language=body.language,
+                author=body.author,
+                gospel_moods=body.gospel_moods,
+                origin="override",
+            )
+            if not result.get("ok"):
+                raise HTTPException(status_code=400, detail=result.get("error") or "Could not save parish lyrics.")
+            return result
+
+        # New song → save to parish catalog immediately, then queue for SA global approval.
+        section = str((body.sections or ["meditation"])[0] or "meditation").strip().lower()
+        parish_save = save_parish_original_song(
+            parish_id,
+            title=body.title,
+            lyrics=body.lyrics,
+            section=section,
+            language=body.language,
+            author=body.author,
+            gospel_moods=body.gospel_moods,
+            updated_by=session.user.user_id,
+        )
+        if not parish_save.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=parish_save.get("error") or "Could not save parish song.",
+            )
+        result = submit_pending_song(
+            session,
+            title=body.title,
+            lyrics=body.lyrics,
+            sections=body.sections,
+            language=body.language,
+            author=body.author,
+            gospel_moods=body.gospel_moods,
+            parish_hymn_id=str(parish_save.get("id") or ""),
+            parish_section=str(parish_save.get("section") or section),
+        )
+        if not result.get("ok"):
+            # Parish song is already saved; surface submission issues without losing the parish copy.
+            return {
+                **parish_save,
+                "pending": False,
+                "submission_error": result.get("error") or "Could not submit for global approval.",
+                "message": (
+                    (parish_save.get("message") or "Saved to your parish catalog.")
+                    + " "
+                    + (result.get("error") or "Could not submit for global approval.")
+                ),
+            }
+        # Attach submission id onto parish row when possible.
+        try:
+            from services.parish_hymn_overrides import save_override as _save_ov
+
+            _save_ov(
+                parish_id,
+                hymn_id=str(parish_save.get("id") or ""),
+                section=str(parish_save.get("section") or section),
+                lyrics=body.lyrics,
+                title=clean_title,
+                updated_by=session.user.user_id,
+                language=body.language,
+                author=body.author,
+                gospel_moods=body.gospel_moods,
+                origin="parish",
+                submission_id=str(result.get("submission_id") or "") or None,
+            )
+        except Exception:
+            pass
+        return {
+            **parish_save,
+            "pending": True,
+            "submission_id": result.get("submission_id"),
+            "created": [str(parish_save.get("section") or section)],
+            "message": result.get("message")
+            or "Saved to your parish catalog and submitted for superadmin approval.",
+        }
+    result = save_lyrics_song(
+        title=body.title,
+        lyrics=body.lyrics,
+        sections=body.sections,
+        language=body.language,
+        author=body.author,
+        gospel_moods=body.gospel_moods,
+        audio_media=(
+            body.audio_media.model_dump()
+            if body.audio_media is not None
+            else (None if "audio_media" in body.model_fields_set else ...)
+        ),
+        video_media=(
+            body.video_media.model_dump()
+            if body.video_media is not None
+            else (None if "video_media" in body.model_fields_set else ...)
+        ),
+        audio_preview=(
+            body.audio_preview
+            if body.audio_preview is not None
+            else (None if "audio_preview" in body.model_fields_set else ...)
+        ),
+        updated_by=session.user.user_id if session else None,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not save lyrics.")
+    return result
+
+
+@app.post("/api/submissions/priest")
+def api_submit_priest(
+    body: PriestSubmissionBody,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if is_superadmin_user(session.user):
+        from services import community_store
+
+        names = community_store.append_celebrant_name(body.name.strip())
+        if supabase_enabled():
+            from services.pending_submissions import sync_celebrants_to_supabase_profiles
+
+            sync_celebrants_to_supabase_profiles()
+        else:
+            update_community(celebrant_names=names)
+        payload = _community_api_payload(session)
+        return {"ok": True, "celebrant_names": names, **payload}
+    result = submit_pending_priest(session, name=body.name)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit priest.")
+    return result
+
+
+@app.post("/api/community/request-rename")
+def api_request_parish_rename(
+    body: CommunityNameBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    result = submit_pending_parish_rename(session, community_name=body.community_name)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit rename request.")
+    return result

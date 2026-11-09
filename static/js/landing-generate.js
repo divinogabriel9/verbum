@@ -152,12 +152,14 @@
   function landingAutoConfig(language) {
     var lang = String(language || "english").toLowerCase();
     var isTagalog = lang === "tagalog";
+    var isCebuano = lang === "cebuano" || lang === "bisaya" || lang === "visaya";
+    var vernacular = isTagalog ? "tagalog" : (isCebuano ? "cebuano" : "english");
     return {
-      mass_language: isTagalog ? "tagalog" : "english",
-      our_father_choice: isTagalog ? "tagalog" : "english",
-      creed_choice: isTagalog ? "apostles" : "nicene",
-      kyrie_choice: isTagalog ? "tagalog" : "english",
-      songLanguageFilter: isTagalog ? "Tagalog" : "English",
+      mass_language: vernacular,
+      our_father_choice: isTagalog ? "tagalog" : (isCebuano ? "visaya" : "english"),
+      creed_choice: (isTagalog || isCebuano) ? "apostles" : "nicene",
+      kyrie_choice: isTagalog ? "tagalog" : (isCebuano ? "cebuano" : "english"),
+      songLanguageFilter: isTagalog ? "Tagalog" : (isCebuano ? "Cebuano" : "English"),
       hymn_lyrics_layout: "dual",
       poster_template: "liturgical_color",
       include_gospel_art: false,
@@ -455,7 +457,9 @@
     var data = await postJSON("/api/preview", {
       date: state.massDate,
       readings_only: false,
-      mass_language: state.language === "tagalog" ? "tagalog" : "english",
+      mass_language: (state.language === "tagalog" || state.language === "cebuano")
+        ? state.language
+        : "english",
     });
     if (!data.ok) throw new Error(data.error || "Could not load readings.");
     state.preview = data;
@@ -484,7 +488,7 @@
       var raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return false;
       var draft = JSON.parse(raw);
-      if (draft.language === "english" || draft.language === "tagalog") {
+      if (draft.language === "english" || draft.language === "tagalog" || draft.language === "cebuano") {
         state.language = draft.language;
       }
       if (draft.themeId) state.themeId = draft.themeId;

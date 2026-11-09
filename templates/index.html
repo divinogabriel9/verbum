@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261018-gospel-side8" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261109-poster-fallback" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -2584,6 +2584,7 @@
                         <select id="flow-mass-language" aria-labelledby="mass-language-label">
                           <option value="english" selected>English</option>
                           <option value="tagalog">Tagalog (Filipino Ordo)</option>
+                          <option value="cebuano">Bisaya / Cebuano</option>
                         </select>
                       </div>
                     </div>
@@ -2763,6 +2764,7 @@
                         <select id="flow-penitential-language" data-mw-rite-lang="penitential" data-vb-select="off" hidden>
                           <option value="english" selected>English</option>
                           <option value="tagalog">Tagalog</option>
+                          <option value="cebuano">Bisaya</option>
                         </select>
                         <select id="flow-penitential-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="penitential" hidden>
                           <option value="confiteor" selected>I Confess (Confiteor)</option>
@@ -2824,6 +2826,7 @@
                         <select id="flow-creed-language" data-mw-rite-lang="creed" data-vb-select="off" hidden>
                           <option value="english" selected>English</option>
                           <option value="tagalog">Tagalog</option>
+                          <option value="cebuano">Bisaya</option>
                         </select>
                         <select id="flow-creed-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="creed" hidden>
                           <option value="nicene" selected>Nicene Creed</option>
@@ -2838,6 +2841,7 @@
                         <select id="flow-sanctus-language" data-mw-rite-lang="sanctus" data-vb-select="off" hidden>
                           <option value="english" selected>English</option>
                           <option value="tagalog">Tagalog</option>
+                          <option value="cebuano">Bisaya</option>
                         </select>
                         <div class="mw-options" role="radiogroup" aria-label="Sanctus tune" data-mw-media-section="sanctus">
                           <div class="mw-option-line">
@@ -3079,7 +3083,12 @@
                           <p class="muted flow-setup-field-hint">Fades the carousel poster behind divider text. 0% = full strength, 10% = softest fade.</p>
                         </div>
                         <div class="mw-ai-poster-gate" id="mw-ai-poster-gate" data-ai-ready="0" hidden>
-                          <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
+                          <div class="mw-ai-poster-gate__panel">
+                            <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
+                            <button type="button" class="mw-ai-poster-gate__sa-gen" id="mw-ai-poster-sa-generate" hidden>
+                              Generate this week’s styles
+                            </button>
+                          </div>
                         </div>
                         </div>
                         <select id="flow-ai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
@@ -3309,7 +3318,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261010-yt-link-sa3"></script>
+      <script src="/static/js/mw-wizard.js?v=20261109-cebuano"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3442,6 +3451,7 @@
                 <select id="cal-language" data-vb-select="off" title="Calendar language" aria-label="Calendar language" style="min-width:7.5rem;">
                   <option value="english">English</option>
                   <option value="tagalog">Tagalog</option>
+                  <option value="cebuano">Bisaya</option>
                 </select>
                 <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-missing-btn" hidden data-default-title="Fetch critical/warning dates in this month (skips healthy; resumes where you left off)" title="Fetch critical/warning dates in this month (skips healthy; resumes where you left off)">
                   <span class="cal-fetch-btn__idle">Fetch missing</span>
@@ -5393,7 +5403,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261018-extras-av2"></script>
+  <script src="/static/js/app.js?v=20261109-cebuano"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

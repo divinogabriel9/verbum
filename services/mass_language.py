@@ -2,13 +2,17 @@
 
 English remains the default. Tagalog uses Filipino Ordo wording as printed in
 common Philippine missalettes (e.g. Sambuhay / Aklat ng Pagmimisa sa Roma).
+Cebuano (Bisaya) uses the Misa Bisaya Ordo and Sulugoon daily readings.
 """
 
 from __future__ import annotations
 
 from typing import Final
 
-ALLOWED_MASS_LANGUAGES: Final[frozenset[str]] = frozenset({"english", "tagalog"})
+ALLOWED_MASS_LANGUAGES: Final[frozenset[str]] = frozenset({"english", "tagalog", "cebuano"})
+
+# Mass languages that have their own daily readings source.
+READINGS_LANGUAGES: Final[frozenset[str]] = frozenset({"english", "tagalog", "cebuano"})
 
 # When the user picks a mass language, apply these rite defaults unless they
 # explicitly override later in the wizard.
@@ -21,16 +25,37 @@ MASS_LANGUAGE_DEFAULTS: Final[dict[str, dict[str, str]]] = {
         "creed_choice": "apostles",
         "our_father_choice": "tagalog",
     },
+    "cebuano": {
+        "creed_choice": "apostles",
+        "our_father_choice": "visaya",
+    },
+}
+
+_MASS_LANGUAGE_ALIASES: Final[dict[str, str]] = {
+    "filipino": "tagalog",
+    "fil": "tagalog",
+    "tl": "tagalog",
+    "tgl": "tagalog",
+    "visaya": "cebuano",
+    "bisaya": "cebuano",
+    "binisaya": "cebuano",
+    "sugbuanon": "cebuano",
+    "ceb": "cebuano",
 }
 
 
 def normalize_mass_language(value: str | None) -> str:
     lang = (value or "english").strip().lower().replace("-", "_").replace(" ", "_")
-    if lang in {"filipino", "fil", "tl", "tgl"}:
-        lang = "tagalog"
+    lang = _MASS_LANGUAGE_ALIASES.get(lang, lang)
     if lang not in ALLOWED_MASS_LANGUAGES:
         return "english"
     return lang
+
+
+def readings_language_for(language: str | None) -> str:
+    """Lectionary source language for a Mass language."""
+    lang = normalize_mass_language(language)
+    return lang if lang in READINGS_LANGUAGES else "english"
 
 
 def defaults_for_mass_language(language: str | None) -> dict[str, str]:
@@ -55,7 +80,9 @@ _LANGUAGE_ALIASES: Final[dict[str, str]] = {
     "fil": "tagalog",
     "tl": "tagalog",
     "tgl": "tagalog",
-    "bisaya": "visaya",
+    "bisaya": "cebuano",
+    "visaya": "cebuano",
+    "binisaya": "cebuano",
     "ceb": "cebuano",
     "en": "english",
     "bm": "malay",
@@ -75,6 +102,10 @@ READING_SECTION_LABELS: Final[dict[str, dict[str, str]]] = {
     "tagalog": {
         "first": "Unang Pagbasa",
         "second": "Ikalawang Pagbasa",
+    },
+    "cebuano": {
+        "first": "Unang Pagbasa",
+        "second": "Ikaduhang Pagbasa",
     },
 }
 

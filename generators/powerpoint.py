@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Iterator, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
 
 from lxml import etree
 from pptx import Presentation
@@ -60,6 +60,7 @@ from services.mass_divider.types import DIVIDER_TEMPLATE_DEFAULT, DIVIDER_TEMPLA
 from services.responsorial_reading import responsorial_section_title
 from . import gfcc_flow_content as GFCC
 from . import gfcc_flow_content_tagalog as GFCC_TL
+from . import gfcc_flow_content_cebuano as GFCC_CEB
 from .deck_template import (
     COLLECTION_FOOTER_TOP,
     COLLECTION_TITLE_H,
@@ -419,19 +420,110 @@ def _mass_lang_override(language: str | None) -> Iterator[None]:
 
 
 def _use_english_rite_templates() -> bool:
-    """English-only reference PPT decks; skip when Mass language is Tagalog."""
+    """English-only reference PPT decks; skip when Mass language is vernacular."""
     return _mass_lang() == "english"
+
+
+_FLOW_MODULES = {
+    "english": GFCC,
+    "tagalog": GFCC_TL,
+    "cebuano": GFCC_CEB,
+}
 
 
 def _flow():
     """Order-of-Mass dialogue / cue text for the active Mass language."""
-    if _mass_lang() == "tagalog":
-        return GFCC_TL
-    return GFCC
+    return _FLOW_MODULES.get(_mass_lang(), GFCC)
 
 
 def _prayer(name: str) -> str:
     return get_prayer(name, language=_mass_lang())
+
+
+# Section / footer titles per Mass language. Missing keys fall back to English.
+_SECTION_TITLES: Dict[str, Dict[str, str]] = {
+    "english": {
+        "intro_rites": "Introductory Rites",
+        "penitential": "Penitential Act",
+        "kyrie": "Kyrie Eleison",
+        "gloria": "Gloria",
+        "lotw": "Liturgy of the Word",
+        "gospel_acclamation": "",
+        "apostles_creed": "Apostles' Creed",
+        "nicene_creed": "Nicene Creed",
+        "prayer_faithful": "Prayer of the Faithful",
+        "lote": "Liturgy of the Eucharist",
+        "sanctus": "Sanctus",
+        "mystery_of_faith": "The Mystery of Faith",
+        "eucharistic_prayer": "The Eucharistic Prayer",
+        "sign_of_peace": "Sign of Peace",
+        "lamb_of_god": "Lamb of God",
+        "communion_rite": "The Communion Rite",
+        "final_blessing": "Final Blessing",
+        "year_word": "YEAR",
+    },
+    "tagalog": {
+        "intro_rites": "Pasimula",
+        "penitential": "Pagsisisi",
+        "kyrie": "Panginoon, Kaawaan Mo Kami",
+        "gloria": "Papuri sa Diyos",
+        "lotw": "Pagpapahayag ng Salita ng Diyos",
+        "gospel_acclamation": "Aleluya",
+        "apostles_creed": "Sumasampalataya Ako",
+        "nicene_creed": "Sumasampalataya Ako (Nicea)",
+        "prayer_faithful": "Panalangin ng Bayan",
+        "lote": "Pagdiriwang ng Huling Hapunan",
+        "sanctus": "Santo, Santo, Santo",
+        "mystery_of_faith": "Misteryo ng Pananampalataya",
+        "eucharistic_prayer": "Panalanging Eukaristiko",
+        "sign_of_peace": "Tanda ng Kapayapaan",
+        "lamb_of_god": "Kordero ng Diyos",
+        "communion_rite": "Rito ng Pakikinabang",
+        "final_blessing": "Pagbabasbas",
+        "year_word": "TAON",
+    },
+    "cebuano": {
+        "intro_rites": "Pasiunang Rito",
+        "penitential": "Paghinulsol",
+        "kyrie": "Ginoo, Kaloy-i Kami",
+        "gloria": "Himaya sa Dios",
+        "lotw": "Liturhiya sa Pulong sa Dios",
+        "gospel_acclamation": "Aleluya",
+        "apostles_creed": "Nagatoo Ako",
+        "nicene_creed": "Nagatoo Ako (Nicea)",
+        "prayer_faithful": "Pag-ampo sa Katawhan",
+        "lote": "Liturhiya sa Eukaristiya",
+        "sanctus": "Santos, Santos, Santos",
+        "mystery_of_faith": "Misteryo sa Pagtoo",
+        "eucharistic_prayer": "Pag-ampo sa Eukaristiya",
+        "sign_of_peace": "Timaan sa Kalinaw",
+        "lamb_of_god": "Kordero sa Dios",
+        "communion_rite": "Rito sa Pagkalawat",
+        "final_blessing": "Katapusang Panalangin",
+        "year_word": "TUIG",
+    },
+}
+
+
+def _section_title(key: str) -> str:
+    """Localized section / footer title for the active Mass language."""
+    table = _SECTION_TITLES.get(_mass_lang()) or _SECTION_TITLES["english"]
+    value = table.get(key)
+    if value is None:
+        value = _SECTION_TITLES["english"].get(key, "")
+    return value
+
+
+# Dialogue speaker labels ("Priest: " / "All: ") for the generic gospel slides.
+_DIALOGUE_LABELS: Dict[str, Tuple[str, str]] = {
+    "english": ("Priest: ", "All: "),
+    "tagalog": ("Pari: ", "Bayan: "),
+    "cebuano": ("Pari: ", "Tanan: "),
+}
+
+
+def _dialogue_labels() -> Tuple[str, str]:
+    return _DIALOGUE_LABELS.get(_mass_lang(), _DIALOGUE_LABELS["english"])
 
 _OUTPUT_DIR = _PROJECT_ROOT / "outputs"
 _CONFESSION_SLIDE_PNG = _PROJECT_ROOT / "static" / "images" / "sacrament-of-confession.png"
@@ -1511,22 +1603,40 @@ def _marked_has_projectable_content(marked: str) -> bool:
     return False
 
 
+def _localized_titles(*keys: str) -> Tuple[str, ...]:
+    """Lower-cased section titles for ``keys`` across every Mass language."""
+    out: List[str] = []
+    for table in _SECTION_TITLES.values():
+        for key in keys:
+            value = (table.get(key) or "").strip().lower()
+            if value and value not in out:
+                out.append(value)
+    return tuple(out)
+
+
 def _suppress_all_role_prefix(footer_section: str) -> bool:
     """Kyrie / Gloria / Sanctus / Our Father / Lamb: congregation lines without an ``All:`` prefix."""
     f = (footer_section or "").strip().lower()
     keys = ("kyrie eleison", "gloria", "sanctus", "our father", "lamb of god")
+    keys += _localized_titles("kyrie", "gloria", "sanctus", "lamb_of_god")
+    keys += tuple(v.lower() for v in _OUR_FATHER_TITLES.values())
     return any(f.startswith(k) for k in keys)
 
 
 def _is_projection_dialogue_slide(footer_section: str) -> bool:
     """Priest/assembly dialogue: centered body, gold ``Priest:`` label, white text."""
     f = (footer_section or "").strip().lower()
-    return (
+    if (
         f.startswith("final blessing")
         or f.startswith("the communion rite")
         or f == "communion rite"
         or f.startswith("gospel acclamation")
         or f.startswith("aleluya")
+    ):
+        return True
+    return any(
+        f.startswith(k)
+        for k in _localized_titles("final_blessing", "communion_rite", "gospel_acclamation")
     )
 
 
@@ -1544,6 +1654,11 @@ def _is_prayer_rite_slide(footer_section: str) -> bool:
         "apostles' creed",
         "apostles creed",
     )
+    keys += _localized_titles(
+        "kyrie", "gloria", "sanctus", "lamb_of_god", "penitential",
+        "nicene_creed", "apostles_creed",
+    )
+    keys += tuple(v.lower() for v in _OUR_FATHER_TITLES.values())
     return any(k in f for k in keys)
 
 
@@ -1554,10 +1669,11 @@ def _marked_body_height_inches() -> float:
 
 
 def _rite_display_line(role: str, line: str, *, strip_all: bool) -> str:
+    priest_label, all_label = _dialogue_labels()
     if role == "priest":
-        return f"Priest: {line}"
+        return f"{priest_label}{line}"
     if role == "all":
-        return line if strip_all else f"All: {line}"
+        return line if strip_all else f"{all_label}{line}"
     return line
 
 
@@ -2459,7 +2575,7 @@ def _add_penitential_act_slides(prs: Presentation, theme: SlideTheme) -> None:
             return
         _add_templated_prayer(prs, PENITENTIAL_ACT, theme)
         return
-    _add_marked_chunked(prs, "Penitential Act", _prayer("penitential_act"), theme)
+    _add_marked_chunked(prs, _section_title("penitential"), _prayer("penitential_act"), theme)
 
 
 def _add_kyrie_from_tagalog_deck(prs: Presentation, theme: SlideTheme, slide_index: int) -> bool:
@@ -2481,7 +2597,7 @@ def _add_kyrie_from_tagalog_deck(prs: Presentation, theme: SlideTheme, slide_ind
 
 
 def _add_kyrie_slide(prs: Presentation, theme: SlideTheme) -> None:
-    title = "Panginoon, Kaawaan Mo Kami" if _mass_lang() == "tagalog" else "Kyrie Eleison"
+    title = _section_title("kyrie")
     if _ACTIVE_KYRIE_CHOICE == "tagalog":
         if _add_kyrie_from_tagalog_deck(prs, theme, _ACTIVE_KYRIE_TAGALOG_SLIDE):
             return
@@ -2506,7 +2622,7 @@ def _add_kyrie_slide(prs: Presentation, theme: SlideTheme) -> None:
 
 
 def _add_lamb_of_god_slide(prs: Presentation, theme: SlideTheme) -> None:
-    title = "Kordero ng Diyos" if _mass_lang() == "tagalog" else "Lamb of God"
+    title = _section_title("lamb_of_god")
     if _use_english_rite_templates() and _clone_master_section(prs, "lamb_of_god", theme, "Lamb of God"):
         return
     if _use_english_rite_templates():
@@ -2529,7 +2645,7 @@ def _apply_sign_of_peace_typography(slide) -> None:
 
 
 def _add_sign_of_peace_slide(prs: Presentation, theme: SlideTheme) -> None:
-    title = "Tanda ng Kapayapaan" if _mass_lang() == "tagalog" else "Sign of Peace"
+    title = _section_title("sign_of_peace")
     if _use_english_rite_templates() and _clone_master_section(prs, "sign_of_peace", theme, "Sign of Peace"):
         return
     if _use_english_rite_templates():
@@ -2550,7 +2666,7 @@ def _apply_gloria_typography(slide) -> None:
 
 
 def _add_gloria_slides(prs: Presentation, theme: SlideTheme) -> None:
-    title = "Papuri sa Diyos" if _mass_lang() == "tagalog" else "Gloria"
+    title = _section_title("gloria")
     if _mass_lang() == "tagalog":
         _add_tagalog_gloria_slides(prs, theme)
         return
@@ -2681,7 +2797,8 @@ _GOSPEL_BOOK_TL = {
 
 def _gospel_book_for_language(gospel_reference: str, language: str | None = None) -> str:
     book = _gospel_book_from_reference(gospel_reference)
-    if (language or _mass_lang()) != "tagalog":
+    # Tagalog and Cebuano share the Spanish-derived evangelist names (San Mateo…).
+    if (language or _mass_lang()) not in ("tagalog", "cebuano"):
         return book
     key = re.sub(r"^san\s+", "", (book or "").strip().lower())
     return _GOSPEL_BOOK_TL.get(key) or ("San " + book if book else "San Juan")
@@ -3712,6 +3829,7 @@ def _add_english_gospel_dialogue_slide(
     wrap_assembly=None,
 ) -> None:
     geom = _EN_GOSPEL_DIALOGUE_LAYOUTS[layout]
+    priest_label, assembly_label = _dialogue_labels()
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
     if priest_body:
@@ -3723,7 +3841,7 @@ def _add_english_gospel_dialogue_slide(
             top_in=t,
             width_in=w,
             height_in=h,
-            label="Priest: ",
+            label=priest_label,
             lines=priest_lines,
             size_pt=pt,
             label_color=theme.emphasis,
@@ -3740,7 +3858,7 @@ def _add_english_gospel_dialogue_slide(
             top_in=t,
             width_in=w,
             height_in=h,
-            label="All: ",
+            label=assembly_label,
             lines=assembly_lines,
             size_pt=pt,
             label_color=theme.primary,
@@ -3755,10 +3873,9 @@ def _add_english_gospel_intro_slides(
     *,
     gospel_reference: str,
 ) -> None:
-    marked = _format_gospel_intro(
-        _flow().GOSPEL_INTRO, gospel_reference, "english"
-    )
-    book = _gospel_book_for_language(gospel_reference, "english")
+    lang = _mass_lang()
+    marked = _format_gospel_intro(_flow().GOSPEL_INTRO, gospel_reference, lang)
+    book = _gospel_book_for_language(gospel_reference, lang)
     pairs = _tagalog_gospel_dialogue_pairs(marked)
     layouts = ("greeting", "announcement")
     wraps = (None, _english_priest_announcement_lines)
@@ -3804,7 +3921,7 @@ def _add_gospel_acclamation_slides(
     gospel_acclamation_verse: str = "",
 ) -> None:
     """Gospel Acclamation: Alleluia sandwich + priest/assembly dialogue."""
-    title = "Aleluya" if _mass_lang() == "tagalog" else ""
+    title = _section_title("gospel_acclamation")
     _add_gospel_acclamation_verse_slide(
         prs, theme, gospel_acclamation_verse or "", title
     )
@@ -3884,7 +4001,7 @@ def _apply_apostles_creed_typography(slide) -> None:
 
 
 def _add_apostles_creed_slides(prs: Presentation, theme: SlideTheme) -> None:
-    title = "Sumasampalataya Ako" if _mass_lang() == "tagalog" else _APOSTLES_CREED_TITLE
+    title = _section_title("apostles_creed")
     if not _use_english_rite_templates():
         _add_marked_chunked(prs, title, _prayer("apostles_creed"), theme)
         return
@@ -3941,7 +4058,7 @@ def _apply_nicene_creed_typography(slide) -> None:
 
 
 def _add_nicene_creed_slides(prs: Presentation, theme: SlideTheme) -> None:
-    title = "Sumasampalataya Ako (Nicea)" if _mass_lang() == "tagalog" else _NICENE_CREED_TITLE
+    title = _section_title("nicene_creed")
     if not _use_english_rite_templates():
         _add_marked_chunked(prs, title, _prayer("nicene_creed"), theme)
         return
@@ -4005,10 +4122,11 @@ def _append_projection_dialogue_paragraph(
     p.alignment = PP_ALIGN.CENTER
     p.space_before = Pt(6)
     p.space_after = Pt(8)
+    priest_label, all_label = _dialogue_labels()
 
     if role == "priest":
         label = p.add_run()
-        label.text = "Priest: "
+        label.text = priest_label
         _style_dialogue_run(label, color=_ACTIVE_THEME.emphasis, size_pt=size_pt)
         body = p.add_run()
         body.text = line
@@ -4018,7 +4136,7 @@ def _append_projection_dialogue_paragraph(
     if role == "all":
         if not strip_all:
             label = p.add_run()
-            label.text = "All: "
+            label.text = all_label
             _style_dialogue_run(label, color=_ACTIVE_THEME.primary, size_pt=size_pt)
         body = p.add_run()
         body.text = line
@@ -4101,11 +4219,11 @@ def _render_marked_slide(
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         if role == "priest":
-            p.text = f"Priest: {line}"
+            p.text = _rite_display_line(role, line, strip_all=strip_all)
             _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
             p.space_before = Pt(4)
         elif role == "all":
-            p.text = line if strip_all else f"All: {line}"
+            p.text = _rite_display_line(role, line, strip_all=strip_all)
             _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.primary, bold=True)
             p.space_before = Pt(4)
         elif role == "hymn":
@@ -4270,11 +4388,11 @@ def _add_our_father_slide(
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         if role == "priest":
-            p.text = f"Priest: {line}"
+            p.text = _rite_display_line(role, line, strip_all=strip_all)
             _style_para(p, size_pt=font_pt, color=theme.emphasis, bold=True)
             p.space_before = Pt(4)
         elif role == "all":
-            p.text = line if strip_all else f"All: {line}"
+            p.text = _rite_display_line(role, line, strip_all=strip_all)
             _style_para(p, size_pt=font_pt, color=theme.primary, bold=True)
             p.space_before = Pt(4)
         elif role == "hymn":
@@ -4539,7 +4657,7 @@ def _divider_date_display(date: str) -> str:
 
 
 def _divider_year_word() -> str:
-    return "TAON" if _mass_lang() == "tagalog" else "YEAR"
+    return _section_title("year_word") or "YEAR"
 
 
 def _divider_year_date_line(lectionary_cycle: str, date: str) -> str:
@@ -4596,9 +4714,9 @@ def _divider3_date_display(date: str) -> str:
     for fmt in ("%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%d %B %Y"):
         try:
             d = _dt.datetime.strptime(raw, fmt).date()
-            if _mass_lang() == "tagalog":
-                month = _TAGALOG_MONTHS[d.month - 1]
-                return f"{month} {d.day}, {d.year}"
+            months = _LOCAL_MONTHS.get(_mass_lang())
+            if months:
+                return f"{months[d.month - 1]} {d.day}, {d.year}"
             return f"{d.strftime('%B').upper()} {d.day}, {d.year}"
         except ValueError:
             continue
@@ -5362,6 +5480,24 @@ _TAGALOG_MONTHS = (
     "NOBYEMBRE",
     "DISYEMBRE",
 )
+_CEBUANO_MONTHS = (
+    "ENERO",
+    "PEBRERO",
+    "MARSO",
+    "ABRIL",
+    "MAYO",
+    "HUNYO",
+    "HULYO",
+    "AGOSTO",
+    "SEPTYEMBRE",
+    "OKTUBRE",
+    "NOBYEMBRE",
+    "DISYEMBRE",
+)
+_LOCAL_MONTHS = {
+    "tagalog": _TAGALOG_MONTHS,
+    "cebuano": _CEBUANO_MONTHS,
+}
 
 
 def _divider3_panel_inner_width() -> float:
@@ -7575,7 +7711,7 @@ def _generate_mass_ppt_inner(
         _add_divider_cover(prs, **ctx)
 
     # --- Introductory Rites ---
-    intro_title = "Pasimula" if _mass_lang() == "tagalog" else "Introductory Rites"
+    intro_title = _section_title("intro_rites")
     if _want("intro_rites"):
         if _mass_lang() == "tagalog":
             _add_tagalog_sign_of_the_cross_slides(prs, theme)
@@ -7594,7 +7730,7 @@ def _generate_mass_ppt_inner(
         _add_kyrie_slide(prs, theme)
     if _want("gloria") and not omit_gloria and not _use_video("gloria", "Gloria"):
         _add_gloria_slides(prs, theme)
-    lotw_label = "Pagpapahayag ng Salita ng Diyos" if _mass_lang() == "tagalog" else "Liturgy of the Word"
+    lotw_label = _section_title("lotw")
     if _want("opening_prayer"):
         if _mass_lang() == "tagalog":
             _add_tagalog_opening_prayer_slide(prs, theme)
@@ -7696,7 +7832,7 @@ def _generate_mass_ppt_inner(
             gospel_acclamation_verse=gospel_acclamation_verse or "",
         )
 
-        gospel_end_title = "Aleluya" if _mass_lang() == "tagalog" else ""
+        gospel_end_title = _section_title("gospel_acclamation")
         if _want("dividers"):
             _add_divider_cover(prs, **ctx)
         if _mass_lang() == "tagalog":
@@ -7714,7 +7850,7 @@ def _generate_mass_ppt_inner(
         _add_divider_cover(prs, **ctx)
 
     # --- Prayer of the Faithful ---
-    pof_title = "Panalangin ng Bayan" if _mass_lang() == "tagalog" else "Prayer of the Faithful"
+    pof_title = _section_title("prayer_faithful")
     if _want("prayer_faithful"):
         if _use_english_rite_templates() and _clone_master_section(
             prs, "prayer_faithful", theme, "Prayer of the Faithful"
@@ -7748,7 +7884,7 @@ def _generate_mass_ppt_inner(
             )
     if _want("lote_poster"):
         _add_lote_poster_slide(prs, theme, lote_poster_path)
-    lote_title = "Pagdiriwang ng Huling Hapunan" if _mass_lang() == "tagalog" else "Liturgy of the Eucharist"
+    lote_title = _section_title("lote")
     if _want("pray_brethren"):
         if _use_english_rite_templates() and _clone_master_section(
             prs, "lote_pray_brethren", theme, "Liturgy of the Eucharist"
@@ -7770,15 +7906,15 @@ def _generate_mass_ppt_inner(
         _add_lote_poster_slide(prs, theme, lote_poster_path)
     if _want("sanctus") and not _use_video("sanctus", "Sanctus"):
         with _mass_lang_override(sanctus_language or None):
-            sanctus_title = "Santo, Santo, Santo" if _mass_lang() == "tagalog" else "Sanctus"
+            sanctus_title = _section_title("sanctus")
             if _use_english_rite_templates() and _clone_master_section(prs, "sanctus", theme, "Sanctus"):
                 pass
             else:
                 _add_marked_chunked(prs, sanctus_title, _prayer("holy_holy"), theme)
     if _want("lote_poster"):
         _add_lote_poster_slide(prs, theme, lote_poster_path)
-    mystery_title = "Misteryo ng Pananampalataya" if _mass_lang() == "tagalog" else "The Mystery of Faith"
-    ep_footer = "Panalanging Eukaristiko" if _mass_lang() == "tagalog" else "The Eucharistic Prayer"
+    mystery_title = _section_title("mystery_of_faith")
+    ep_footer = _section_title("eucharistic_prayer")
     if _want("mystery_of_faith"):
         if _use_english_rite_templates() and _clone_master_section(
             prs, "mystery_of_faith", theme, "The Eucharistic Prayer"
@@ -7813,7 +7949,7 @@ def _generate_mass_ppt_inner(
         _add_sign_of_peace_slide(prs, theme)
     if _want("lamb_of_god") and not _use_video("lamb_of_god", "Lamb of God"):
         _add_lamb_of_god_slide(prs, theme)
-    communion_rite_title = "Rito ng Pakikinabang" if _mass_lang() == "tagalog" else "The Communion Rite"
+    communion_rite_title = _section_title("communion_rite")
     if _want("communion_rite"):
         if _use_english_rite_templates() and _clone_master_section(
             prs, "communion_rite", theme, "The Communion Rite"
@@ -7991,7 +8127,7 @@ def _generate_mass_ppt_inner(
                 title_pt=_SECTION_TITLE_PT_LARGE,
             )
 
-    blessing_title = "Pagbabasbas" if _mass_lang() == "tagalog" else "Final Blessing"
+    blessing_title = _section_title("final_blessing")
     if _want("final_blessing"):
         if _use_english_rite_templates() and _clone_master_section(
             prs, "final_blessing", theme, "Final Blessing"

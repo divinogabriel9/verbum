@@ -359,9 +359,9 @@ def invalidate_preview_cache(date: str | None = None, language: str | None = Non
     d = date.strip()
     lang = None
     if language:
-        from services.mass_language import normalize_mass_language
+        from services.mass_language import readings_language_for
 
-        lang = normalize_mass_language(language)
+        lang = readings_language_for(language)
     for key in list(_PREVIEW_CACHE):
         if key[0] != d:
             continue
@@ -381,9 +381,10 @@ def fetch_preview(
     language: str = "english",
 ) -> PreviewPayload:
     d = (date or "").strip()
-    from services.mass_language import normalize_mass_language
+    from services.mass_language import readings_language_for
 
-    lang = normalize_mass_language(language)
+    # Preview payloads are keyed by *readings* language (en / tl / ceb).
+    lang = readings_language_for(language)
     cache_key = (d, readings_only, lang, _PREVIEW_CACHE_VERSION)
     now = time.monotonic()
     if force_refresh:

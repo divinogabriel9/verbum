@@ -16,6 +16,8 @@ data/uploads/
 data/parish_dna/
 outputs/
 readings_cache.json
+data/readings_cache_tagalog.json
+data/readings_cache_cebuano.json
 data/.content_submissions_migrated
 .cursor/design-references/_vendor/
 node_modules/

@@ -1,4 +1,4 @@
-"""Missal-style prayer text blocks for Mass slides (English + Tagalog Ordo)."""
+"""Missal-style prayer text blocks for Mass slides (English, Tagalog and Cebuano Ordo)."""
 
 from __future__ import annotations
 
@@ -43,6 +43,24 @@ na ako’y ipanalangin sa Panginoong ating Diyos.
 <<P>>Kaawaan tayo ng makapangyarihang Diyos, patawarin ang ating mga kasalanan, at patnubayan tayo sa buhay na walang hanggan.
 
 <<A>>Amen.""",
+    "penitential_act_cebuano": """<<P>>Mga igsoon, atong ilhon ang atong mga sala aron kita mahimong takus sa pagsaulog niining balaang misteryo.
+
+<<A>>Nagakumpisal ako sa Dios nga makagagahum sa tanan
+ug kaninyo, mga igsoon,
+nga nakasala ako sa hilabihan gayud
+sa hunahuna, sa pulong, sa buhat,
+ug sa wala pagbuhat sa angay buhaton;
+<<D>>(dukdoka ang dughan)
+tungod sa akong sala, sa akong sala,
+sa akong dakung sala;
+busa nagahangyo ako kang Santa Maria nga Birhen kanunay,
+sa tanang mga anghel ug mga santos,
+ug kaninyo, mga igsoon,
+nga iampo ninyo ako sa Ginoo nga atong Dios.
+
+<<P>>Kaloy-an unta kita sa Dios nga makagagahum sa tanan, pasayloon ang atong mga sala, ug dad-on kita ngadto sa kinabuhing dayon.
+
+<<A>>Amen.""",
     "gloria": """<<A>>Glory to God in the highest,
 and on earth peace to people of good will.
 We praise you, we bless you, we adore you,
@@ -79,6 +97,23 @@ Sapagkat ikaw lamang ang banal,
 ikaw lamang ang Panginoon,
 ikaw lamang, O Hesukristo, ang Kataas-taasan,
 kasama ng Espiritu Santo sa kadakilaan ng Diyos Ama.
+Amen.""",
+    "gloria_cebuano": """<<A>>Himaya sa Dios sa kahitas-an
+ug sa yuta kalinaw sa mga tawo nga iyang gikahimut-an.
+Nagadayeg kami kanimo, nagahimaya kami kanimo,
+nagasimba kami kanimo, nagapasidungog kami kanimo,
+nagapasalamat kami kanimo tungod sa imong dakung himaya.
+Ginoong Dios, Hari sa langit,
+Dios Amahan nga makagagahum sa tanan.
+Ginoong Jesukristo, Bugtong nga Anak,
+Ginoong Dios, Kordero sa Dios, Anak sa Amahan.
+Ikaw nga nagawagtang sa mga sala sa kalibutan, kaloy-i kami.
+Ikaw nga nagawagtang sa mga sala sa kalibutan, dawata ang among pangamuyo.
+Ikaw nga nagalingkod sa tuo sa Amahan, kaloy-i kami.
+Kay ikaw lamang ang Santos,
+ikaw lamang ang Ginoo,
+ikaw lamang, O Jesukristo, ang Labing Halangdon,
+uban sa Espiritu Santo diha sa himaya sa Dios Amahan.
 Amen.""",
     "nicene_creed": """<<A>>I believe in one God,
 the Father almighty,
@@ -147,6 +182,38 @@ Sumasampalataya ako sa iisang banal na Simbahang Katolika at apostolika.
 Gayundin sa isang binyag na ikapagpapatawad ng mga kasalanan.
 At hinihintay ko ang muling pagkabuhay ng nangamatay
 at sa buhay na walang hanggan. Amen.""",
+    "nicene_creed_cebuano": """<<A>>Nagatoo ako sa usa ka Dios,
+Amahan nga makagagahum sa tanan,
+Magbubuhat sa langit ug sa yuta,
+sa tanang butang makita ug dili makita.
+Nagatoo ako sa usa ka Ginoo, si Jesukristo,
+ang Bugtong nga Anak sa Dios,
+gianak sa Amahan sa wala pa ang tanang katuigan.
+Dios gikan sa Dios, Kahayag gikan sa Kahayag,
+matuod nga Dios gikan sa matuod nga Dios,
+gianak, dili binuhat, usa ra ug kinaiya sa Amahan;
+pinaagi kaniya gibuhat ang tanang butang.
+Tungod kanatong mga tawo ug alang sa atong kaluwasan
+mikanaug siya gikan sa langit.
+<<D>>(moyukbo)
+Ug pinaagi sa Espiritu Santo nagpakatawo siya
+gikan ni Maria nga Birhen, ug nahimong tawo.
+<<D>>(motindog)
+Tungod kanato gilansang siya sa krus sa sugo ni Poncio Pilato;
+nag-antos siya sa kamatayon ug gilubong.
+Nabanhaw siya sa ikatulo ka adlaw sumala sa Kasulatan;
+misaka siya sa langit ug nagalingkod sa tuo sa Amahan.
+Mobalik siya nga mahimayaon
+aron paghukom sa mga buhi ug sa mga minatay,
+ug ang iyang gingharian walay katapusan.
+Nagatoo ako sa Espiritu Santo, ang Ginoo, ang maghahatag sa kinabuhi,
+nga nagagikan sa Amahan ug sa Anak,
+nga uban sa Amahan ug sa Anak gisimba ug gihimaya,
+nga misulti pinaagi sa mga propeta.
+Nagatoo ako sa usa, santos, katoliko ug apostoliko nga Simbahan.
+Nagaila ako sa usa ka Bunyag alang sa kapasayloan sa mga sala
+ug nagapaabot ako sa pagkabanhaw sa mga minatay
+ug sa kinabuhi sa umaabot nga kalibutan. Amen.""",
     "apostles_creed": """<<A>>I believe in God,
 the Father almighty,
 Creator of heaven and earth,
@@ -184,6 +251,24 @@ sa kasamahan ng mga banal,
 sa kapatawaran ng mga kasalanan,
 sa pagkabuhay na muli ng nangamatay na tao
 at sa buhay na walang hanggan. Amen.""",
+    "apostles_creed_cebuano": """<<A>>Nagatoo ako sa Dios Amahan nga makagagahum sa tanan,
+Magbubuhat sa langit ug sa yuta.
+Nagatoo ako kang Jesukristo, iyang bugtong Anak, atong Ginoo,
+nga gipanamkon sa lalang sa Espiritu Santo,
+gianak ni Maria nga Birhen.
+Nag-antos siya sa sugo ni Poncio Pilato,
+gilansang sa krus, namatay ug gilubong.
+Mikanaug siya sa mga minatay,
+sa ikatulo ka adlaw nabanhaw siya.
+Misaka siya sa langit
+ug nagalingkod sa tuo sa Dios Amahan nga makagagahum sa tanan.
+Gikan didto mobalik siya aron paghukom sa mga buhi ug sa mga minatay.
+Nagatoo ako sa Espiritu Santo,
+sa santos nga Simbahang Katoliko,
+sa panag-ambit sa mga santos,
+sa kapasayloan sa mga sala,
+sa pagkabanhaw sa lawas,
+ug sa kinabuhing dayon. Amen.""",
     "our_father": """<<A>>Our Father, who art in heaven,
 hallowed be thy name;
 thy kingdom come,
@@ -256,6 +341,12 @@ Napupuno ang langit at lupa ng kadakilaan mo!
 Osana sa kaitaasan!
 Pinagpala ang naparirito sa ngalan ng Panginoon!
 Osana sa kaitaasan!""",
+    "holy_holy_cebuano": """<<A>>Santos, Santos, Santos
+nga Ginoo, Dios sa kagahuman!
+Puno ang langit ug ang yuta sa imong himaya!
+Osana sa kahitas-an!
+Dalaygon ang nagaanhi sa ngalan sa Ginoo!
+Osana sa kahitas-an!""",
     "mystery_of_faith": """<<A>>We proclaim your Death, O Lord,
 and profess your Resurrection
 until you come again.
@@ -266,6 +357,9 @@ kami’y natubos mong tunay,
 Poong Hesus naming mahal,
 iligtas mo kaming tanan
 ngayon at magpakailanman.""",
+    "mystery_of_faith_cebuano": """<<A>>Ginoo, gimantala namo ang imong kamatayon
+ug gipadayag ang imong pagkabanhaw
+hangtod sa imong pagbalik.""",
     "lamb_of_god": """<<A>>Lamb of God,
 you take away the sins of the world,
 have mercy on us.
@@ -284,6 +378,15 @@ maawa ka sa amin.
 Kordero ng Diyos,
 na nag-aalis ng mga kasalanan ng sanlibutan,
 ipagkaloob mo sa amin ang kapayapaan.""",
+    "lamb_of_god_cebuano": """<<A>>Kordero sa Dios,
+nga nagawagtang sa mga sala sa kalibutan,
+kaloy-i kami.
+Kordero sa Dios,
+nga nagawagtang sa mga sala sa kalibutan,
+kaloy-i kami.
+Kordero sa Dios,
+nga nagawagtang sa mga sala sa kalibutan,
+ihatag kanamo ang kalinaw.""",
     "kyrie": """<<A>>LORD, HAVE MERCY.
 <<A>>LORD, HAVE MERCY.
 <<A>>LORD, HAVE MERCY.
@@ -299,6 +402,12 @@ ipagkaloob mo sa amin ang kapayapaan.""",
 <<A>>Kristo, kaawaan mo kami.
 <<A>>Panginoon, kaawaan mo kami.
 <<A>>Panginoon, kaawaan mo kami.""",
+    "kyrie_cebuano": """<<A>>Ginoo, kaloy-i kami.
+<<A>>Ginoo, kaloy-i kami.
+<<A>>Kristo, kaloy-i kami.
+<<A>>Kristo, kaloy-i kami.
+<<A>>Ginoo, kaloy-i kami.
+<<A>>Ginoo, kaloy-i kami.""",
 }
 
 _ALIASES: Final[dict[str, str]] = {
@@ -325,7 +434,7 @@ _OUR_FATHER_LANGS: Final[dict[str, str]] = {
     "korean": "our_father_korean",
 }
 
-# Prayer base keys that have a ``_{language}`` variant (tagalog today).
+# Prayer base keys that have a ``_{language}`` variant (tagalog, cebuano).
 _LOCALIZED_PRAYERS: Final[frozenset[str]] = frozenset(
     {
         "penitential_act",
@@ -345,7 +454,7 @@ def get_prayer(name: str, language: str = "english") -> str:
     Return marked prayer text for slide rendering.
     Keys: penitential_act, gloria, nicene_creed, apostles_creed, kyrie,
     our_father, holy_holy, mystery_of_faith, lamb_of_god.
-    Optional ``language`` (english | tagalog) selects localized Ordo wording.
+    Optional ``language`` (english | tagalog | cebuano) selects localized Ordo wording.
     """
     key = (name or "").strip().lower().replace(" ", "_").replace("-", "_")
     key = _ALIASES.get(key, key)

@@ -1,0 +1,476 @@
+<!DOCTYPE html><html lang="ceb" translate="no" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="google" content="notranslate"><script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var q = params.get('theme');
+        var stored = '';
+        try {
+          stored = localStorage.getItem('theme') || '';
+        } catch (_) {}
+        var theme = stored;
+        if (q) {
+          if (q === 'toggle') {
+            var cur = theme || 'light';
+            theme = cur === 'dark' ? 'light' : 'dark';
+          } else if (q === 'dark' || q === 'light') {
+            theme = q;
+          }
+          try {
+            var url = new URL(location.href);
+            url.searchParams.delete('theme');
+            history.replaceState({}, document.title, url.toString());
+          } catch (_) {}
+        }
+        if (theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          try {
+            localStorage.setItem('theme', theme);
+          } catch (_) {}
+        }
+
+        window.__currentTheme = function () {
+          return document.documentElement.getAttribute('data-theme') || 'light';
+        };
+
+        window.__refreshDisqus = function () {
+          var thread = document.getElementById('disqus_thread');
+          if (!thread || !window.DISQUS || !window.DISQUS.reset) return;
+          try {
+            window.DISQUS.reset({
+              reload: true,
+              config: function () {
+                this.page.url = window.location.href;
+                this.page.identifier = window.location.pathname;
+                this.page.colorScheme =
+                  window.__currentTheme() === 'dark' ? 'dark' : 'light';
+              },
+            });
+          } catch (_) {}
+        };
+
+        window.__setTheme = function (next) {
+          document.documentElement.setAttribute('data-theme', next);
+          try {
+            localStorage.setItem('theme', next);
+          } catch (_) {}
+          window.__refreshDisqus();
+        };
+
+        window.__toggleTheme = function () {
+          var next = window.__currentTheme() === 'dark' ? 'light' : 'dark';
+          window.__setTheme(next);
+          return next;
+        };
+      })();
+    </script><meta name="description" content="Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon · Year A · Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><title>Nobiyembre 8, 2026</title><link rel="canonical" href="https://sulugoon.com/readings/2026/11/08/"><link rel="stylesheet" href="/assets/css/flatpickr.min.css"><link rel="stylesheet" href="/assets/css/icons.css"><link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap"></noscript><link rel="preload" fetchpriority="high" as="image" href="/assets/images/transparent.png" type="image/png"><link rel="stylesheet" href="/assets/css/style.css"><link rel="manifest" href="/manifest.json"><link rel="icon" href="/assets/images/app.svg" type="image/svg+xml"><link rel="icon" href="/assets/images/favicon-16.png" type="image/png" sizes="16x16"><link rel="icon" href="/assets/images/favicon-32.png" type="image/png" sizes="32x32"><link rel="icon" href="/assets/images/favicon-48.png" type="image/png" sizes="48x48"><link rel="icon" href="/assets/images/favicon-96.png" type="image/png" sizes="96x96"><link rel="icon" href="/assets/images/icon-192.png" type="image/png" sizes="192x192"><link rel="icon" href="/assets/images/app.png" type="image/png" sizes="512x512"><link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png" sizes="180x180"><meta name="theme-color" content="#0d6efd"><meta name="application-name" content="Sulugoon"><meta name="msapplication-TileColor" content="#0d6efd"><meta name="msapplication-TileImage" content="/assets/images/icon-144.png"><meta name="msapplication-config" content="/assets/images/browserconfig.xml"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Sulugoon"><meta name="view-transition" content="same-origin"><meta itemprop="name" content="Nobiyembre 8, 2026 | Cebuano Mass Readings"><meta itemprop="description" content="Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon · Year A · Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13"><meta itemprop="image" content="https://sulugoon.com/assets/images/share/2026/11/08"><meta property="og:title" content="Nobiyembre 8, 2026 | Cebuano Mass Readings"><meta property="og:description" content="Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon · Year A · Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13"><meta property="og:type" content="article"><meta property="og:url" content="https://sulugoon.com/readings/2026/11/08/"><meta property="og:site_name" content="Sulugoon"><meta property="og:locale" content="ceb_PH"><meta property="og:locale:alternate" content="en_PH"><meta property="og:locale:alternate" content="fil_PH"><meta property="og:image" content="https://sulugoon.com/assets/images/share/2026/11/08"><meta property="og:image:secure_url" content="https://sulugoon.com/assets/images/share/2026/11/08"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Nobiyembre 8, 2026 | Cebuano Mass Readings"><meta property="article:publisher" content="https://sulugoon.com"><meta property="article:published_time" content="2026-11-08"><meta property="article:modified_time" content="2026-11-08"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Nobiyembre 8, 2026 | Cebuano Mass Readings"><meta name="twitter:description" content="Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon · Year A · Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13"><meta name="twitter:image" content="https://sulugoon.com/assets/images/share/2026/11/08"><meta name="twitter:image:alt" content="Nobiyembre 8, 2026 | Cebuano Mass Readings"><meta name="author" content="Sulugoon"><meta name="referrer" content="strict-origin-when-cross-origin"><meta name="format-detection" content="telephone=no"><meta name="color-scheme" content="light dark"><link rel="alternate" hreflang="ceb" href="https://sulugoon.com/readings/2026/11/08/"><link rel="alternate" hreflang="x-default" href="https://sulugoon.com/readings/2026/11/08/"><link rel="sitemap" type="application/xml" href="/sitemap.xml"><meta name="facebook-domain-verification" content="x70eo4963p1agwsn7g7fx4ck80oykq"><meta name="google-adsense-account" content="ca-pub-3817286986521983"><link rel="preconnect" href="https://pagead2.googlesyndication.com"><link rel="dns-prefetch" href="https://pagead2.googlesyndication.com"><script>
+            {`(function(){var r=document.documentElement;r.setAttribute('data-ads-pending','');setTimeout(function(){r.removeAttribute('data-ads-pending')},6000);})();`}
+          </script><script async crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3817286986521983"></script><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://sulugoon.com/#organization","name":"Sulugoon","url":"https://sulugoon.com/","logo":{"@type":"ImageObject","@id":"https://sulugoon.com/#logo","url":"https://sulugoon.com/assets/images/app.png","contentUrl":"https://sulugoon.com/assets/images/app.png","width":512,"height":512,"caption":"Sulugoon"},"image":{"@id":"https://sulugoon.com/#logo"},"sameAs":["https://play.google.com/store/apps/details?id=com.sulugoon.app"]},{"@type":"WebSite","@id":"https://sulugoon.com/#website","url":"https://sulugoon.com/","name":"Sulugoon","description":"Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon · Year A · Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13","publisher":{"@id":"https://sulugoon.com/#organization"},"inLanguage":"ceb"},{"@type":"Article","@id":"https://sulugoon.com/readings/2026/11/08/#webpage","url":"https://sulugoon.com/readings/2026/11/08/","name":"Nobiyembre 8, 2026","headline":"Nobiyembre 8, 2026 | Cebuano Mass Readings","description":"Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon · Year A · Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13","isPartOf":{"@id":"https://sulugoon.com/#website"},"inLanguage":"ceb","author":{"@id":"https://sulugoon.com/#organization"},"publisher":{"@id":"https://sulugoon.com/#organization"},"primaryImageOfPage":{"@type":"ImageObject","url":"https://sulugoon.com/assets/images/share/2026/11/08","contentUrl":"https://sulugoon.com/assets/images/share/2026/11/08","width":1200,"height":630,"caption":"Nobiyembre 8, 2026 | Cebuano Mass Readings"},"image":{"@type":"ImageObject","url":"https://sulugoon.com/assets/images/share/2026/11/08","contentUrl":"https://sulugoon.com/assets/images/share/2026/11/08","width":1200,"height":630,"caption":"Nobiyembre 8, 2026 | Cebuano Mass Readings"},"datePublished":"2026-11-08","dateModified":"2026-11-08","keywords":"Cebuano Mass readings, Bisaya Mass readings, pagbasa sa misa, Nobiyembre 8, 2026, Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon, Year A","breadcrumb":{"@id":"https://sulugoon.com/readings/2026/11/08/#breadcrumb"}},{"@type":"BreadcrumbList","@id":"https://sulugoon.com/readings/2026/11/08/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Sulugoon","item":"https://sulugoon.com/"},{"@type":"ListItem","position":2,"name":"Ang Mga Basahon","item":"https://sulugoon.com/readings/"},{"@type":"ListItem","position":3,"name":"Nobiyembre 8, 2026","item":"https://sulugoon.com/readings/2026/11/08/"}]},{"@type":"Event","@id":"https://sulugoon.com/readings/2026/11/08/#event","name":"Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon","url":"https://sulugoon.com/readings/2026/11/08/","startDate":"2026-11-08","endDate":"2026-11-08","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","description":"Mga pagbasa sa Santos nga Misa: Unang Pagbasa: Wis. 6: 12-16 · Salmo: Ps. 63: 2. 3-4. 5-6. 7-8 · Ikaduhang Pagbasa: 1 Thes. 4: 13-18 · Ebanghelyo: Mt. 25: 1-13","inLanguage":"ceb","isAccessibleForFree":true,"image":["https://sulugoon.com/assets/images/share/2026/11/08"],"location":{"@type":"Place","@id":"https://sulugoon.com/#place","name":"Simbahang Katoliko sa Pilipinas","url":"https://sulugoon.com/","address":{"@type":"PostalAddress","addressCountry":"PH"}},"performer":{"@type":"PerformingGroup","name":"Simbahang Katoliko Romano"},"organizer":{"@type":"Organization","@id":"https://sulugoon.com/#organization","name":"Sulugoon","url":"https://sulugoon.com/"},"offers":{"@type":"Offer","@id":"https://sulugoon.com/readings/2026/11/08/#offer","url":"https://sulugoon.com/readings/2026/11/08/","price":0,"priceCurrency":"PHP","availability":"https://schema.org/InStock","validFrom":"2026-11-08"},"mainEntityOfPage":{"@id":"https://sulugoon.com/readings/2026/11/08/#webpage"},"about":[{"@type":"CreativeWork","name":"Wis. 6: 12-16","isPartOf":{"@type":"Book","name":"Bible"}},{"@type":"CreativeWork","name":"Ps. 63: 2. 3-4. 5-6. 7-8","isPartOf":{"@type":"Book","name":"Bible"}},{"@type":"CreativeWork","name":"1 Thes. 4: 13-18","isPartOf":{"@type":"Book","name":"Bible"}},{"@type":"CreativeWork","name":"Mt. 25: 1-13","isPartOf":{"@type":"Book","name":"Bible"}}]}]}</script><style>.typewriter[data-astro-cid-sckkx6r4]{display:inline-block;border-right:1px solid currentColor;white-space:nowrap;animation:caret 1s step-end infinite;vertical-align:baseline;line-height:1em}@keyframes caret{50%{border-color:transparent}}
+</style><script type="module">(function(){var d=document.getElementById("disqus_thread");if(!d)return;var a=!1;function s(){if(!a){a=!0,window.__disqusLoaded=!0,window.disqus_config=function(){this.page.url=window.location.href,this.page.identifier=window.location.pathname,this.page.colorScheme=document.documentElement.getAttribute("data-theme")==="dark"?"dark":"light"};var e=document,t=e.createElement("script");t.src="https://3db7.disqus.com/embed.js",t.setAttribute("data-timestamp",+new Date),(e.head||e.body).appendChild(t)}}d.classList.add("disqus-loaded"),s();var i=function(){var e=d.querySelectorAll('iframe[id^="dsq-app"]');e.length>1&&(e[0].style.display="none");for(var t=2;t<e.length;t++)e[t].style.display="none"};i();var r=new MutationObserver(i);r.observe(d,{childList:!0,subtree:!0})})();
+</script></head> <body class="loading  readings-page" data-astro-cid-sckkx6r4> <div class="loader-container" data-astro-cid-sckkx6r4> <div class="loader-wrap" data-astro-cid-sckkx6r4> <div class="loader" data-astro-cid-sckkx6r4></div> <img src="/assets/images/transparent.png" alt="" class="loader-logo" fetchpriority="high" data-astro-cid-sckkx6r4> </div> </div>  <div class="readings-container"> <div class="readings-shell" id="readings-shell"> <header class="readings-header"> <a href="/" class="home-link">Sulugoon</a> <div class="accessibility"> <button id="theme-toggle-header" aria-label="Toggle theme"> <i class="bi bi-sun-fill theme-icon-light"></i> <i class="bi bi-moon-fill theme-icon-dark"></i> </button> <button id="font-decrease" aria-label="Decrease font size">A-</button> <button id="font-increase" aria-label="Increase font size">A+</button> </div> </header> <div class="date-navigation"> <a href="#" class="date-nav-btn" id="prev-date-btn"><i class="bi bi-chevron-left"></i></a> <input type="text" id="reading-date-picker" placeholder="Select Date" value="2026-11-08"> <a href="#" class="date-nav-btn" id="next-date-btn"><i class="bi bi-chevron-right"></i></a> </div> </div> <div class="readings-scrollable"> <main id="reading-body-wrapper"> <div id="reading-body">  <div class="reading-meta"> <h1 class="liturgical-title-main"><span class="info-span" data-info="Green"><img class="liturgical-emoji" src="/assets/emojis/green.png" alt="🟢" loading="lazy"></span> Ikakatloa'g Duha nga Domingo sa Ordinaryong Panahon</h1>  <p class="liturgical-title-alt liturgical-cycle-pills"> <span class="liturgical-cycle-pill"> <span>Year</span> <span>A</span> </span> </p> <p class="saints-view-all-wrap"> <button type="button" id="saints-view-all" class="saints-view-all" aria-haspopup="dialog" aria-controls="saints-modal" aria-expanded="false">
+View All
+</button> </p> </div> <div class="readings-content"> <div class="readings-rendered"> <div class="reading-section" data-section-type="1st-reading"><h3 class="reading-title">PAGBASA GIKAN SA BASAHON SA KAALAM NI SOLOMON</h3><p class="reading-citation">Wis. 6: 12-16</p><p class="reading-text-paragraph">Ang kaalam nagsidlak nga masiga ug dili gayod moawop; sila nga nahigugma ug nangita kaniya masayon nga makakaplag kaniya. Dali siyang magpaila sa iyang kaugalingon kang bisan kinsa nga nagtinguha kaniya. Bangon ug sayo sa buntag aron pagpangita kaniya, ug wala kay kalisdanan; hikaplagan mo siya nga maglingkod sa imong pultahan. Ang inyong pagmatngon sa Kaalam maoy pagkab-ot sa hingpit nga pagsabot. Kon mangita ka kaniya, sa dili madugay makakaplag ka sa kalinaw sa hunahuna, kay mangita siya kanila nga angay kaniya, ug hikaplagan ka niya bisan asa ka. Maluluy-on siya ug mouban kanimo sa tanan mong hunahuna.</p><div class="reading-conclusion static-font-size"><p>ANG PULONG SA GINOO</p></div></div> <div class="reading-section" data-section-type="psalm"> <h3 class="reading-title">SALMO RESPONSORYO</h3> <p class="reading-citation">Ps. 63: 2. 3-4. 5-6. 7-8</p> <p class="psalm-response">Ang akong kalag giuhaw kanimo, O Ginoo, akong Dios.</p>   <p class="reading-text-paragraph">O Dios, ikaw ang akong Dios nga akong gipangita; kanimo nangandoy ang akong unod ug giuhaw ang akong kalag; Sama sa yuta nga uhaw, walay kinabuhi ug walay tubig.</p> <p class="psalm-response">Ang akong kalag giuhaw kanimo, O Ginoo, akong Dios.</p>  <p class="reading-text-paragraph">Sa ingon nagatuktok ako kanimo diha sa santuwaryo aron pagtan-aw sa imong gahom ug sa imong himaya. Kay ang imong kaluoy mas maayo kay sa kinabuhi; ang akong mga ngabil maghimaya kanimo.</p> <p class="psalm-response">Ang akong kalag giuhaw kanimo, O Ginoo, akong Dios.</p>  <p class="reading-text-paragraph">Sa ingon niini daygon ko ikaw samtang buhi pa ako; sa pagbayaw ko sa akong mga kamut sangpiton ko ang imong ngalan. Ingon sa kabuhong sa usa ka bangkite mabusog ang akong kalag, ug sa masadya nga mga ngabil magdayeg kanimo ang akong ba-ba.</p> <p class="psalm-response">Ang akong kalag giuhaw kanimo, O Ginoo, akong Dios.</p>  <p class="reading-text-paragraph">Hinumdoman ko ikaw sa akong higdaanan, ug latas sa pagbantay sa kagabhion magpalandong ako kanimo; Ikaw ang akong hinabang ug diha sa landong sa imong mga pako nagasinggit ako sa kasadya.</p> <p class="psalm-response">Ang akong kalag giuhaw kanimo, O Ginoo, akong Dios.</p>   </div> <div class="reading-section" data-section-type="2nd-reading"><h3 class="reading-title">PAGBASA GIKAN SA UNANG SULAT NI SAN PABLO NGADTO SA TAGA-TESALONICA</h3><p class="reading-citation">1 Thes. 4: 13-18 (TINAAS)</p><p class="reading-text-paragraph">Mga igsuon, buot kami nga masayod kamo sa kamatuoran mahitungod niadtong nangamatay na, aron dili kamo maguol ingon sa mga tawo nga walay paglaum. Kay kita nagtuo man nga si Jesus namatay ug nabanhaw; busa nagtuo kita nga banhawon sa Dios kadtong nangamatay nga nagtuo kang Jesus aron paubanon kaniya. Ang pagtulon-an sa Ginoo nga gitudlo namo kaninyo mao kini: kita nga buhi pa inigbalik sa Ginoo, dili mag-una niadtong nangamatay na. Unya mabati ang singgit sa pagmando ug ang tingog sa arkanghel ingon man ang lanog sa trumpeta sa Dios, ug mokunsad ang Ginoo gikan sa langit. Maoy unang mabanhaw kadtong nangamatay nga nagtuo kang Cristo. Unya kita nga buhi pa niadtong adlawa, bayawon uban kanila didto sa mga panganod aron pagsugat sa Ginoo. Ug kita unya uban na kanunay sa Ginoo. Busa pagdasigay kamo tungod niining paglauma.</p><div class="reading-conclusion static-font-size"><p>ANG PULONG SA GINOO</p></div><div class="or-divider">or</div><h3 class="reading-title">PAGBASA GIKAN SA UNANG SULAT NI SAN PABLO NGADTO SA TAGA-TESALONICA</h3><p class="reading-citation">1 Thes. 4: 13-14 (MINUBO)</p><p class="reading-text-paragraph">Mga igsuon, buot kami nga masayod kamo sa kamatuoran mahitungod niadtong nangamatay na, aron dili kamo maguol ingon sa mga tawo nga walay paglaum. Kay kita nagtuo man nga si Jesus namatay ug nabanhaw; busa nagtuo kita nga banhawon sa Dios kadtong nangamatay nga nagtuo kang Jesus aron paubanon kaniya.</p><div class="reading-conclusion static-font-size"><p>ANG PULONG SA GINOO</p></div></div> <div class="reading-section" data-section-type="gospel"><h3 class="reading-title">PAGBASA SA SANTOS NGA EBANGHELYO SUMALA NI SAN MATEO</h3><p class="reading-citation">Mt. 25: 1-13</p><p class="reading-text-paragraph">Si Jesus misugilon ug sambingay ngadto sa iyang mga tinun-an, "Niadtong adlawa ang Gingharian sa Langit mahisama sa napulo ka dalaga nga nagdala sa ilang mga suga ug nanglakaw aron pagsugat sa pamanhonon. Danghag ang lima kanila ug maalamon ang laing lima. Ang mga danghag nagdala sa ilang mga suga apan wala sila magtagana pagdalag lana nga igdudugang samtang ang mga maalamon nagdalag mga sudlanan nga punog lana uban sa ilang mga suga. Ang pamanhonon nalangan pag-abot, busa nagduka ug nakatulog ang mga dalaga. "Tungang gabii na kadto sa dihang milanog ang usa ka singgit, 'Ania na ang pamanhonon! Dali kamo ug sugata siya!' Nangmata ang mga dalaga ug giandam nila ang ilang mga suga. Unya ang mga danghag miingon sa mga maalamon, 'Bahini kamig diyutay sa inyong lana kay hapit na mangapalong ang among mga suga.' Apan ang mga maalamon mitubag, 'Ayaw kay dili na paigo ang lana alang kaninyo ug kanamo. Lakat hinuon kamo sa tindahan ug pagpalit kamog inyong magamit.' Busa ang mga danghag nga dalaga milakaw aron pagpalit ug lana, ug sa wala na sila didto, miabot ang pamanhonon. Ang lima ka dalaga nga nakapangandam mikuyog kaniya pagsulod ngadto sa kombira sa kasal ug gisirhan ang pultahan." "Unya miabot ang ubang mga dalaga ug misangpit sila, 'Sir, sir, pasudla kami!' Apan ang pamanhonon mitubag, 'Wala ako makaila kaninyo.'" Ug gitapos ni Jesus ang sambingay sa pag-ingon, "Busa pagtukaw kamo kay wala kamo mahibalo sa adlaw o sa takna."</p><div class="reading-conclusion static-font-size"><p>ANG EBANGHELYO SA GINOO</p></div></div>  </div> </div> </div> </main> <aside class="ad-slot ad-slot-display" data-ad-host> <span class="ad-slot-label">Advertisement</span> <div class="ad-slot-box"> <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3817286986521983" data-ad-slot="9711779468" data-ad-format="auto" data-full-width-responsive="true"></ins> </div> </aside> <div class="reading-aside" data-support> <a class="bk-note" href="https://m.me/official3db7" target="_blank" rel="noopener noreferrer" aria-label="Do you have a spare set? Message us on Messenger"> <span class="bk-note-sheen" aria-hidden="true"></span> <span class="bk-note-media" aria-hidden="true"> <img class="bk-note-img bk-note-img-a" src="/assets/images/book-left.png" alt="" width="224" height="308" loading="lazy" decoding="async" draggable="false"> <img class="bk-note-img bk-note-img-b" src="/assets/images/book-right.png" alt="" width="224" height="308" loading="lazy" decoding="async" draggable="false"> </span> <span class="bk-note-body"> <span class="bk-note-title">Do you have a spare set?</span> <span class="bk-note-text">
+We source the readings a month at a time. A donated set would let us
+        publish far ahead. If you have one, or can help us find one:
+</span> <span class="bk-note-cta"> <i class="bi bi-messenger" aria-hidden="true"></i> <span>Message us on Messenger</span> <i class="bi bi-chevron-right bk-note-arrow" aria-hidden="true"></i> </span> </span> </a> </div> <div id="disqus_thread"></div>  <footer class="site-footer"> <p class="provided-by">Provided by:</p> <a href="https://3db7.xyz" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"> <img src="/assets/images/3db7.svg" alt="3DB7 Logo" class="footer-logo"> </a> <p class="church-name"> <a href="https://3db7.xyz" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">3DB7</a> </p> <div class="footer-info"> <p class="footer-message">
+We want to help communities that don't have access to daily readings
+            yet. If you represent a diocese, religious order, or are a private
+            individual with digital readings you'd like to contribute, please
+            contact us. We'd be honored to work together in making God's Word
+            accessible to more people.
+</p> </div> </footer> </div> </div> <div id="saints-modal" class="modal-overlay saints-modal" style="display:none" role="dialog" aria-modal="true" aria-label="All celebrations for this day"> <div class="modal-content saints-modal-content"> <ul class="saints-list"> <li>All Deceased Dominicans</li><li>All Saints of the Diocese of Evry</li><li>All Saints of Wales</li><li>Blessed John Duns Scotus</li><li>Blessed Manuel Sanz Domínguez</li><li>Blessed Maria Crucified Satellico</li><li>Blessed Maximino Serrano Sáiz</li><li>Four Crowned Martyrs</li><li>Pope Saint Adeodatus I</li><li>Saint Clair</li><li>Saint Cybi of Caenarvon</li><li>Saint Drouet of Auxerre</li><li>Saint Elizabeth of the Trinity</li><li>Saint Gervadius</li><li>Saint Giuse Nguyen Ðình Nghi</li><li>Saint Godfrey of Amiens</li><li>Saint Gregory of Einsiedeln</li><li>Saint John Baptist Con</li><li>Saint Martinô Ta Ðuc Thinh</li><li>Saint Martinô Tho</li><li>Saint Maurus of Verdun</li><li>Saint Moroc of Scotland</li><li>Saint Phaolô Nguyen Ngân</li><li>Saint Tysilio of Wales</li><li>Saint Willehad of Bremen</li><li>Saint Wiomad of Trèves</li> </ul> </div> </div><script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var titleSpan = document.querySelector(
+        '.liturgical-title-main .info-span',
+      );
+      if (titleSpan) {
+        var colorName = titleSpan.getAttribute('data-info');
+        if (colorName) window.__setAccentByName(colorName);
+      }
+      var decreaseBtn = document.getElementById('font-decrease');
+      var increaseBtn = document.getElementById('font-increase');
+      var bodyWrapper = document.getElementById('reading-body-wrapper');
+      var themeToggle = document.getElementById('theme-toggle-header');
+
+      var sizes = ['large', 'xlarge', '2xlarge', '3xlarge', '4xlarge'];
+      var currentIndex = 0;
+
+      try {
+        var stored = localStorage.getItem('font-size-index');
+        if (stored !== null) {
+          currentIndex = parseInt(stored, 10);
+          if (
+            isNaN(currentIndex) ||
+            currentIndex < 0 ||
+            currentIndex >= sizes.length
+          ) {
+            currentIndex = 0;
+          }
+        }
+      } catch (e) {}
+
+      function updateFont() {
+        if (!bodyWrapper) return;
+        sizes.forEach(function (s) {
+          bodyWrapper.classList.remove('font-size-' + s);
+        });
+        bodyWrapper.classList.add('font-size-' + sizes[currentIndex]);
+
+        if (decreaseBtn) decreaseBtn.disabled = currentIndex === 0;
+        if (increaseBtn)
+          increaseBtn.disabled = currentIndex === sizes.length - 1;
+
+        try {
+          localStorage.setItem('font-size-index', currentIndex);
+        } catch (e) {}
+      }
+
+      if (decreaseBtn)
+        decreaseBtn.addEventListener('click', function () {
+          if (currentIndex > 0) {
+            currentIndex--;
+            updateFont();
+          }
+        });
+
+      if (increaseBtn)
+        increaseBtn.addEventListener('click', function () {
+          if (currentIndex < sizes.length - 1) {
+            currentIndex++;
+            updateFont();
+          }
+        });
+
+      updateFont();
+
+      var mainTitle = document.querySelector('.liturgical-title-main');
+      if (
+        mainTitle &&
+        document.querySelector('.liturgical-cycle-pills') &&
+        !document.querySelector(
+          '.reading-meta .liturgical-title-alt:not(.liturgical-cycle-pills)',
+        )
+      ) {
+        var updateCycleSpacing = function () {
+          var lineHeight = parseFloat(getComputedStyle(mainTitle).lineHeight);
+          var lines = Math.round(
+            mainTitle.getBoundingClientRect().height / lineHeight,
+          );
+          mainTitle.parentElement.classList.toggle(
+            'reading-meta-single-line',
+            lines === 1,
+          );
+        };
+        updateCycleSpacing();
+        new ResizeObserver(updateCycleSpacing).observe(mainTitle);
+      }
+
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (window.__toggleTheme) {
+            window.__toggleTheme();
+            return;
+          }
+          var current =
+            document.documentElement.getAttribute('data-theme') || 'light';
+          var newTheme = current === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', newTheme);
+          try {
+            localStorage.setItem('theme', newTheme);
+          } catch (e) {}
+        });
+      }
+
+      var dateInput = document.getElementById('reading-date-picker');
+      if (dateInput && typeof flatpickr === 'function') {
+        var fp = flatpickr(dateInput, {
+          dateFormat: 'Y-m-d',
+          disableMobile: true,
+          clickOpens: false,
+          onChange: function (selectedDates, dateStr) {
+            if (dateStr) {
+              document.body.classList.add('loading');
+              var parts = dateStr.split('-');
+              window.location.href =
+                '/readings/' + parts[0] + '/' + parts[1] + '/' + parts[2] + '/';
+            }
+          },
+        });
+        dateInput.addEventListener('click', function (e) {
+          e.preventDefault();
+          fp.toggle();
+        });
+      }
+
+      var prevBtn = document.getElementById('prev-date-btn');
+      var nextBtn = document.getElementById('next-date-btn');
+      var currentDate = new Date(dateInput.value);
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          document.body.classList.add('loading');
+          var d = new Date(currentDate);
+          d.setDate(d.getDate() - 1);
+          var parts = d.toISOString().split('T')[0].split('-');
+          window.location.href =
+            '/readings/' + parts[0] + '/' + parts[1] + '/' + parts[2] + '/';
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          document.body.classList.add('loading');
+          var d = new Date(currentDate);
+          d.setDate(d.getDate() + 1);
+          var parts = d.toISOString().split('T')[0].split('-');
+          window.location.href =
+            '/readings/' + parts[0] + '/' + parts[1] + '/' + parts[2] + '/';
+        });
+      }
+    });
+  </script> <script src="/assets/js/ui.js"></script> <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var container = document.getElementById('reading-body');
+      if (!container) return;
+      var sections = Array.from(
+        container.querySelectorAll('.reading-section[data-section-type]'),
+      );
+      if (sections.length === 0) return;
+      var psalmCount = sections.filter(function (s) {
+        return s.getAttribute('data-section-type').indexOf('psalm') === 0;
+      }).length;
+      var expandAll = false;
+      try {
+        expandAll = /[?&]ads=yes(?:&|$)/.test(window.location.search);
+      } catch (e) {}
+      var typeToTitle = {
+        'pre-mass-gospel': 'Before Mass',
+        entrance: 'Entrance',
+        '1st-reading': '1st Reading',
+        '2nd-reading': '2nd Reading',
+        '3rd-reading': '3rd Reading',
+        '4th-reading': '4th Reading',
+        '5th-reading': '5th Reading',
+        '6th-reading': '6th Reading',
+        '7th-reading': '7th Reading',
+        epistle: 'Epistle',
+        sequence: 'Sequence',
+        acclamation: 'Acclamation',
+        gospel: 'Gospel',
+        communion: 'Communion',
+        psalm: psalmCount > 1 ? 'Psalm 1' : 'Psalm',
+        'psalm-2': 'Psalm 2',
+        'psalm-3': 'Psalm 3',
+        'psalm-4': 'Psalm 4',
+        'psalm-5': 'Psalm 5',
+        'psalm-6': 'Psalm 6',
+        'psalm-7': 'Psalm 7',
+        'psalm-8': 'Psalm 8',
+      };
+      sections.forEach(function (section, idx) {
+        if (section.closest('.reading-collapsible')) return;
+        var type = section.getAttribute('data-section-type');
+        var displayTitle = typeToTitle[type];
+        if (!displayTitle) return;
+        var isFirst = expandAll || idx === 0;
+        var wrapper = document.createElement('div');
+        wrapper.className = 'reading-collapsible';
+        var header = document.createElement('button');
+        header.className = 'reading-collapsible-header';
+        header.setAttribute('aria-expanded', String(isFirst));
+        header.type = 'button';
+        header.innerHTML =
+          '<span class="reading-collapsible-title">' +
+          displayTitle +
+          '</span><span class="reading-collapsible-icon">' +
+          (isFirst ? '−' : '+') +
+          '</span>';
+        var body = document.createElement('div');
+        body.className = 'reading-collapsible-body';
+        body.style.display = isFirst ? 'block' : 'none';
+        section.parentNode.insertBefore(wrapper, section);
+        body.appendChild(section);
+        wrapper.appendChild(header);
+        wrapper.appendChild(body);
+        header.addEventListener('click', function () {
+          var expanded = header.getAttribute('aria-expanded') === 'true';
+          header.setAttribute('aria-expanded', String(!expanded));
+          body.style.display = expanded ? 'none' : 'block';
+          header.querySelector('.reading-collapsible-icon').textContent =
+            expanded ? '+' : '−';
+        });
+      });
+    });
+  </script>  <script>
+      (function () {
+        var loaderHidden = false;
+        var startTime = Date.now();
+        var minShow = 2000;
+
+        function isBackForward() {
+          try {
+            var entries = performance.getEntriesByType('navigation');
+            if (entries && entries.length) {
+              return entries[0].type === 'back_forward';
+            }
+          } catch (e) {}
+          try {
+            if (typeof performance.navigation !== 'undefined') {
+              return performance.navigation.type === 2;
+            }
+          } catch (e) {}
+          return false;
+        }
+
+        function hide() {
+          if (loaderHidden) return;
+          loaderHidden = true;
+          document.body.classList.remove('loading');
+        }
+
+        function tryHide() {
+          if (loaderHidden) return;
+          if (Date.now() - startTime < minShow) {
+            setTimeout(tryHide, 50);
+            return;
+          }
+          requestAnimationFrame(hide);
+        }
+
+        function start() {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(tryHide);
+          });
+        }
+
+        if (isBackForward()) {
+          document.body.classList.remove('loading');
+          loaderHidden = true;
+        } else if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', start, { once: true });
+        } else {
+          start();
+        }
+
+        document.addEventListener('click', function (e) {
+          var a = e.target.closest('a');
+          if (!a) return;
+          var href = a.getAttribute('href');
+          if (!href) return;
+          if (href.charAt(0) === '#') return;
+          if (href.indexOf('javascript:') === 0) return;
+          if (href.indexOf('mailto:') === 0) return;
+          if (href.indexOf('tel:') === 0) return;
+          if (a.getAttribute('target') === '_blank') return;
+          if (a.getAttribute('download')) return;
+          if (
+            e.ctrlKey ||
+            e.metaKey ||
+            e.shiftKey ||
+            e.altKey ||
+            e.button !== 0
+          )
+            return;
+          try {
+            var url = new URL(href, window.location.href);
+            if (url.origin !== window.location.origin) return;
+            if (url.pathname.indexOf('/admin') === 0) return;
+            if (
+              url.pathname === window.location.pathname &&
+              url.search === window.location.search
+            )
+              return;
+          } catch (_) {
+            return;
+          }
+          document.body.classList.add('loading');
+        });
+
+        window.addEventListener('pageshow', function (e) {
+          if (e.persisted) {
+            document.body.classList.remove('loading');
+            loaderHidden = true;
+          }
+        });
+      })();
+    </script>  <script>
+      (function () {
+        var ua = navigator.userAgent || '';
+        var isApp = ua.indexOf('SulugoonApp/1.0') !== -1;
+        var b = document.getElementById('join-banner');
+        var legal = document.getElementById('legal-links');
+        var themeLink = document.getElementById('theme-toggle');
+        function currentTheme() {
+          return document.documentElement.getAttribute('data-theme') || 'light';
+        }
+        function updateThemeLink() {
+          try {
+            if (themeLink) {
+              var t = currentTheme();
+              themeLink.textContent = t === 'dark' ? 'Light' : 'Dark';
+            }
+          } catch (_) {}
+        }
+        function handleTheme(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.__toggleTheme) {
+            window.__toggleTheme();
+          } else {
+            var next = currentTheme() === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try {
+              localStorage.setItem('theme', next);
+            } catch (_) {}
+          }
+          updateThemeLink();
+        }
+        if (themeLink) {
+          updateThemeLink();
+          themeLink.addEventListener('click', handleTheme);
+        }
+        if (!b || !legal) return;
+
+        function alignLegal() {
+          var h = b.offsetHeight || 0;
+          document.documentElement.style.setProperty(
+            '--banner-height',
+            String(h) + 'px',
+          );
+          if (b.classList.contains('show')) {
+            legal.classList.add('above-banner');
+          } else {
+            legal.classList.remove('above-banner');
+          }
+          legal.classList.add('legal-pulse');
+          setTimeout(function () {
+            legal.classList.remove('legal-pulse');
+          }, 400);
+        }
+        function show() {
+          document.body.classList.add('banner-open');
+          b.classList.add('show');
+          b.classList.remove('hide');
+          alignLegal();
+        }
+        function showIfAllowed() {
+          if (isApp) return;
+          if (document.body.classList.contains('tour-open')) return;
+          show();
+        }
+        setTimeout(showIfAllowed, 3000);
+        document.body.addEventListener('tour:closed', showIfAllowed);
+
+        var logo = document.querySelector('.landing-logo');
+        if (logo) logo.addEventListener('click', showIfAllowed);
+        alignLegal();
+        window.addEventListener('resize', alignLegal);
+      })();
+    </script> <script src="/assets/js/flatpickr.min.js"></script> <script src="/assets/js/common.js"></script> <script src="/assets/js/donations.js"></script> <script src="/assets/js/anniversary.js"></script> <script src="/assets/js/main.js"></script> <script defer src="/assets/js/extras.js"></script> <script>
+      (function () {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js');
+        }
+      })();
+    </script> <!-- Cloudflare Pages Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b086f635c9db4209a7f3c2e9efe027be"}'></script><!-- Cloudflare Pages Analytics --></body> </html>

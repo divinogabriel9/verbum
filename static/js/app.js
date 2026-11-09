@@ -784,38 +784,57 @@
     var readingsPollers = new Map();
     var flowLoadSeq = 0;
 
+    /* Mass (surface) language drives Order of Mass wording AND readings source.
+       Tagalog → Awit at Papuri; Cebuano → Sulugoon; English → USCCB. */
+    var READINGS_LANGUAGES = ["english", "tagalog", "cebuano"];
+
+    function normalizeMassSurfaceLanguage(value) {
+      const raw = String(value || "").trim().toLowerCase();
+      if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
+      if (raw === "cebuano" || raw === "bisaya" || raw === "visaya" || raw === "ceb") return "cebuano";
+      if (raw === "english") return "english";
+      return "";
+    }
+
+    function readingsLanguageForMass(language) {
+      const lang = normalizeMassSurfaceLanguage(language) || "english";
+      return READINGS_LANGUAGES.indexOf(lang) !== -1 ? lang : "english";
+    }
+
     function persistMassLanguage(language) {
-      const lang = language === "tagalog" ? "tagalog" : "english";
+      const lang = normalizeMassSurfaceLanguage(language) || "english";
       try { localStorage.setItem(MASS_LANGUAGE_LS_KEY, lang); } catch (_e) { /* ignore */ }
       return lang;
     }
 
     function readPersistedMassLanguage() {
       try {
-        const raw = String(localStorage.getItem(MASS_LANGUAGE_LS_KEY) || "").trim().toLowerCase();
-        if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
-        if (raw === "english") return "english";
+        return normalizeMassSurfaceLanguage(localStorage.getItem(MASS_LANGUAGE_LS_KEY));
       } catch (_e) { /* ignore */ }
       return "";
+    }
+
+    function currentMassSurfaceLanguage() {
+      const sel = $("flow-mass-language");
+      return (sel && normalizeMassSurfaceLanguage(sel.value)) || "english";
     }
 
     function applyPersistedMassLanguage() {
       const sel = $("flow-mass-language");
       const lang = readPersistedMassLanguage();
-      if (!sel || !lang || sel.value === lang) return lang || (sel && sel.value === "tagalog" ? "tagalog" : "english");
+      if (!sel || !lang || sel.value === lang) return lang || currentMassSurfaceLanguage();
       sel.value = lang;
       if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(sel);
       return lang;
     }
 
     function currentMassLanguage() {
-      const sel = $("flow-mass-language");
-      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+      return readingsLanguageForMass(currentMassSurfaceLanguage());
     }
 
     function flowApplyIsCurrent(date, language) {
       const d = String(date || "").trim();
-      const lang = language === "tagalog" ? "tagalog" : "english";
+      const lang = readingsLanguageForMass(language);
       const dateEl = $("mass-date");
       const liveDate = dateEl ? String(dateEl.value || "").trim() : "";
       return !!d && liveDate === d && currentMassLanguage() === lang;
@@ -823,11 +842,11 @@
 
     function currentCalendarLanguage() {
       const sel = $("cal-language");
-      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+      return (sel && readingsLanguageForMass(sel.value)) || "english";
     }
 
     function resolveReadingsLanguage(opts) {
-      if (opts && (opts.language === "tagalog" || opts.language === "english")) {
+      if (opts && READINGS_LANGUAGES.indexOf(opts.language) !== -1) {
         return opts.language;
       }
       return currentMassLanguage();
@@ -862,20 +881,34 @@
       if (!data) return "";
       const raw = String(data.readings_language || "").trim().toLowerCase();
       if (raw === "tagalog" || raw === "filipino") return "tagalog";
+      if (raw === "cebuano" || raw === "bisaya" || raw === "visaya") return "cebuano";
       if (raw === "english") return "english";
       // Heuristic fallback for older cached payloads without readings_language.
       // Prefer clear English gospel book names before Tagalog ones — "Ezekiel"
       // is English and must not be treated as Tagalog (that broke Mass Builder).
+      // Sulugoon citations often look English (Mt./Lk.), so also peek at body text.
       const blob = [
         data.gospel_reference,
         data.first_reading_reference,
         data.second_reading_reference,
         data.psalm_reference,
       ].join(" ").toLowerCase();
-      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)) {
+      const body = [
+        data.gospel_text,
+        data.gospel_quote,
+        data.first_reading_excerpt,
+        data.first_reading_text,
+        data.psalm_text,
+      ].join(" ").toLowerCase();
+      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)
+          && !/\b(ginoo|kaninyo|kamong|igsoon|mga|sulat|ebanghelyo|pagbasa gikan)\b/.test(body)) {
         return "english";
       }
-      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)) {
+      if (/\b(ginoo|kaninyo|kamong|igsoon|sulat ni san|ebanghelyo sumala|pagbasa gikan|salmo responsoryo)\b/.test(body)) {
+        return "cebuano";
+      }
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)
+          || /\b(panginoon|mga kapatid|mabuting balita|unang pagbasa)\b/.test(body)) {
         return "tagalog";
       }
       return "";
@@ -901,6 +934,9 @@
     window.persistMassLanguage = persistMassLanguage;
     window.applyPersistedMassLanguage = applyPersistedMassLanguage;
     window.currentMassLanguage = currentMassLanguage;
+    window.currentMassSurfaceLanguage = currentMassSurfaceLanguage;
+    window.normalizeMassSurfaceLanguage = normalizeMassSurfaceLanguage;
+    window.readingsLanguageForMass = readingsLanguageForMass;
     window.readingsLanguageOf = readingsLanguageOf;
     window.payloadMatchesLanguage = payloadMatchesLanguage;
 
@@ -914,8 +950,8 @@
         readingsPollers.delete(language + ":" + d);
         return;
       }
-      // Stop both language pollers for this date when language not specified.
-      ["english", "tagalog"].forEach((lang) => {
+      // Stop all language pollers for this date when language not specified.
+      READINGS_LANGUAGES.forEach((lang) => {
         const state = readingsPollers.get(lang + ":" + d);
         if (!state) return;
         if (state.timer) clearTimeout(state.timer);
@@ -1035,21 +1071,24 @@
     function prefetchAlternateMassLanguage(date) {
       const d = String(date || "").trim();
       if (!d) return;
-      const other = currentMassLanguage() === "tagalog" ? "english" : "tagalog";
-      if (cachedReadingsForLanguage(d, other)) return;
-      fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
-        .then((data) => {
-          if (!data || !readingsPayloadComplete(data)) return;
-          data.readings_language = other;
-          if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
-        })
-        .catch(function () { /* warm cache only */ });
+      const current = currentMassLanguage();
+      const others = READINGS_LANGUAGES.filter((lang) => lang !== current);
+      others.forEach((other) => {
+        if (cachedReadingsForLanguage(d, other)) return;
+        fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
+          .then((data) => {
+            if (!data || !readingsPayloadComplete(data)) return;
+            data.readings_language = other;
+            if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
+          })
+          .catch(function () { /* warm cache only */ });
+      });
     }
 
     function invalidateClientReadings(date) {
       const d = String(date || "").trim();
       if (!d) return;
-      ["english", "tagalog"].forEach((lang) => {
+      READINGS_LANGUAGES.forEach((lang) => {
         previewCache.delete(previewCacheKey(d, false, lang));
         previewCache.delete(previewCacheKey(d, true, lang));
         stopReadingsPoll(d, lang);
@@ -1147,7 +1186,7 @@
             // Prefer the language we asked for over heuristics — backend should
             // stamp readings_language; fall back to request lang when missing.
             const stamped = String(data.readings_language || "").trim().toLowerCase();
-            if (stamped === "tagalog" || stamped === "english") {
+            if (READINGS_LANGUAGES.indexOf(stamped) !== -1) {
               data.readings_language = stamped;
             } else {
               data.readings_language = readingsLanguageOf(data) || lang;
@@ -28890,8 +28929,8 @@
     async function reloadFlowReadingsForLanguage(date, language) {
       const d = String(date || ($("mass-date") && $("mass-date").value) || "").trim();
       if (!d) return;
-      const lang = language === "tagalog" || language === "english"
-        ? language
+      const lang = normalizeMassSurfaceLanguage(language)
+        ? readingsLanguageForMass(language)
         : currentMassLanguage();
       const apply = (data) => {
         if (!flowApplyIsCurrent(d, lang)) return;
@@ -29272,10 +29311,11 @@
         setMassBuilderFieldValue("flow-our-father-choice", suggestions.our_father_choice);
         applied = true;
       }
-      if (suggestions.mass_language === "english" || suggestions.mass_language === "tagalog") {
+      const suggestedMassLang = normalizeMassSurfaceLanguage(suggestions.mass_language);
+      if (suggestedMassLang) {
         // Never auto-switch Mass language on date/load — only Quick Mass (force) may apply it.
         if (force) {
-          setMassBuilderFieldValue("flow-mass-language", suggestions.mass_language);
+          setMassBuilderFieldValue("flow-mass-language", suggestedMassLang);
           applied = true;
         }
       }
@@ -30409,11 +30449,44 @@
       });
     }
 
+    function openSaWeeklyPosterGeneratePanel() {
+      try {
+        if (typeof showRoute === "function") showRoute("/superadmin");
+        else window.location.assign("/superadmin");
+      } catch (_e) {
+        window.location.assign("/superadmin");
+      }
+      window.setTimeout(function () {
+        if (typeof showSaPanel === "function") {
+          showSaPanel("system-gospel-posters");
+        } else if (typeof saState === "object" && saState) {
+          saState.panel = "system-gospel-posters";
+          if (saState.hubPanel) saState.hubPanel.platform = "system-gospel-posters";
+        }
+        const genBtn = $("mw-weekly-posters-generate");
+        if (genBtn && typeof genBtn.focus === "function") {
+          try { genBtn.focus(); } catch (_err) { /* ignore */ }
+        }
+      }, 120);
+    }
+
+    function bindWeeklyAiPosterSaGenerateCta() {
+      const btn = $("mw-ai-poster-sa-generate");
+      if (!btn || btn.dataset.boundSaGenCta === "1") return;
+      btn.dataset.boundSaGenCta = "1";
+      btn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        openSaWeeklyPosterGeneratePanel();
+      });
+    }
+
     function syncWeeklyAiPosterGate(catalog) {
       const gate = $("mw-ai-poster-gate");
       const body = $("mw-ai-poster-body");
       const wrap = $("flow-ai-poster-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
+      const saGenBtn = $("mw-ai-poster-sa-generate");
+      bindWeeklyAiPosterSaGenerateCta();
       if (catalog && typeof catalog === "object") {
         const items = Array.isArray(catalog.items) ? catalog.items : [];
         const readyFromItems = items.filter((it) => it && it.ready).length;
@@ -30439,6 +30512,7 @@
         ? canUseCuratedPosters(churchMembershipState)
         : true;
       if (!membershipAllows) {
+        if (saGenBtn) saGenBtn.hidden = true;
         if (typeof syncCuratedPosterAccessUi === "function") syncCuratedPosterAccessUi();
         stopWeeklyPosterAutoScroll();
         syncWeeklyPosterExpandUi();
@@ -30446,6 +30520,7 @@
         return;
       }
       const unlocked = areWeeklyAiPostersReady();
+      const sa = isWeeklyPosterSuperadmin();
       if (gate) {
         gate.hidden = unlocked;
         gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
@@ -30463,13 +30538,14 @@
       if (body) {
         body.setAttribute("aria-disabled", unlocked ? "false" : "true");
       }
+      if (saGenBtn) saGenBtn.hidden = unlocked || !sa;
       if (msg) {
         msg.textContent = unlocked
           ? ""
           : (
-            isWeeklyPosterSuperadmin()
-              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Use “Generate this week’s styles” above the carousel.')
-              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.')
+            sa
+              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Generate this week’s styles in Superadmin.')
+              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. This Mass will use the classic green gradient dividers.')
           );
       }
       if (unlocked) {
@@ -32516,6 +32592,7 @@
       const parts = [];
       if (model.collection) parts.push(model.collection);
       if (model.aiPoster) parts.push("Beautifully curated poster");
+      else parts.push("Classic green gradient dividers");
       if (model.creed) parts.push(model.creed);
       return parts.join(" · ");
     }
@@ -34305,7 +34382,11 @@
         const divAllowed = ["divider2", "divider3", "auto"];
         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
         const divHidden = (divStyleEl && divStyleEl.value) || "";
-        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
+        let divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
+        // Curated posters unavailable → classic green-gradient Mass dividers.
+        if (!body.include_ai_mass_poster) {
+          divVal = "divider3";
+        }
         activeDividerStyle = divVal;
         if (divStyleEl) divStyleEl.value = divVal;
         body.divider_style = divVal;
@@ -34335,12 +34416,10 @@
         const creedSel = $("flow-creed-choice");
         const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
         body.creed_choice = creedVal === "apostles" ? "apostles" : (creedVal === "none" ? "none" : "nicene");
-        const creedLangSel = $("flow-creed-language");
-        body.creed_language = creedLangSel && creedLangSel.value === "tagalog" ? "tagalog" : "english";
-        const penLangSel = $("flow-penitential-language");
-        body.penitential_language = penLangSel && penLangSel.value === "tagalog" ? "tagalog" : "english";
-        const sanctusLangSel = $("flow-sanctus-language");
-        body.sanctus_language = sanctusLangSel && sanctusLangSel.value === "tagalog" ? "tagalog" : "english";
+        const riteLang = (sel) => (sel && normalizeMassSurfaceLanguage(sel.value)) || "english";
+        body.creed_language = riteLang($("flow-creed-language"));
+        body.penitential_language = riteLang($("flow-penitential-language"));
+        body.sanctus_language = riteLang($("flow-sanctus-language"));
         const gloriaSel = $("flow-gloria-choice");
         const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
         body.gloria_choice = gloriaVal === "latin" ? "latin" : (gloriaVal === "none" ? "none" : "english");
@@ -34355,8 +34434,7 @@
         body.kyrie_choice = kyrieSel && kyrieAllowed.includes(kyrieSel.value) ? kyrieSel.value : "english";
         const kyrieSlideSel = $("flow-kyrie-tagalog-slide");
         body.kyrie_tagalog_slide = kyrieSlideSel && kyrieSlideSel.value === "2" ? 2 : 1;
-        const massLangSel = $("flow-mass-language");
-        body.mass_language = massLangSel && massLangSel.value === "tagalog" ? "tagalog" : "english";
+        body.mass_language = currentMassSurfaceLanguage();
         body.hymn_lyrics_layout = readHymnLyricsLayout();
         body.show_hymn_section_labels = readHymnSectionLabels();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
@@ -34769,7 +34847,9 @@
       if (status) {
         status.textContent = lang === "tagalog"
           ? "Loading Tagalog liturgical calendar…"
-          : "Loading liturgical calendar…";
+          : (lang === "cebuano"
+            ? "Loading Cebuano liturgical calendar…"
+            : "Loading liturgical calendar…");
       }
       try {
         const qs = "year=" + y + "&month=" + m + "&lang=" + encodeURIComponent(lang);
@@ -34781,7 +34861,11 @@
         if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
         calendarMonthData = data.days || {};
         calendarMonthKey = key;
-        if (status) status.textContent = lang === "tagalog" ? "Tagalog readings" : "English · Philippines Proper";
+        if (status) {
+          status.textContent = lang === "tagalog"
+            ? "Tagalog readings"
+            : (lang === "cebuano" ? "Cebuano / Sulugoon readings" : "English · Philippines Proper");
+        }
       } catch (err) {
         calendarMonthData = {};
         calendarMonthKey = "";
@@ -34821,7 +34905,9 @@
       if (title) title.textContent = "Readings — " + (detail.date || "");
       if (subtitle) {
         const h = health.status || "unknown";
-        const cacheLabel = detail.language === "tagalog" ? "Tagalog cache" : "Global cache";
+        const cacheLabel = detail.language === "tagalog"
+          ? "Tagalog cache"
+          : (detail.language === "cebuano" ? "Cebuano cache" : "Global cache");
         subtitle.textContent = cacheLabel + " · " + h.charAt(0).toUpperCase() + h.slice(1);
       }
       if (statusEl) {
@@ -35092,7 +35178,10 @@
     ];
 
     function calAdminSourceName() {
-      return currentCalendarLanguage() === "tagalog" ? "Tagalog readings" : "English readings";
+      const lang = currentCalendarLanguage();
+      if (lang === "tagalog") return "Tagalog readings";
+      if (lang === "cebuano") return "Cebuano / Sulugoon readings";
+      return "English readings";
     }
 
     function syncCalAdminFetchSourceLabels() {
@@ -39959,7 +40048,7 @@
     if (calLanguageSel) {
       try {
         const savedCalLang = localStorage.getItem("verbumCalLanguage");
-        if (savedCalLang === "tagalog" || savedCalLang === "english") {
+        if (savedCalLang === "tagalog" || savedCalLang === "english" || savedCalLang === "cebuano") {
           calLanguageSel.value = savedCalLang;
         }
       } catch (_e) { /* ignore */ }

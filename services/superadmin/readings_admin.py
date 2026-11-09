@@ -145,6 +145,10 @@ def _cache_entry_for_language(iso: str, language: str) -> dict[str, str] | None:
         from services.awit_at_papuri_readings import get_tagalog_cache_entry
 
         return get_tagalog_cache_entry(iso)
+    if lang == "cebuano":
+        from services.sulugoon_readings import get_cebuano_cache_entry
+
+        return get_cebuano_cache_entry(iso)
     return _raw_cache_entry(iso)
 
 
@@ -159,7 +163,7 @@ def assess_readings_health(date: str, language: str = "english") -> dict[str, An
     is_sunday = on_date.weekday() == 6
     lang = normalize_mass_language(language)
     entry = _cache_entry_for_language(iso, lang)
-    if lang != "tagalog" and entry and not _cache_entry_has_core_refs(entry):
+    if lang not in {"tagalog", "cebuano"} and entry and not _cache_entry_has_core_refs(entry):
         entry = _heal_missing_refs_from_lectionary(iso, entry)
 
     psalm_body_ok = bool(entry and _cache_entry_has_psalm(entry))
@@ -224,16 +228,16 @@ def get_readings_admin_detail(date: str, language: str = "english") -> dict[str,
     iso = date.strip()
     lang = normalize_mass_language(language)
     entry = _cache_entry_for_language(iso, lang) or {}
-    if lang != "tagalog" and entry and not _cache_entry_has_core_refs(entry):
+    if lang not in {"tagalog", "cebuano"} and entry and not _cache_entry_has_core_refs(entry):
         entry = _heal_missing_refs_from_lectionary(iso, entry)
     for psalm_key in ("psalm_text", "psalm_response"):
         if entry.get(psalm_key):
             entry[psalm_key] = repair_eaten_r_refrain(str(entry.get(psalm_key) or ""))
     health = assess_readings_health(iso, language=lang)
-    cached_payload = get_cached(iso) if lang != "tagalog" else None
+    cached_payload = get_cached(iso) if lang not in {"tagalog", "cebuano"} else None
     title = (cached_payload or {}).get("title") or ""
     season = (cached_payload or {}).get("season") or ""
-    if lang == "tagalog":
+    if lang in {"tagalog", "cebuano"}:
         title = str(entry.get("mass_celebration") or "").strip() or title
         if not season:
             from services.liturgical_calendar import get_liturgical_color
@@ -273,6 +277,14 @@ def patch_readings_admin_entry(
         )
 
         existing = get_tagalog_cache_entry(iso) or {k: "" for k in TAGALOG_CACHE_KEYS}
+    elif lang == "cebuano":
+        from services.sulugoon_readings import (
+            CACHE_KEYS as CEBUANO_CACHE_KEYS,
+            get_cebuano_cache_entry,
+            set_cebuano_cache_entry,
+        )
+
+        existing = get_cebuano_cache_entry(iso) or {k: "" for k in CEBUANO_CACHE_KEYS}
     else:
         existing = _raw_cache_entry(iso) or {k: "" for k in CACHE_KEYS}
     changed = False
@@ -292,6 +304,8 @@ def patch_readings_admin_entry(
             merged[psalm_key] = repair_eaten_r_refrain(str(merged.get(psalm_key) or ""))
     if lang == "tagalog":
         set_tagalog_cache_entry(iso, merged)
+    elif lang == "cebuano":
+        set_cebuano_cache_entry(iso, merged)
     else:
         set_readings_cache_entry(iso, merged)
         _apply_cache_edits_to_lectionary(iso, merged)
@@ -307,7 +321,7 @@ def patch_readings_admin_entry(
 def fetch_readings_admin_date(date: str, language: str = "english") -> dict[str, Any]:
     """Force a live fetch for one date, bypassing cached rows.
 
-    English uses USCCB/Bible. Tagalog uses Awit at Papuri.
+    English uses USCCB/Bible. Tagalog uses Awit at Papuri. Cebuano uses Sulugoon.
     """
     iso = date.strip()
     if not iso:
@@ -328,13 +342,18 @@ def fetch_readings_admin_date(date: str, language: str = "english") -> dict[str,
 
     after = assess_readings_health(iso, language=lang)
     detail = get_readings_admin_detail(iso, language=lang)
+    source = "english"
+    if lang == "tagalog":
+        source = "tagalog"
+    elif lang == "cebuano":
+        source = "cebuano"
     detail["fetch"] = {
         "ok": fetched and after["status"] != "critical",
         "fetched": fetched,
         "before": before["status"],
         "after": after["status"],
         "error": error,
-        "source": "tagalog" if lang == "tagalog" else "english",
+        "source": source,
     }
     return detail
 

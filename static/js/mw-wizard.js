@@ -364,10 +364,11 @@
           var previewDate = pd && pd.__previewDate ? String(pd.__previewDate) : '';
           var wantLang = (typeof window.currentMassLanguage === 'function')
             ? window.currentMassLanguage()
-            : (function () {
-                var sel = $('flow-mass-language');
-                return sel && sel.value === 'tagalog' ? 'tagalog' : 'english';
-              })();
+            : ((typeof window.readingsLanguageForMass === 'function')
+                ? window.readingsLanguageForMass(massSurfaceLanguage())
+                : (massSurfaceLanguage() === 'tagalog' || massSurfaceLanguage() === 'cebuano'
+                    ? massSurfaceLanguage()
+                    : 'english'));
           var gotLang = (typeof window.readingsLanguageOf === 'function')
             ? window.readingsLanguageOf(pd)
             : '';
@@ -902,10 +903,34 @@
             try { vid.load(); } catch (e1) {}
           }
         }
-        function preferredMassLanguageOption() {
+        function massSurfaceLanguage() {
           var massLang = $('flow-mass-language');
-          var lang = massLang && massLang.value === 'tagalog' ? 'tagalog' : 'english';
-          return lang;
+          var raw = massLang ? String(massLang.value || '').trim().toLowerCase() : '';
+          if (typeof window.normalizeMassSurfaceLanguage === 'function') {
+            return window.normalizeMassSurfaceLanguage(raw) || 'english';
+          }
+          if (raw === 'tagalog' || raw === 'cebuano') return raw;
+          return 'english';
+        }
+        /* Option values a rite select may carry for a Mass language
+           (Our Father uses "visaya" for the Cebuano Mass). */
+        function riteOptionCandidates(lang) {
+          if (lang === 'cebuano') return ['cebuano', 'visaya'];
+          return [lang];
+        }
+        function firstMatchingOption(sel, candidates) {
+          var found = '';
+          candidates.some(function (val) {
+            var has = Array.prototype.some.call(sel.options, function (o) {
+              return o.value === val && !o.disabled;
+            });
+            if (has) found = val;
+            return has;
+          });
+          return found;
+        }
+        function preferredMassLanguageOption() {
+          return massSurfaceLanguage();
         }
         function isLanguageRiteSelect(sel) {
           if (!sel) return false;
@@ -914,9 +939,11 @@
         }
         function reorderSelectLanguageOptions(sel, preferred) {
           if (!sel || !preferred || !isLanguageRiteSelect(sel)) return false;
+          var wanted = firstMatchingOption(sel, riteOptionCandidates(preferred));
+          if (!wanted) return false;
           var match = null;
           Array.prototype.forEach.call(sel.options, function (o) {
-            if (!match && o.value === preferred && !o.disabled) match = o;
+            if (!match && o.value === wanted && !o.disabled) match = o;
           });
           if (!match) return false;
           if (sel.options[0] === match) return true;
@@ -928,9 +955,10 @@
         function reorderMwLanguageCards(sel, preferred) {
           if (!sel || !preferred) return false;
           var rite = sel.closest('.mw-rite');
+          var wanted = firstMatchingOption(sel, riteOptionCandidates(preferred)) || preferred;
           var langMenu = rite && rite.querySelector('.mw-rite-lang__menu, .mw-rite-lang .mw-kyrie-dd__menu');
           if (langMenu) {
-            var langItem = langMenu.querySelector('[data-val="' + preferred + '"]');
+            var langItem = langMenu.querySelector('[data-val="' + wanted + '"]');
             if (!langItem) return false;
             if (langMenu.firstElementChild === langItem) return true;
             langMenu.insertBefore(langItem, langMenu.firstElementChild);
@@ -938,7 +966,7 @@
           }
           var wrap = sel.nextElementSibling;
           if (!wrap || !wrap.classList || !wrap.classList.contains('mw-options')) return false;
-          var card = wrap.querySelector('.mw-option[data-val="' + preferred + '"]');
+          var card = wrap.querySelector('.mw-option[data-val="' + wanted + '"]');
           if (!card) return false;
           var move = card.closest('.mw-option-line') || card;
           if (wrap.firstElementChild === move) return true;
@@ -1553,12 +1581,12 @@
           });
         }
         function syncVariantRiteLanguagesFromMass(lang) {
-          var preferred = lang === 'tagalog' ? 'tagalog' : 'english';
+          var surface = (typeof window.normalizeMassSurfaceLanguage === 'function')
+            ? (window.normalizeMassSurfaceLanguage(lang) || 'english')
+            : (lang === 'tagalog' || lang === 'cebuano' ? lang : 'english');
           Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-rite-lang]'), function (sel) {
-            var has = Array.prototype.some.call(sel.options, function (o) {
-              return o.value === preferred && !o.disabled;
-            });
-            if (!has) return;
+            var preferred = firstMatchingOption(sel, riteOptionCandidates(surface));
+            if (!preferred) return;
             if (sel.value === preferred) {
               sel.dispatchEvent(new Event('change', { bubbles: true }));
               return;
@@ -2967,22 +2995,21 @@
           if (massLang && massLang.dataset.mwLangBound !== '1') {
             massLang.dataset.mwLangBound = '1';
             massLang.addEventListener('change', function () {
-              var lang = massLang.value === 'tagalog' ? 'tagalog' : 'english';
+              var lang = massSurfaceLanguage();
+              var readingsLang = (typeof window.readingsLanguageForMass === 'function')
+                ? window.readingsLanguageForMass(lang)
+                : (lang === 'tagalog' || lang === 'cebuano' ? lang : 'english');
               if (typeof window.persistMassLanguage === 'function') window.persistMassLanguage(lang);
               /* Prefer matching vernacular for Our Father / Kyrie — Creed stays user-chosen. */
               if ($('flow-our-father-choice')) {
                 var ofSel = $('flow-our-father-choice');
-                var hasLang = Array.prototype.some.call(ofSel.options, function (o) {
-                  return o.value === lang && !o.disabled;
-                });
-                if (hasLang) ofSel.value = lang;
+                var ofLang = firstMatchingOption(ofSel, riteOptionCandidates(lang));
+                if (ofLang) ofSel.value = ofLang;
               }
               if ($('flow-kyrie-choice')) {
                 var kSel = $('flow-kyrie-choice');
-                var hasKyrie = Array.prototype.some.call(kSel.options, function (o) {
-                  return o.value === lang && !o.disabled;
-                });
-                if (hasKyrie) kSel.value = lang;
+                var kyrieLang = firstMatchingOption(kSel, [lang === 'cebuano' ? 'english' : lang]);
+                if (kyrieLang) kSel.value = kyrieLang;
               }
               applyMassLanguageOptionOrder(lang);
               syncVariantRiteLanguagesFromMass(lang);
@@ -2996,7 +3023,7 @@
               fillAside(1);
               var md = $('mass-date');
               if (md && md.value && typeof window.reloadFlowReadingsForLanguage === 'function') {
-                window.reloadFlowReadingsForLanguage(md.value, lang);
+                window.reloadFlowReadingsForLanguage(md.value, readingsLang);
               }
             });
           }

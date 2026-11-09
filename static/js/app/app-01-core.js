@@ -784,38 +784,57 @@
     var readingsPollers = new Map();
     var flowLoadSeq = 0;
 
+    /* Mass (surface) language drives Order of Mass wording AND readings source.
+       Tagalog → Awit at Papuri; Cebuano → Sulugoon; English → USCCB. */
+    var READINGS_LANGUAGES = ["english", "tagalog", "cebuano"];
+
+    function normalizeMassSurfaceLanguage(value) {
+      const raw = String(value || "").trim().toLowerCase();
+      if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
+      if (raw === "cebuano" || raw === "bisaya" || raw === "visaya" || raw === "ceb") return "cebuano";
+      if (raw === "english") return "english";
+      return "";
+    }
+
+    function readingsLanguageForMass(language) {
+      const lang = normalizeMassSurfaceLanguage(language) || "english";
+      return READINGS_LANGUAGES.indexOf(lang) !== -1 ? lang : "english";
+    }
+
     function persistMassLanguage(language) {
-      const lang = language === "tagalog" ? "tagalog" : "english";
+      const lang = normalizeMassSurfaceLanguage(language) || "english";
       try { localStorage.setItem(MASS_LANGUAGE_LS_KEY, lang); } catch (_e) { /* ignore */ }
       return lang;
     }
 
     function readPersistedMassLanguage() {
       try {
-        const raw = String(localStorage.getItem(MASS_LANGUAGE_LS_KEY) || "").trim().toLowerCase();
-        if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
-        if (raw === "english") return "english";
+        return normalizeMassSurfaceLanguage(localStorage.getItem(MASS_LANGUAGE_LS_KEY));
       } catch (_e) { /* ignore */ }
       return "";
+    }
+
+    function currentMassSurfaceLanguage() {
+      const sel = $("flow-mass-language");
+      return (sel && normalizeMassSurfaceLanguage(sel.value)) || "english";
     }
 
     function applyPersistedMassLanguage() {
       const sel = $("flow-mass-language");
       const lang = readPersistedMassLanguage();
-      if (!sel || !lang || sel.value === lang) return lang || (sel && sel.value === "tagalog" ? "tagalog" : "english");
+      if (!sel || !lang || sel.value === lang) return lang || currentMassSurfaceLanguage();
       sel.value = lang;
       if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(sel);
       return lang;
     }
 
     function currentMassLanguage() {
-      const sel = $("flow-mass-language");
-      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+      return readingsLanguageForMass(currentMassSurfaceLanguage());
     }
 
     function flowApplyIsCurrent(date, language) {
       const d = String(date || "").trim();
-      const lang = language === "tagalog" ? "tagalog" : "english";
+      const lang = readingsLanguageForMass(language);
       const dateEl = $("mass-date");
       const liveDate = dateEl ? String(dateEl.value || "").trim() : "";
       return !!d && liveDate === d && currentMassLanguage() === lang;
@@ -823,11 +842,11 @@
 
     function currentCalendarLanguage() {
       const sel = $("cal-language");
-      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+      return (sel && readingsLanguageForMass(sel.value)) || "english";
     }
 
     function resolveReadingsLanguage(opts) {
-      if (opts && (opts.language === "tagalog" || opts.language === "english")) {
+      if (opts && READINGS_LANGUAGES.indexOf(opts.language) !== -1) {
         return opts.language;
       }
       return currentMassLanguage();
@@ -862,20 +881,34 @@
       if (!data) return "";
       const raw = String(data.readings_language || "").trim().toLowerCase();
       if (raw === "tagalog" || raw === "filipino") return "tagalog";
+      if (raw === "cebuano" || raw === "bisaya" || raw === "visaya") return "cebuano";
       if (raw === "english") return "english";
       // Heuristic fallback for older cached payloads without readings_language.
       // Prefer clear English gospel book names before Tagalog ones — "Ezekiel"
       // is English and must not be treated as Tagalog (that broke Mass Builder).
+      // Sulugoon citations often look English (Mt./Lk.), so also peek at body text.
       const blob = [
         data.gospel_reference,
         data.first_reading_reference,
         data.second_reading_reference,
         data.psalm_reference,
       ].join(" ").toLowerCase();
-      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)) {
+      const body = [
+        data.gospel_text,
+        data.gospel_quote,
+        data.first_reading_excerpt,
+        data.first_reading_text,
+        data.psalm_text,
+      ].join(" ").toLowerCase();
+      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)
+          && !/\b(ginoo|kaninyo|kamong|igsoon|mga|sulat|ebanghelyo|pagbasa gikan)\b/.test(body)) {
         return "english";
       }
-      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)) {
+      if (/\b(ginoo|kaninyo|kamong|igsoon|sulat ni san|ebanghelyo sumala|pagbasa gikan|salmo responsoryo)\b/.test(body)) {
+        return "cebuano";
+      }
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)
+          || /\b(panginoon|mga kapatid|mabuting balita|unang pagbasa)\b/.test(body)) {
         return "tagalog";
       }
       return "";
@@ -901,6 +934,9 @@
     window.persistMassLanguage = persistMassLanguage;
     window.applyPersistedMassLanguage = applyPersistedMassLanguage;
     window.currentMassLanguage = currentMassLanguage;
+    window.currentMassSurfaceLanguage = currentMassSurfaceLanguage;
+    window.normalizeMassSurfaceLanguage = normalizeMassSurfaceLanguage;
+    window.readingsLanguageForMass = readingsLanguageForMass;
     window.readingsLanguageOf = readingsLanguageOf;
     window.payloadMatchesLanguage = payloadMatchesLanguage;
 
@@ -914,8 +950,8 @@
         readingsPollers.delete(language + ":" + d);
         return;
       }
-      // Stop both language pollers for this date when language not specified.
-      ["english", "tagalog"].forEach((lang) => {
+      // Stop all language pollers for this date when language not specified.
+      READINGS_LANGUAGES.forEach((lang) => {
         const state = readingsPollers.get(lang + ":" + d);
         if (!state) return;
         if (state.timer) clearTimeout(state.timer);
@@ -1035,21 +1071,24 @@
     function prefetchAlternateMassLanguage(date) {
       const d = String(date || "").trim();
       if (!d) return;
-      const other = currentMassLanguage() === "tagalog" ? "english" : "tagalog";
-      if (cachedReadingsForLanguage(d, other)) return;
-      fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
-        .then((data) => {
-          if (!data || !readingsPayloadComplete(data)) return;
-          data.readings_language = other;
-          if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
-        })
-        .catch(function () { /* warm cache only */ });
+      const current = currentMassLanguage();
+      const others = READINGS_LANGUAGES.filter((lang) => lang !== current);
+      others.forEach((other) => {
+        if (cachedReadingsForLanguage(d, other)) return;
+        fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
+          .then((data) => {
+            if (!data || !readingsPayloadComplete(data)) return;
+            data.readings_language = other;
+            if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
+          })
+          .catch(function () { /* warm cache only */ });
+      });
     }
 
     function invalidateClientReadings(date) {
       const d = String(date || "").trim();
       if (!d) return;
-      ["english", "tagalog"].forEach((lang) => {
+      READINGS_LANGUAGES.forEach((lang) => {
         previewCache.delete(previewCacheKey(d, false, lang));
         previewCache.delete(previewCacheKey(d, true, lang));
         stopReadingsPoll(d, lang);
@@ -1147,7 +1186,7 @@
             // Prefer the language we asked for over heuristics — backend should
             // stamp readings_language; fall back to request lang when missing.
             const stamped = String(data.readings_language || "").trim().toLowerCase();
-            if (stamped === "tagalog" || stamped === "english") {
+            if (READINGS_LANGUAGES.indexOf(stamped) !== -1) {
               data.readings_language = stamped;
             } else {
               data.readings_language = readingsLanguageOf(data) || lang;

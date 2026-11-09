@@ -1590,7 +1590,7 @@ class PreviewBody(BaseModel):
     )
     mass_language: str = Field(
         "english",
-        description="Readings language: english | tagalog.",
+        description="Mass language: english | tagalog | cebuano (Cebuano → Sulugoon readings).",
         max_length=16,
     )
 
@@ -1782,17 +1782,17 @@ class GenerateBody(BaseModel):
     )
     creed_language: str = Field(
         "english",
-        description="Language for Creed slides: english | tagalog.",
+        description="Language for Creed slides: english | tagalog | cebuano.",
         max_length=16,
     )
     penitential_language: str = Field(
         "english",
-        description="Language for Penitential Act slides: english | tagalog.",
+        description="Language for Penitential Act slides: english | tagalog | cebuano.",
         max_length=16,
     )
     sanctus_language: str = Field(
         "english",
-        description="Language for Sanctus slides: english | tagalog.",
+        description="Language for Sanctus slides: english | tagalog | cebuano.",
         max_length=16,
     )
     gloria_choice: str = Field(
@@ -1817,7 +1817,7 @@ class GenerateBody(BaseModel):
     )
     mass_language: str = Field(
         "english",
-        description="Order of Mass surface language: english | tagalog.",
+        description="Order of Mass surface language: english | tagalog | cebuano.",
         max_length=16,
     )
     hymn_lyrics_layout: str = Field(
@@ -5818,6 +5818,13 @@ def api_generate(
         else:
             include_ai = False
 
+    # No curated weekly hero available → classic green-gradient Mass dividers.
+    if not include_ai and not bool(body.leaflet_only):
+        try:
+            body.divider_style = "divider3"
+        except Exception:
+            pass
+
     try:
         print("[generate] building media…", flush=True)
         parish_id = _session_parish_id(session) or "local"
@@ -6237,10 +6244,11 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         if (body.our_father_choice or "").strip()
         else lang_defaults.get("our_father_choice", "english")
     )
-    if mass_lang == "tagalog":
-        of_choice = "tagalog"
+    if mass_lang != "english":
+        # Vernacular Mass always pairs with its own Our Father (tagalog / visaya).
+        of_choice = lang_defaults.get("our_father_choice", of_choice)
     creed_choice = lang_defaults.get("creed_choice", "nicene")
-    rite_lang = "tagalog" if mass_lang == "tagalog" else "english"
+    rite_lang = mass_lang
     kyrie_choice = "tagalog" if mass_lang == "tagalog" else "english"
 
     theme = validate_theme_id(body.custom_theme)

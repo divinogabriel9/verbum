@@ -21,15 +21,15 @@ logger = logging.getLogger(__name__)
 
 DEMO_WATERMARK = "Liturgyflow.com"
 DEMO_DOWNLOAD_TTL_S = 30 * 60  # 30 minutes
-_ALLOWED_OUR_FATHER = frozenset({"english", "malay", "tagalog"})
+_ALLOWED_OUR_FATHER = frozenset({"english", "malay", "tagalog", "visaya"})
 _ALLOWED_THEME_IDS = frozenset({"theme1", "theme2", "theme3"})
-_ALLOWED_MASS_LANGUAGES = frozenset({"english", "tagalog"})
+_ALLOWED_MASS_LANGUAGES = frozenset({"english", "tagalog", "cebuano"})
 
 
 def validate_mass_language(choice: str) -> str:
-    c = str(choice or "english").strip().lower()
-    if c in {"filipino", "fil", "tl", "tgl"}:
-        c = "tagalog"
+    from services.mass_language import normalize_mass_language
+
+    c = normalize_mass_language(choice)
     if c not in _ALLOWED_MASS_LANGUAGES:
         return "english"
     return c

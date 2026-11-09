@@ -1,0 +1,326 @@
+diff --git a/data/app.sqlite b/data/app.sqlite
+index d9ffad9..8839f2f 100644
+Binary files a/data/app.sqlite and b/data/app.sqlite differ
+diff --git a/server.py b/server.py
+index fde4b46..c13f24e 100644
+--- a/server.py
++++ b/server.py
+@@ -5818,6 +5818,13 @@ def api_generate(
+         else:
+             include_ai = False
+ 
++    # No curated weekly hero available → classic green-gradient Mass dividers.
++    if not include_ai and not bool(body.leaflet_only):
++        try:
++            body.divider_style = "divider3"
++        except Exception:
++            pass
++
+     try:
+         print("[generate] building media…", flush=True)
+         parish_id = _session_parish_id(session) or "local"
+diff --git a/static/css/mw-wizard.css b/static/css/mw-wizard.css
+index 8ef4aec..d3d41a6 100644
+--- a/static/css/mw-wizard.css
++++ b/static/css/mw-wizard.css
+@@ -3683,20 +3683,47 @@
+         body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate[hidden] {
+           display: none !important;
+         }
+-        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate__msg {
++        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate__panel {
+           margin: 0;
+           max-width: min(34rem, 92%);
+-          padding: 12px 16px;
++          padding: 12px 16px 14px;
+           text-align: center;
++          background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
++          border: 1px solid color-mix(in srgb, var(--ink, #1a1a1a) 12%, transparent);
++          border-radius: 12px;
++          display: grid;
++          gap: 10px;
++          justify-items: center;
++          pointer-events: auto;
++        }
++        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate__msg {
++          margin: 0;
+           font-size: 0.92rem;
+           font-weight: 650;
+           line-height: 1.4;
+           color: color-mix(in srgb, var(--ink, #1a1a1a) 78%, transparent);
+-          background: color-mix(in srgb, var(--surface, #fff) 88%, transparent);
+-          border: 1px solid color-mix(in srgb, var(--ink, #1a1a1a) 12%, transparent);
+-          border-radius: 10px;
+           pointer-events: none;
+         }
++        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate__sa-gen {
++          appearance: none;
++          border: 0;
++          border-radius: 999px;
++          padding: 0.45rem 0.95rem;
++          font: inherit;
++          font-size: 0.82rem;
++          font-weight: 700;
++          letter-spacing: 0.01em;
++          color: #fff;
++          background: color-mix(in srgb, var(--accent, #2f5d50) 92%, #000);
++          cursor: pointer;
++          pointer-events: auto;
++        }
++        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate__sa-gen:hover {
++          filter: brightness(1.06);
++        }
++        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate__sa-gen[hidden] {
++          display: none !important;
++        }
+         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__unlock {
+           position: absolute;
+           top: 10px;
+diff --git a/static/js/app.js b/static/js/app.js
+index 4d556e8..683369f 100644
+--- a/static/js/app.js
++++ b/static/js/app.js
+@@ -30409,11 +30409,44 @@
+       });
+     }
+ 
++    function openSaWeeklyPosterGeneratePanel() {
++      try {
++        if (typeof showRoute === "function") showRoute("/superadmin");
++        else window.location.assign("/superadmin");
++      } catch (_e) {
++        window.location.assign("/superadmin");
++      }
++      window.setTimeout(function () {
++        if (typeof showSaPanel === "function") {
++          showSaPanel("system-gospel-posters");
++        } else if (typeof saState === "object" && saState) {
++          saState.panel = "system-gospel-posters";
++          if (saState.hubPanel) saState.hubPanel.platform = "system-gospel-posters";
++        }
++        const genBtn = $("mw-weekly-posters-generate");
++        if (genBtn && typeof genBtn.focus === "function") {
++          try { genBtn.focus(); } catch (_err) { /* ignore */ }
++        }
++      }, 120);
++    }
++
++    function bindWeeklyAiPosterSaGenerateCta() {
++      const btn = $("mw-ai-poster-sa-generate");
++      if (!btn || btn.dataset.boundSaGenCta === "1") return;
++      btn.dataset.boundSaGenCta = "1";
++      btn.addEventListener("click", function (ev) {
++        ev.preventDefault();
++        openSaWeeklyPosterGeneratePanel();
++      });
++    }
++
+     function syncWeeklyAiPosterGate(catalog) {
+       const gate = $("mw-ai-poster-gate");
+       const body = $("mw-ai-poster-body");
+       const wrap = $("flow-ai-poster-style-wrap");
+       const msg = $("mw-ai-poster-gate-msg");
++      const saGenBtn = $("mw-ai-poster-sa-generate");
++      bindWeeklyAiPosterSaGenerateCta();
+       if (catalog && typeof catalog === "object") {
+         const items = Array.isArray(catalog.items) ? catalog.items : [];
+         const readyFromItems = items.filter((it) => it && it.ready).length;
+@@ -30439,6 +30472,7 @@
+         ? canUseCuratedPosters(churchMembershipState)
+         : true;
+       if (!membershipAllows) {
++        if (saGenBtn) saGenBtn.hidden = true;
+         if (typeof syncCuratedPosterAccessUi === "function") syncCuratedPosterAccessUi();
+         stopWeeklyPosterAutoScroll();
+         syncWeeklyPosterExpandUi();
+@@ -30446,6 +30480,7 @@
+         return;
+       }
+       const unlocked = areWeeklyAiPostersReady();
++      const sa = isWeeklyPosterSuperadmin();
+       if (gate) {
+         gate.hidden = unlocked;
+         gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
+@@ -30463,13 +30498,14 @@
+       if (body) {
+         body.setAttribute("aria-disabled", unlocked ? "false" : "true");
+       }
++      if (saGenBtn) saGenBtn.hidden = unlocked || !sa;
+       if (msg) {
+         msg.textContent = unlocked
+           ? ""
+           : (
+-            isWeeklyPosterSuperadmin()
+-              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Use “Generate this week’s styles” above the carousel.')
+-              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.')
++            sa
++              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Generate this week’s styles in Superadmin.')
++              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. This Mass will use the classic green gradient dividers.')
+           );
+       }
+       if (unlocked) {
+@@ -32516,6 +32552,7 @@
+       const parts = [];
+       if (model.collection) parts.push(model.collection);
+       if (model.aiPoster) parts.push("Beautifully curated poster");
++      else parts.push("Classic green gradient dividers");
+       if (model.creed) parts.push(model.creed);
+       return parts.join(" · ");
+     }
+@@ -34305,7 +34342,11 @@
+         const divAllowed = ["divider2", "divider3", "auto"];
+         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
+         const divHidden = (divStyleEl && divStyleEl.value) || "";
+-        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
++        let divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
++        // Curated posters unavailable → classic green-gradient Mass dividers.
++        if (!body.include_ai_mass_poster) {
++          divVal = "divider3";
++        }
+         activeDividerStyle = divVal;
+         if (divStyleEl) divStyleEl.value = divVal;
+         body.divider_style = divVal;
+diff --git a/static/js/app/app-07-posters-slideshow.js b/static/js/app/app-07-posters-slideshow.js
+index 1edb270..21371f2 100644
+--- a/static/js/app/app-07-posters-slideshow.js
++++ b/static/js/app/app-07-posters-slideshow.js
+@@ -3668,11 +3668,44 @@
+       });
+     }
+ 
++    function openSaWeeklyPosterGeneratePanel() {
++      try {
++        if (typeof showRoute === "function") showRoute("/superadmin");
++        else window.location.assign("/superadmin");
++      } catch (_e) {
++        window.location.assign("/superadmin");
++      }
++      window.setTimeout(function () {
++        if (typeof showSaPanel === "function") {
++          showSaPanel("system-gospel-posters");
++        } else if (typeof saState === "object" && saState) {
++          saState.panel = "system-gospel-posters";
++          if (saState.hubPanel) saState.hubPanel.platform = "system-gospel-posters";
++        }
++        const genBtn = $("mw-weekly-posters-generate");
++        if (genBtn && typeof genBtn.focus === "function") {
++          try { genBtn.focus(); } catch (_err) { /* ignore */ }
++        }
++      }, 120);
++    }
++
++    function bindWeeklyAiPosterSaGenerateCta() {
++      const btn = $("mw-ai-poster-sa-generate");
++      if (!btn || btn.dataset.boundSaGenCta === "1") return;
++      btn.dataset.boundSaGenCta = "1";
++      btn.addEventListener("click", function (ev) {
++        ev.preventDefault();
++        openSaWeeklyPosterGeneratePanel();
++      });
++    }
++
+     function syncWeeklyAiPosterGate(catalog) {
+       const gate = $("mw-ai-poster-gate");
+       const body = $("mw-ai-poster-body");
+       const wrap = $("flow-ai-poster-style-wrap");
+       const msg = $("mw-ai-poster-gate-msg");
++      const saGenBtn = $("mw-ai-poster-sa-generate");
++      bindWeeklyAiPosterSaGenerateCta();
+       if (catalog && typeof catalog === "object") {
+         const items = Array.isArray(catalog.items) ? catalog.items : [];
+         const readyFromItems = items.filter((it) => it && it.ready).length;
+@@ -3698,6 +3731,7 @@
+         ? canUseCuratedPosters(churchMembershipState)
+         : true;
+       if (!membershipAllows) {
++        if (saGenBtn) saGenBtn.hidden = true;
+         if (typeof syncCuratedPosterAccessUi === "function") syncCuratedPosterAccessUi();
+         stopWeeklyPosterAutoScroll();
+         syncWeeklyPosterExpandUi();
+@@ -3705,6 +3739,7 @@
+         return;
+       }
+       const unlocked = areWeeklyAiPostersReady();
++      const sa = isWeeklyPosterSuperadmin();
+       if (gate) {
+         gate.hidden = unlocked;
+         gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
+@@ -3722,13 +3757,14 @@
+       if (body) {
+         body.setAttribute("aria-disabled", unlocked ? "false" : "true");
+       }
++      if (saGenBtn) saGenBtn.hidden = unlocked || !sa;
+       if (msg) {
+         msg.textContent = unlocked
+           ? ""
+           : (
+-            isWeeklyPosterSuperadmin()
+-              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Use “Generate this week’s styles” above the carousel.')
+-              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.')
++            sa
++              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Generate this week’s styles in Superadmin.')
++              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. This Mass will use the classic green gradient dividers.')
+           );
+       }
+       if (unlocked) {
+@@ -5775,6 +5811,7 @@
+       const parts = [];
+       if (model.collection) parts.push(model.collection);
+       if (model.aiPoster) parts.push("Beautifully curated poster");
++      else parts.push("Classic green gradient dividers");
+       if (model.creed) parts.push(model.creed);
+       return parts.join(" · ");
+     }
+diff --git a/static/js/app/app-08-calendar-catalog.js b/static/js/app/app-08-calendar-catalog.js
+index ea8e7a0..868916d 100644
+--- a/static/js/app/app-08-calendar-catalog.js
++++ b/static/js/app/app-08-calendar-catalog.js
+@@ -490,7 +490,11 @@
+         const divAllowed = ["divider2", "divider3", "auto"];
+         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
+         const divHidden = (divStyleEl && divStyleEl.value) || "";
+-        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
++        let divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
++        // Curated posters unavailable → classic green-gradient Mass dividers.
++        if (!body.include_ai_mass_poster) {
++          divVal = "divider3";
++        }
+         activeDividerStyle = divVal;
+         if (divStyleEl) divStyleEl.value = divVal;
+         body.divider_style = divVal;
+diff --git a/templates/index.html b/templates/index.html
+index 5e793a5..a0dff29 100644
+--- a/templates/index.html
++++ b/templates/index.html
+@@ -99,7 +99,7 @@
+   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
+   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
+   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
+-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261018-gospel-side8" />
++  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261109-poster-fallback" />
+   <script src="/static/js/input-limits.js" defer></script>
+   <script src="/static/js/hls.min.js" defer></script>
+   {% if auth_enabled %}
+@@ -3079,7 +3079,12 @@
+                           <p class="muted flow-setup-field-hint">Fades the carousel poster behind divider text. 0% = full strength, 10% = softest fade.</p>
+                         </div>
+                         <div class="mw-ai-poster-gate" id="mw-ai-poster-gate" data-ai-ready="0" hidden>
+-                          <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
++                          <div class="mw-ai-poster-gate__panel">
++                            <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
++                            <button type="button" class="mw-ai-poster-gate__sa-gen" id="mw-ai-poster-sa-generate" hidden>
++                              Generate this week’s styles
++                            </button>
++                          </div>
+                         </div>
+                         </div>
+                         <select id="flow-ai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
+@@ -5393,7 +5398,7 @@
+       window.WebPptx.setAssetBase("/static/webpptx");
+     }
+   </script>
+-  <script src="/static/js/app.js?v=20261018-extras-av2"></script>
++  <script src="/static/js/app.js?v=20261109-poster-fallback"></script>
+   <script src="/static/js/driver.js?v=20260703"></script>
+   <script src="/static/js/guided-tour.js?v=20260920g"></script>
+   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

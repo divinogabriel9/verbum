@@ -136,7 +136,7 @@ def readings_snapshot(
             if age < ttl:
                 return mem[1], True
 
-    had_persistent = False if lang == "tagalog" else get_cached(d) is not None
+    had_persistent = False if lang in {"tagalog", "cebuano"} else get_cached(d) is not None
     data = get_liturgical_data(d, force_refresh=force_refresh, language=lang)
     if not data:
         payload = {
@@ -148,7 +148,7 @@ def readings_snapshot(
 
     payload = _build_payload(d, data)
     _MEMORY[mem_key] = (now, payload)
-    return payload, had_persistent or (lang != "tagalog" and get_cached(d) is not None)
+    return payload, had_persistent or (lang not in {"tagalog", "cebuano"} and get_cached(d) is not None)
 
 
 def warm_readings_for_date(date: str) -> None:

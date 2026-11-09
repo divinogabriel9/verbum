@@ -1,0 +1,5009 @@
+/* Verbum SPA part 1/9: app-01-core.js
+ * Chrome, readings helpers, API utils, early mass/song wiring
+ * Split from app.js — restore: git tag restore-before-appjs-split
+ * Top-level const/let → var so classic multi-script scope is shared.
+ * Lines (pre-split content): 1-3498
+ */
+    var $ = (id) => document.getElementById(id);
+
+    var CHURCH_BRANDING_STORAGE = {
+      logo: "churchMediaIncludeChurchLogo",
+      name: "churchMediaIncludeChurchName",
+      footer: "churchMediaShowFooter",
+    };
+
+    function hasSavedChurchBrandingSettings() {
+      try {
+        return localStorage.getItem(CHURCH_BRANDING_STORAGE.logo) != null
+          || localStorage.getItem(CHURCH_BRANDING_STORAGE.name) != null
+          || localStorage.getItem(CHURCH_BRANDING_STORAGE.footer) != null;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function applySavedChurchBrandingSettings() {
+      try {
+        const logo = localStorage.getItem(CHURCH_BRANDING_STORAGE.logo);
+        const name = localStorage.getItem(CHURCH_BRANDING_STORAGE.name);
+        const footer = localStorage.getItem(CHURCH_BRANDING_STORAGE.footer);
+        const logoEl = $("flow-include-church-logo");
+        const nameEl = $("flow-include-church-name");
+        const footerEl = $("flow-show-footer");
+        if (logoEl && logo != null) logoEl.checked = logo === "1";
+        if (nameEl && name != null) nameEl.checked = name === "1";
+        if (footerEl && footer != null) footerEl.checked = footer === "1";
+      } catch (_e) { /* ignore */ }
+    }
+
+    function saveChurchBrandingSettingsFromUi() {
+      const logoEl = $("flow-include-church-logo");
+      const nameEl = $("flow-include-church-name");
+      const footerEl = $("flow-show-footer");
+      try {
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.logo, logoEl && logoEl.checked ? "1" : "0");
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.name, nameEl && nameEl.checked ? "1" : "0");
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.footer, footerEl && footerEl.checked ? "1" : "0");
+      } catch (_e) {
+        throw new Error("Could not save settings in this browser.");
+      }
+    }
+
+    function syncAppHeaderOffset() {
+      const header = $("app-header");
+      if (!header) return;
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      if (height > 0) {
+        document.documentElement.style.setProperty("--app-header-offset", height + "px");
+      }
+    }
+
+    function initAppHeaderOffset() {
+      const header = $("app-header");
+      if (!header || header.dataset.offsetBound === "1") return;
+      header.dataset.offsetBound = "1";
+      syncAppHeaderOffset();
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(() => syncAppHeaderOffset()).observe(header);
+      }
+      window.addEventListener("resize", syncAppHeaderOffset, { passive: true });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(syncAppHeaderOffset);
+      }
+    }
+    initAppHeaderOffset();
+
+    var mobileChromeRestore = { inited: false, litBefore: null, notifBefore: null, tickerNext: null, createParent: null, navParent: null, navNext: null };
+
+    function isMobileChromeLayout() {
+      return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+    }
+
+    function initMobileChromeRestore() {
+      if (mobileChromeRestore.inited) return;
+      mobileChromeRestore.inited = true;
+      const notif = document.querySelector(".notif-wrap");
+      const themeBtn = $("theme-toggle-btn");
+      const main = document.querySelector(".app-header__main");
+      const createParent = document.querySelector(".app-sidebar__create");
+      const nav = $("app-bottom-nav");
+      if (notif) mobileChromeRestore.litBefore = notif;
+      if (themeBtn) mobileChromeRestore.notifBefore = themeBtn;
+      if (main) mobileChromeRestore.tickerNext = main.querySelector(".app-header__utilities");
+      if (createParent) mobileChromeRestore.createParent = createParent;
+      if (nav) {
+        mobileChromeRestore.navParent = nav.parentElement;
+        mobileChromeRestore.navNext = nav.nextElementSibling;
+      }
+    }
+
+    function restoreHeaderChipChild(wrap, beforeEl) {
+      const chips = document.querySelector(".header-chips-wrap");
+      if (!wrap || !chips) return;
+      if (beforeEl && beforeEl.parentElement === chips) {
+        chips.insertBefore(wrap, beforeEl);
+      } else {
+        chips.appendChild(wrap);
+      }
+    }
+
+    function syncMobileChromeLayout() {
+      initMobileChromeRestore();
+      const mobile = isMobileChromeLayout();
+      document.body.classList.toggle("mobile-chrome-tabs", mobile);
+      document.body.classList.toggle("mobile-top-nav", false);
+      document.body.classList.toggle("has-bottom-nav", mobile);
+      document.body.classList.toggle("mobile-float-nav", mobile);
+      if (!mobile) document.body.classList.remove("bottom-nav-scroll-away");
+
+      const menuBtn = $("app-header-menu-btn");
+      if (menuBtn) menuBtn.hidden = !mobile;
+
+      const litWrap = document.querySelector(".liturgical-indicator-wrap");
+      const notifWrap = document.querySelector(".notif-wrap");
+      const accountWrap = document.querySelector(".account-menu-wrap");
+      const createWrap = document.querySelector(".create-menu-wrap--sidebar");
+      const litHost = $("today-liturgical-host");
+      const notifHost = $("today-notif-host");
+      const accountHost = $("app-mobile-menu-account-host");
+      const headerCreateHost = $("header-create-host");
+      const bottomCreateHost = $("bottom-nav-create-host");
+      const litPanel = $("liturgical-indicator-panel");
+      const notifPanel = $("notif-panel");
+      const accountPanel = $("account-menu-panel");
+      const ticker = $("app-header-ticker");
+      const tickerRow = $("app-header-ticker-row");
+      const navRow = $("app-header-nav-row");
+      const nav = $("app-bottom-nav");
+      const main = document.querySelector(".app-header__main");
+
+      if (mobile) {
+        if (litWrap && litHost) litHost.appendChild(litWrap);
+        if (notifWrap && notifHost) notifHost.appendChild(notifWrap);
+        if (accountWrap && accountHost) accountHost.appendChild(accountWrap);
+        if (createWrap && headerCreateHost) {
+          createWrap.classList.add("create-menu-wrap--header");
+          createWrap.classList.remove("create-menu-wrap--bottom-nav");
+          headerCreateHost.appendChild(createWrap);
+        }
+        if (bottomCreateHost) {
+          bottomCreateHost.hidden = true;
+          bottomCreateHost.setAttribute("aria-hidden", "true");
+        }
+        if (litPanel) {
+          litPanel.hidden = false;
+          litPanel.classList.add("today-page-panel");
+        }
+        if (notifPanel) {
+          notifPanel.hidden = false;
+          notifPanel.classList.add("today-page-panel");
+        }
+        if (accountPanel) {
+          accountPanel.hidden = false;
+          accountPanel.classList.add("mobile-menu-account-panel");
+        }
+        if (ticker && tickerRow) {
+          tickerRow.appendChild(ticker);
+          tickerRow.hidden = false;
+          tickerRow.setAttribute("aria-hidden", "false");
+        }
+        // Keep floating bottom dock in its original parent (not header)
+        if (nav && mobileChromeRestore.navParent && nav.parentElement !== mobileChromeRestore.navParent) {
+          if (mobileChromeRestore.navNext && mobileChromeRestore.navNext.parentElement === mobileChromeRestore.navParent) {
+            mobileChromeRestore.navParent.insertBefore(nav, mobileChromeRestore.navNext);
+          } else {
+            mobileChromeRestore.navParent.appendChild(nav);
+          }
+        }
+        if (navRow) {
+          navRow.hidden = true;
+          navRow.setAttribute("aria-hidden", "true");
+          navRow.style.display = "none";
+        }
+        if (nav) {
+          nav.hidden = false;
+          nav.style.display = "flex";
+        }
+        if (typeof applyMobileNavOrder === "function") applyMobileNavOrder();
+        if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+        if (typeof closeMobileMenu === "function") closeMobileMenu();
+        if (normalizeRoute(currentRoute()) === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
+          updateLiturgicalCountdowns();
+        }
+        if (typeof syncNotificationsAccordionHeader === "function") syncNotificationsAccordionHeader();
+      } else {
+        restoreHeaderChipChild(litWrap, mobileChromeRestore.litBefore);
+        restoreHeaderChipChild(notifWrap, mobileChromeRestore.notifBefore);
+        restoreHeaderChipChild(accountWrap, null);
+        if (createWrap && mobileChromeRestore.createParent) {
+          createWrap.classList.remove("create-menu-wrap--bottom-nav", "create-menu-wrap--header");
+          mobileChromeRestore.createParent.appendChild(createWrap);
+        }
+        if (bottomCreateHost) {
+          bottomCreateHost.hidden = true;
+          bottomCreateHost.setAttribute("aria-hidden", "true");
+        }
+        if (litPanel) {
+          litPanel.hidden = true;
+          litPanel.classList.remove("today-page-panel");
+        }
+        if (notifPanel) {
+          notifPanel.hidden = true;
+          notifPanel.classList.remove("today-page-panel");
+        }
+        if (accountPanel) {
+          accountPanel.hidden = true;
+          accountPanel.classList.remove("mobile-menu-account-panel");
+        }
+        if (ticker && main && mobileChromeRestore.tickerNext) {
+          main.insertBefore(ticker, mobileChromeRestore.tickerNext);
+        }
+        if (tickerRow) {
+          tickerRow.hidden = true;
+          tickerRow.setAttribute("aria-hidden", "true");
+        }
+        if (nav && mobileChromeRestore.navParent) {
+          if (mobileChromeRestore.navNext && mobileChromeRestore.navNext.parentElement === mobileChromeRestore.navParent) {
+            mobileChromeRestore.navParent.insertBefore(nav, mobileChromeRestore.navNext);
+          } else {
+            mobileChromeRestore.navParent.appendChild(nav);
+          }
+        }
+        if (navRow) {
+          navRow.hidden = true;
+          navRow.setAttribute("aria-hidden", "true");
+          navRow.style.display = "";
+        }
+        if (nav) nav.style.display = "";
+        if (typeof closeMobileMenu === "function") closeMobileMenu();
+      }
+      syncAppHeaderOffset();
+    }
+
+    function syncNotificationsAccordionHeader() {
+      const season = $("home-liturgical-season");
+      const year = $("home-liturgical-year");
+      const seasonEl = $("notifications-accordion-season");
+      const yearEl = $("notifications-accordion-year");
+      if (season && seasonEl) seasonEl.textContent = season.textContent || "Ordinary Time";
+      if (year && yearEl) yearEl.textContent = year.textContent || "";
+    }
+
+    function initNotificationsAccordions() {
+      const liturgyAcc = $("notifications-liturgy-accordion");
+      if (liturgyAcc && liturgyAcc.dataset.bound !== "1") {
+        liturgyAcc.dataset.bound = "1";
+        liturgyAcc.addEventListener("toggle", () => {
+          if (liturgyAcc.open && typeof updateLiturgicalCountdowns === "function") {
+            updateLiturgicalCountdowns();
+          }
+        });
+      }
+      syncNotificationsAccordionHeader();
+    }
+
+    function setBottomNavScrollAway(hidden) {
+      document.body.classList.toggle("bottom-nav-scroll-away", !!hidden);
+    }
+
+    function initMobileFloatNavScroll() {
+      if (window.__verbumFloatNavScrollBound) return;
+      window.__verbumFloatNavScrollBound = true;
+      var lastY = window.scrollY || document.documentElement.scrollTop || 0;
+      var ticking = false;
+      var THRESHOLD = 10;
+
+      function onScrollFrame() {
+        ticking = false;
+        if (!isMobileChromeLayout()) {
+          setBottomNavScrollAway(false);
+          lastY = window.scrollY || document.documentElement.scrollTop || 0;
+          return;
+        }
+        // Sheet / overlay modes own the dock; don't fight them
+        if (document.body.classList.contains("bottom-nav-sheet-open")) {
+          lastY = window.scrollY || document.documentElement.scrollTop || 0;
+          return;
+        }
+        var y = window.scrollY || document.documentElement.scrollTop || 0;
+        var delta = y - lastY;
+        if (y <= 24) {
+          setBottomNavScrollAway(false);
+        } else if (delta > THRESHOLD) {
+          // Scrolling down the page → hide dock (FB)
+          setBottomNavScrollAway(true);
+        } else if (delta < -THRESHOLD) {
+          // Scrolling up → show dock
+          setBottomNavScrollAway(false);
+        }
+        lastY = y;
+      }
+
+      window.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(onScrollFrame);
+      }, { passive: true });
+
+      // Touchend near bottom edge can restore dock if user stalls
+      document.addEventListener("touchstart", function () {
+        if (!isMobileChromeLayout()) return;
+        if (document.body.classList.contains("bottom-nav-sheet-open")) return;
+        // Keep lastY fresh so a direction change after pause is responsive
+        lastY = window.scrollY || document.documentElement.scrollTop || 0;
+      }, { passive: true });
+    }
+
+    function initMobileChromeLayout() {
+      syncMobileChromeLayout();
+      initMobileFloatNavScroll();
+      window.addEventListener("resize", () => {
+        syncMobileChromeLayout();
+        if (typeof applyNavTabVisibility === "function") applyNavTabVisibility();
+        if (!isMobileChromeLayout()) setBottomNavScrollAway(false);
+      }, { passive: true });
+    }
+
+    var MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
+    var MOBILE_NAV_DEFAULT_ORDER = ["/mass/builder", "/library/songs"];
+    var MOBILE_NAV_LOCKED = new Set(["/mass/builder", "/library/songs"]);
+    var mobileNavDragBound = false;
+    var mobileNavDragState = null;
+
+    function shortMobileNavLabel(text) {
+      const t = String(text || "").trim();
+      const map = {
+        "Mass setup": "Mass",
+        "Mass draft": "Mass",
+        "Lyrics Library": "Songs",
+        "Songs": "Songs",
+        "Choir practice": "Practice",
+        "Notifications": "Alerts",
+        "Liturgical Calendar": "Calendar",
+        "Theme Lab": "Design",
+        "Live Radio": "Media",
+      };
+      if (map[t]) return map[t];
+      if (t.length > 10) return t.split(/\s+/)[0];
+      return t || "Tab";
+    }
+
+    function getMobileNavOrder() {
+      try {
+        const raw = localStorage.getItem(MOBILE_NAV_ORDER_KEY);
+        if (!raw) return MOBILE_NAV_DEFAULT_ORDER.slice();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || !parsed.length) return MOBILE_NAV_DEFAULT_ORDER.slice();
+        const cleaned = parsed.map((r) => normalizeRoute(String(r || ""))).filter(Boolean);
+        const seen = new Set();
+        const out = [];
+        cleaned.forEach((r) => {
+          if (seen.has(r)) return;
+          seen.add(r);
+          out.push(r);
+        });
+        // Locked tabs always remain somewhere in the bar
+        [...MOBILE_NAV_LOCKED].reverse().forEach((r) => {
+          if (!seen.has(r)) {
+            out.unshift(r);
+            seen.add(r);
+          }
+        });
+        return out;
+      } catch (_e) {
+        return MOBILE_NAV_DEFAULT_ORDER.slice();
+      }
+    }
+
+    function saveMobileNavOrder(order) {
+      try {
+        localStorage.setItem(MOBILE_NAV_ORDER_KEY, JSON.stringify(order));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function findNavLinkSource(route) {
+      const nav = $("app-bottom-nav");
+      const r = normalizeRoute(route);
+      if (nav) {
+        const existing = Array.from(nav.querySelectorAll(".nav-link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+        if (existing) return existing;
+      }
+      const menu = $("app-mobile-menu-pages");
+      if (menu) {
+        const fromMenu = Array.from(menu.querySelectorAll(".app-mobile-menu__link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+        if (fromMenu) return fromMenu;
+      }
+      const side = document.querySelector(".app-sidebar__nav");
+      if (side) {
+        const fromSide = Array.from(side.querySelectorAll(".app-sidebar__link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+        if (fromSide) return fromSide;
+      }
+      return null;
+    }
+
+    function buildPinnedNavLink(sourceEl, route) {
+      const r = normalizeRoute(route || sourceEl.getAttribute("href") || sourceEl.dataset.route || "");
+      const a = document.createElement("a");
+      a.className = "nav-link nav-link--pinned nav-link--mobile-only";
+      a.href = r;
+      a.dataset.route = r;
+      const tab = sourceEl.dataset.navTab || (typeof routeToNavTabId === "function" ? routeToNavTabId(r) : "") || "";
+      if (tab) a.dataset.navTab = tab;
+      if (sourceEl.dataset.routePrefix) a.dataset.routePrefix = sourceEl.dataset.routePrefix;
+      if (sourceEl.dataset.routeExclude) a.dataset.routeExclude = sourceEl.dataset.routeExclude;
+      const icon = sourceEl.querySelector("svg");
+      if (icon) {
+        const svg = icon.cloneNode(true);
+        svg.removeAttribute("class");
+        svg.classList.add("nav-icon", "app-bottom-nav__svg-icon");
+        a.appendChild(svg);
+      }
+      const label = document.createElement("span");
+      label.className = "nav-label";
+      const rawLabel = (sourceEl.querySelector(".nav-label, span:not([class])") || sourceEl).textContent || "";
+      label.textContent = shortMobileNavLabel(rawLabel.replace(/\s+/g, " ").trim());
+      a.appendChild(label);
+      return a;
+    }
+
+    function ensureMobileNavLink(route) {
+      const nav = $("app-bottom-nav");
+      if (!nav) return null;
+      const r = normalizeRoute(route);
+      let link = Array.from(nav.querySelectorAll(".nav-link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+      if (link) return link;
+      const source = findNavLinkSource(r);
+      if (!source) return null;
+      link = buildPinnedNavLink(source, r);
+      nav.appendChild(link);
+      return link;
+    }
+
+    function applyMobileNavOrder() {
+      const nav = $("app-bottom-nav");
+      if (!nav || !isMobileChromeLayout()) return;
+      const createSlot = $("bottom-nav-create-host");
+      if (createSlot) {
+        createSlot.hidden = true;
+        createSlot.setAttribute("aria-hidden", "true");
+      }
+      // Fixed mobile dock: Mass · Songs · Practice · More
+      const mass = nav.querySelector('.nav-link[data-route="/mass/builder"]');
+      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
+      const practice = nav.querySelector('.nav-link[data-route="/library/practice"]') || $("app-bottom-nav-practice");
+      const more = $("app-bottom-nav-more");
+      const primary = [mass, songs, practice, more].filter(Boolean);
+      const primarySet = new Set(primary);
+      Array.from(nav.querySelectorAll(".nav-link")).forEach((el) => {
+        if (primarySet.has(el)) {
+          el.hidden = false;
+          return;
+        }
+        if (el.classList.contains("nav-link--pinned")) el.remove();
+        else el.hidden = true;
+      });
+      primary.forEach((el) => nav.appendChild(el));
+      if (createSlot) nav.appendChild(createSlot);
+      saveMobileNavOrder(["/mass/builder", "/library/songs"]);
+      syncAppHeaderOffset();
+    }
+
+    function insertMobileNavRoute(route, beforeRoute) {
+      const r = normalizeRoute(route);
+      if (!r) return;
+      let order = getMobileNavOrder().filter((x) => x !== r);
+      if (beforeRoute) {
+        const idx = order.indexOf(normalizeRoute(beforeRoute));
+        if (idx >= 0) order.splice(idx, 0, r);
+        else order.push(r);
+      } else {
+        order.push(r);
+      }
+      saveMobileNavOrder(order);
+      applyMobileNavOrder();
+    }
+
+    function reorderMobileNavRoute(route, beforeRoute) {
+      insertMobileNavRoute(route, beforeRoute);
+    }
+
+    function removeMobileNavRoute(route) {
+      const r = normalizeRoute(route);
+      if (MOBILE_NAV_LOCKED.has(r)) return false;
+      const order = getMobileNavOrder().filter((x) => x !== r);
+      saveMobileNavOrder(order);
+      applyMobileNavOrder();
+      return true;
+    }
+
+    function mobileNavDropBeforeRoute(clientX) {
+      const nav = $("app-bottom-nav");
+      if (!nav) return null;
+      const links = Array.from(nav.querySelectorAll(".nav-link:not([hidden])"));
+      for (const link of links) {
+        const rect = link.getBoundingClientRect();
+        const mid = rect.left + rect.width / 2;
+        if (clientX < mid) return normalizeRoute(link.getAttribute("href") || link.dataset.route || "");
+      }
+      return null;
+    }
+
+    function clearMobileNavDragUI() {
+      document.body.classList.remove("mobile-nav-dragging");
+      document.querySelectorAll(".nav-link.is-drag-source, .nav-link.is-drop-target, .app-mobile-menu__link.is-drag-source").forEach((el) => {
+        el.classList.remove("is-drag-source", "is-drop-target");
+      });
+      const ghost = $("mobile-nav-drag-ghost");
+      if (ghost) ghost.remove();
+      mobileNavDragState = null;
+    }
+
+    function initMobileNavDragDrop() {
+      if (mobileNavDragBound) return;
+      mobileNavDragBound = true;
+      const PRESS_MS = 240;
+      const MOVE_PX = 10;
+
+      function routeOf(el) {
+        return normalizeRoute(el.getAttribute("href") || el.dataset.route || "");
+      }
+
+      function startGhost(el, x, y) {
+        let ghost = $("mobile-nav-drag-ghost");
+        if (!ghost) {
+          ghost = document.createElement("div");
+          ghost.id = "mobile-nav-drag-ghost";
+          ghost.className = "mobile-nav-drag-ghost";
+          document.body.appendChild(ghost);
+        }
+        const label = (el.querySelector(".nav-label, span") || el).textContent.trim();
+        ghost.textContent = shortMobileNavLabel(label);
+        ghost.style.left = x + "px";
+        ghost.style.top = y + "px";
+        ghost.hidden = false;
+      }
+
+      function moveGhost(x, y) {
+        const ghost = $("mobile-nav-drag-ghost");
+        if (!ghost) return;
+        ghost.style.left = x + "px";
+        ghost.style.top = y + "px";
+      }
+
+      function beginDrag(el, fromMenu, pointerId, x, y) {
+        const route = routeOf(el);
+        if (!route) return;
+        mobileNavDragState = { el, fromMenu, route, pointerId, started: true, startX: x, startY: y, moved: false };
+        document.body.classList.add("mobile-nav-dragging");
+        el.classList.add("is-drag-source");
+        if (fromMenu && typeof closeMobileMenu === "function") closeMobileMenu();
+        startGhost(el, x, y);
+        try { el.setPointerCapture(pointerId); } catch (_e) { /* ignore */ }
+      }
+
+      function onPointerDown(e) {
+        if (!isMobileChromeLayout() || e.button != null && e.button !== 0) return;
+        const menuLink = e.target.closest("#app-mobile-menu-pages .app-mobile-menu__link");
+        const navLink = e.target.closest("#app-bottom-nav .nav-link");
+        const el = menuLink || navLink;
+        if (!el) return;
+        const fromMenu = !!menuLink;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const pointerId = e.pointerId;
+        let armed = false;
+        let cancelled = false;
+        const timer = setTimeout(() => {
+          if (cancelled) return;
+          armed = true;
+          beginDrag(el, fromMenu, pointerId, startX, startY);
+        }, PRESS_MS);
+
+        const onMove = (ev) => {
+          if (ev.pointerId !== pointerId) return;
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          if (!armed && (Math.abs(dx) > MOVE_PX || Math.abs(dy) > MOVE_PX)) {
+            cancelled = true;
+            clearTimeout(timer);
+            cleanup();
+            return;
+          }
+          if (!mobileNavDragState || !mobileNavDragState.started) return;
+          ev.preventDefault();
+          mobileNavDragState.moved = true;
+          moveGhost(ev.clientX, ev.clientY);
+          const before = mobileNavDropBeforeRoute(ev.clientX);
+          document.querySelectorAll("#app-bottom-nav .nav-link.is-drop-target").forEach((n) => n.classList.remove("is-drop-target"));
+          if (before) {
+            const target = Array.from(document.querySelectorAll("#app-bottom-nav .nav-link:not([hidden])")).find((n) => routeOf(n) === before);
+            if (target) target.classList.add("is-drop-target");
+          }
+          const nav = $("app-bottom-nav");
+          if (nav) {
+            const rect = nav.getBoundingClientRect();
+            const overNav = ev.clientY >= rect.top - 8 && ev.clientY <= rect.bottom + 24;
+            nav.classList.toggle("is-drop-hover", overNav);
+          }
+        };
+
+        const onUp = (ev) => {
+          if (ev.pointerId !== pointerId) return;
+          clearTimeout(timer);
+          if (mobileNavDragState && mobileNavDragState.started) {
+            ev.preventDefault();
+            const nav = $("app-bottom-nav");
+            const rect = nav ? nav.getBoundingClientRect() : null;
+            const overNav = !!(rect && ev.clientY >= rect.top - 12 && ev.clientY <= rect.bottom + 36);
+            const before = mobileNavDropBeforeRoute(ev.clientX);
+            const route = mobileNavDragState.route;
+            const fromMenu = mobileNavDragState.fromMenu;
+            const moved = !!mobileNavDragState.moved;
+            const dy = Math.abs(ev.clientY - (mobileNavDragState.startY || 0));
+            clearMobileNavDragUI();
+            if (nav) nav.classList.remove("is-drop-hover");
+            if (overNav && moved) {
+              reorderMobileNavRoute(route, before);
+            } else if (!fromMenu && moved && !overNav && dy > 56) {
+              removeMobileNavRoute(route);
+            }
+            if (moved) {
+              const blockClick = (clickEv) => {
+                clickEv.preventDefault();
+                clickEv.stopPropagation();
+                document.removeEventListener("click", blockClick, true);
+              };
+              document.addEventListener("click", blockClick, true);
+            }
+          }
+          cleanup();
+        };
+
+        const cleanup = () => {
+          window.removeEventListener("pointermove", onMove, true);
+          window.removeEventListener("pointerup", onUp, true);
+          window.removeEventListener("pointercancel", onUp, true);
+        };
+
+        window.addEventListener("pointermove", onMove, true);
+        window.addEventListener("pointerup", onUp, true);
+        window.addEventListener("pointercancel", onUp, true);
+      }
+
+      document.addEventListener("pointerdown", onPointerDown, true);
+    }
+    var escapeHtml = (value) => {
+      const div = document.createElement("div");
+      div.textContent = String(value || "");
+      return div.innerHTML;
+    };
+    var formatDateInput = (date) => {
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    };
+    var PRACTICE_DEVICE_STORE_KEY = "lf-practice-device-id";
+    function getPracticeDeviceId() {
+      try {
+        let id = String(localStorage.getItem(PRACTICE_DEVICE_STORE_KEY) || "").trim();
+        if (id.length >= 16) return id;
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          id = window.crypto.randomUUID().replace(/-/g, "") + window.crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+        } else {
+          id = "d" + String(Date.now()) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        }
+        id = id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+        localStorage.setItem(PRACTICE_DEVICE_STORE_KEY, id);
+        return id;
+      } catch (_e) {
+        return "";
+      }
+    }
+    function practiceDeviceHeaders() {
+      const deviceId = getPracticeDeviceId();
+      return deviceId ? { "X-Practice-Device-Id": deviceId } : {};
+    }
+    window.getPracticeDeviceId = getPracticeDeviceId;
+    window.practiceDeviceHeaders = practiceDeviceHeaders;
+
+    function sanitizePublicError(raw) {
+      let text = "";
+      if (typeof raw === "string") text = raw;
+      else if (raw && typeof raw === "object") {
+        if (typeof raw.msg === "string") text = raw.msg;
+        else if (typeof raw.message === "string") text = raw.message;
+        else if (Array.isArray(raw)) {
+          text = raw.map((item) => (item && (item.msg || item.message)) || "").filter(Boolean).join(" ");
+        } else {
+          try { text = JSON.stringify(raw); } catch (_e) { text = ""; }
+        }
+      } else if (raw != null) text = String(raw);
+      text = String(text || "").trim();
+      if (!text) return "Something went wrong. Please try again.";
+      const lower = text.toLowerCase();
+      const leaksSecret =
+        /openai|gemini|api[_ -]?key|huggingface|anthropic|sk-[a-z0-9]|aiza|bearer\s+[a-z0-9]|traceback|sqlalchemy|psycopg|redis\.exceptions|supabase/i.test(text);
+      const mentionsPipeline =
+        /\bai\s+(image|poster|art)\b|weekly ai|connecting to ai|image generation failed|generator\.py|providers?/i.test(lower);
+      if (/limit reached|quota|allowance|429/.test(lower) || (mentionsPipeline && /limit|week|remaining/.test(lower))) {
+        return "Curated posters aren't included on the free plan. Use a premium Mass token, or start a trial under Settings → Billing.";
+      }
+      if (leaksSecret || mentionsPipeline) {
+        return "We couldn't prepare the poster right now. Please try again shortly.";
+      }
+      // Avoid dumping huge internal payloads into the UI.
+      if (text.length > 280) return "Something went wrong. Please try again.";
+      return text;
+    }
+    window.sanitizePublicError = sanitizePublicError;
+
+    var postJSON = async (url, body, opts) => {
+      const skipAuthWait = !!(opts && opts.skipAuthWait);
+      if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+        await window.VerbumAuth.waitUntilReady();
+      }
+      const headers = { "Content-Type": "application/json" };
+      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+        Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+      }
+      if (String(url || "").indexOf("/api/practice/") === 0) {
+        const deviceHdrs = (typeof practiceDeviceHeaders === "function"
+          ? practiceDeviceHeaders
+          : window.practiceDeviceHeaders);
+        if (typeof deviceHdrs === "function") Object.assign(headers, deviceHdrs());
+      }
+      if (opts && opts.headers) Object.assign(headers, opts.headers);
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (
+          res.status === 401 &&
+          window.VerbumAuth &&
+          window.VerbumAuth.isReady &&
+          window.VerbumAuth.isReady() &&
+          window.VerbumAuth.redirectToSignIn
+        ) {
+          window.VerbumAuth.redirectToSignIn();
+        }
+        const message = data.detail || data.error || res.statusText;
+        throw new Error(sanitizePublicError(message));
+      }
+      return data;
+    };
+
+    var getJSON = async (url, opts) => {
+      const skipAuthWait = !!(opts && opts.skipAuthWait);
+      if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+        await window.VerbumAuth.waitUntilReady();
+      }
+      const headers = {};
+      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+        Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+      }
+      if (opts && opts.headers) Object.assign(headers, opts.headers);
+      const res = await fetch(url, { method: "GET", headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.detail || data.error || res.statusText;
+        throw new Error(sanitizePublicError(message));
+      }
+      return data;
+    };
+
+    var previewCache = new Map();
+    var previewInflight = new Map();
+    var readingsInflight = new Map();
+    var READINGS_LS_PREFIX = "verbumReadings:";
+    var MASS_LANGUAGE_LS_KEY = "verbumMassLanguage";
+    var READINGS_POLL_INTERVAL_MS = 4000;
+    var READINGS_POLL_MAX_ATTEMPTS = 18;
+    var readingsPollers = new Map();
+    var flowLoadSeq = 0;
+
+    function persistMassLanguage(language) {
+      const lang = language === "tagalog" ? "tagalog" : "english";
+      try { localStorage.setItem(MASS_LANGUAGE_LS_KEY, lang); } catch (_e) { /* ignore */ }
+      return lang;
+    }
+
+    function readPersistedMassLanguage() {
+      try {
+        const raw = String(localStorage.getItem(MASS_LANGUAGE_LS_KEY) || "").trim().toLowerCase();
+        if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
+        if (raw === "english") return "english";
+      } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function applyPersistedMassLanguage() {
+      const sel = $("flow-mass-language");
+      const lang = readPersistedMassLanguage();
+      if (!sel || !lang || sel.value === lang) return lang || (sel && sel.value === "tagalog" ? "tagalog" : "english");
+      sel.value = lang;
+      if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(sel);
+      return lang;
+    }
+
+    function currentMassLanguage() {
+      const sel = $("flow-mass-language");
+      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+    }
+
+    function flowApplyIsCurrent(date, language) {
+      const d = String(date || "").trim();
+      const lang = language === "tagalog" ? "tagalog" : "english";
+      const dateEl = $("mass-date");
+      const liveDate = dateEl ? String(dateEl.value || "").trim() : "";
+      return !!d && liveDate === d && currentMassLanguage() === lang;
+    }
+
+    function currentCalendarLanguage() {
+      const sel = $("cal-language");
+      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+    }
+
+    function resolveReadingsLanguage(opts) {
+      if (opts && (opts.language === "tagalog" || opts.language === "english")) {
+        return opts.language;
+      }
+      return currentMassLanguage();
+    }
+
+    function previewCacheKey(date, readingsOnly, language) {
+      const lang = language || currentMassLanguage();
+      return (
+        String(date || "").trim() +
+        "|" +
+        lang +
+        "|" +
+        (readingsOnly ? "readings" : "full")
+      );
+    }
+
+    /* Don't trust or persist a readings payload that is missing the first reading
+       or gospel — prevents a stale/incomplete cache from sticking for 7 days. */
+    function readingsPayloadComplete(data) {
+      if (!data || data.ok === false) return false;
+      if (data.readings_complete === true) return true;
+      if (data.readings_complete === false) return false;
+      const frRef = String(data.first_reading_reference || "").trim();
+      const frBody = String(data.first_reading_excerpt || data.first_reading_text || "").trim();
+      const gospel = String(data.gospel_text || data.gospel_quote || data.gospel_reference || "").trim();
+      const psalmRefrains = Array.isArray(data.psalm_refrains) ? data.psalm_refrains.filter(Boolean) : [];
+      const psalm = String(data.psalm_text || data.psalm_verses || "").trim();
+      return !!(frRef && frBody && gospel && (psalmRefrains.length || psalm));
+    }
+
+    function readingsLanguageOf(data) {
+      if (!data) return "";
+      const raw = String(data.readings_language || "").trim().toLowerCase();
+      if (raw === "tagalog" || raw === "filipino") return "tagalog";
+      if (raw === "english") return "english";
+      // Heuristic fallback for older cached payloads without readings_language.
+      // Prefer clear English gospel book names before Tagalog ones — "Ezekiel"
+      // is English and must not be treated as Tagalog (that broke Mass Builder).
+      const blob = [
+        data.gospel_reference,
+        data.first_reading_reference,
+        data.second_reading_reference,
+        data.psalm_reference,
+      ].join(" ").toLowerCase();
+      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)) {
+        return "english";
+      }
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)) {
+        return "tagalog";
+      }
+      return "";
+    }
+
+    function payloadMatchesLanguage(data, language) {
+      if (!readingsPayloadComplete(data)) return false;
+      const got = readingsLanguageOf(data);
+      return !!got && got === language;
+    }
+
+    function dropMismatchedReadingsCache(date, language, data) {
+      if (!data || payloadMatchesLanguage(data, language)) return false;
+      const d = String(date || "").trim();
+      previewCache.delete(previewCacheKey(d, false, language));
+      previewCache.delete(previewCacheKey(d, true, language));
+      try {
+        localStorage.removeItem(READINGS_LS_PREFIX + language + ":" + d);
+      } catch (_e) { /* ignore */ }
+      return true;
+    }
+
+    window.persistMassLanguage = persistMassLanguage;
+    window.applyPersistedMassLanguage = applyPersistedMassLanguage;
+    window.currentMassLanguage = currentMassLanguage;
+    window.readingsLanguageOf = readingsLanguageOf;
+    window.payloadMatchesLanguage = payloadMatchesLanguage;
+
+    function stopReadingsPoll(date, language) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      if (language) {
+        const state = readingsPollers.get(language + ":" + d);
+        if (!state) return;
+        if (state.timer) clearTimeout(state.timer);
+        readingsPollers.delete(language + ":" + d);
+        return;
+      }
+      // Stop both language pollers for this date when language not specified.
+      ["english", "tagalog"].forEach((lang) => {
+        const state = readingsPollers.get(lang + ":" + d);
+        if (!state) return;
+        if (state.timer) clearTimeout(state.timer);
+        readingsPollers.delete(lang + ":" + d);
+      });
+      // Legacy key (pre-language) if any.
+      const legacy = readingsPollers.get(d);
+      if (legacy) {
+        if (legacy.timer) clearTimeout(legacy.timer);
+        readingsPollers.delete(d);
+      }
+    }
+
+    function startReadingsPoll(date, onUpdate, language) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      const lang = language || currentMassLanguage();
+      const pollKey = lang + ":" + d;
+      const existing = readingsPollers.get(pollKey);
+      if (existing) {
+        if (typeof onUpdate === "function") existing.listeners.add(onUpdate);
+        return;
+      }
+      const state = { timer: null, attempts: 0, listeners: new Set(), language: lang };
+      if (typeof onUpdate === "function") state.listeners.add(onUpdate);
+      readingsPollers.set(pollKey, state);
+
+      const notify = (data) => {
+        state.listeners.forEach((fn) => {
+          try { fn(data); } catch (_e) { /* ignore */ }
+        });
+      };
+
+      const tick = async () => {
+        const active = readingsPollers.get(pollKey);
+        if (!active || active !== state) return;
+        state.attempts += 1;
+        try {
+          const data = await fetchReadings(d, { forceRefresh: true, language: lang });
+          previewCache.set(previewCacheKey(d, true, lang), data);
+          if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
+          notify(data);
+          if (readingsPayloadComplete(data)) {
+            stopReadingsPoll(d, lang);
+            return;
+          }
+        } catch (_e) { /* keep polling */ }
+        if (state.attempts >= READINGS_POLL_MAX_ATTEMPTS) {
+          stopReadingsPoll(d, lang);
+          return;
+        }
+        state.timer = setTimeout(tick, READINGS_POLL_INTERVAL_MS);
+      };
+
+      state.timer = setTimeout(tick, READINGS_POLL_INTERVAL_MS);
+    }
+
+    async function ensureReadingsComplete(date, opts) {
+      const d = String(date || "").trim();
+      const onUpdate = opts && opts.onUpdate;
+      const lang = resolveReadingsLanguage(opts);
+      const data = await fetchReadings(d, Object.assign({}, opts || {}, { language: lang }));
+      if (typeof onUpdate === "function") onUpdate(data);
+      if (readingsPayloadComplete(data)) return data;
+      startReadingsPoll(d, onUpdate, lang);
+      return data;
+    }
+
+    function readStoredReadings(date, language) {
+      try {
+        const lang = language || currentMassLanguage();
+        const raw = localStorage.getItem(
+          READINGS_LS_PREFIX + lang + ":" + String(date || "").trim()
+        );
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.data || !parsed.ts) return null;
+        if (Date.now() - parsed.ts > 7 * 86400000) return null;
+        return parsed.data;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function writeStoredReadings(date, data, language) {
+      try {
+        const lang = language || currentMassLanguage();
+        localStorage.setItem(
+          READINGS_LS_PREFIX + lang + ":" + String(date || "").trim(),
+          JSON.stringify({ ts: Date.now(), data })
+        );
+      } catch (_e) { /* quota */ }
+    }
+
+    function cachedReadingsForLanguage(date, language) {
+      const d = String(date || "").trim();
+      const lang = language || currentMassLanguage();
+      if (!d) return null;
+      const candidates = [
+        previewCache.get(previewCacheKey(d, false, lang)),
+        previewCache.get(previewCacheKey(d, true, lang)),
+        readStoredReadings(d, lang),
+      ];
+      for (let i = 0; i < candidates.length; i += 1) {
+        const hit = candidates[i];
+        if (!hit) continue;
+        if (dropMismatchedReadingsCache(d, lang, hit)) continue;
+        if (payloadMatchesLanguage(hit, lang)) {
+          previewCache.set(previewCacheKey(d, true, lang), hit);
+          previewCache.set(previewCacheKey(d, false, lang), hit);
+          return hit;
+        }
+      }
+      return null;
+    }
+
+    function prefetchAlternateMassLanguage(date) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      const other = currentMassLanguage() === "tagalog" ? "english" : "tagalog";
+      if (cachedReadingsForLanguage(d, other)) return;
+      fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
+        .then((data) => {
+          if (!data || !readingsPayloadComplete(data)) return;
+          data.readings_language = other;
+          if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
+        })
+        .catch(function () { /* warm cache only */ });
+    }
+
+    function invalidateClientReadings(date) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      ["english", "tagalog"].forEach((lang) => {
+        previewCache.delete(previewCacheKey(d, false, lang));
+        previewCache.delete(previewCacheKey(d, true, lang));
+        stopReadingsPoll(d, lang);
+        try {
+          localStorage.removeItem(READINGS_LS_PREFIX + lang + ":" + d);
+        } catch (_e) { /* ignore */ }
+      });
+      [readingsInflight, previewInflight].forEach((map) => {
+        Array.from(map.keys()).forEach((key) => {
+          if (String(key).indexOf(d) !== -1) map.delete(key);
+        });
+      });
+    }
+
+    async function fetchReadings(date, opts) {
+      const d = String(date || "").trim();
+      const forceRefresh = !!(opts && opts.forceRefresh);
+      const lang = resolveReadingsLanguage(opts);
+      if (!d) throw new Error("Date required");
+      // Permanently use Mass Setup's POST /api/preview path so home, calendar,
+      // and setup share one payload (same psalm refrain / gospel sentences).
+      const fullKey = previewCacheKey(d, false, lang);
+      const readKey = previewCacheKey(d, true, lang);
+      if (!forceRefresh && previewCache.has(fullKey)) {
+        const cached = previewCache.get(fullKey);
+        if (payloadMatchesLanguage(cached, lang)) {
+          previewCache.set(readKey, cached);
+          return cached;
+        }
+        dropMismatchedReadingsCache(d, lang, cached);
+      }
+      if (!forceRefresh && previewCache.has(readKey)) {
+        const cached = previewCache.get(readKey);
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
+      }
+      if (!forceRefresh) {
+        const stored = readStoredReadings(d, lang);
+        if (payloadMatchesLanguage(stored, lang)) {
+          previewCache.set(readKey, stored);
+          previewCache.set(fullKey, stored);
+          return stored;
+        }
+        if (stored) dropMismatchedReadingsCache(d, lang, stored);
+      }
+      const inflightKey = (forceRefresh ? "refresh:" : "") + lang + ":" + d;
+      if (readingsInflight.has(inflightKey)) return readingsInflight.get(inflightKey);
+      const req = fetchPreview(d, { readingsOnly: false, forceRefresh, language: lang })
+        .then((data) => {
+          previewCache.set(readKey, data);
+          previewCache.set(fullKey, data);
+          if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
+          return data;
+        })
+        .finally(() => {
+          readingsInflight.delete(inflightKey);
+        });
+      readingsInflight.set(inflightKey, req);
+      return req;
+    }
+
+    async function fetchPreview(date, opts) {
+      const readingsOnly = !!(opts && opts.readingsOnly);
+      const forceRefresh = !!(opts && opts.forceRefresh);
+      const lang = resolveReadingsLanguage(opts);
+      const d = String(date || "").trim();
+      if (!d) throw new Error("Date required");
+      const fullKey = previewCacheKey(d, false, lang);
+      const readKey = previewCacheKey(d, true, lang);
+      if (!forceRefresh && !readingsOnly && previewCache.has(fullKey)) {
+        const cached = previewCache.get(fullKey);
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
+      }
+      if (!forceRefresh && readingsOnly && previewCache.has(readKey)) {
+        const cached = previewCache.get(readKey);
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
+      }
+      if (!forceRefresh && readingsOnly && previewCache.has(fullKey)) {
+        const cached = previewCache.get(fullKey);
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
+      }
+      const key = (forceRefresh ? "refresh:" : "") + (readingsOnly ? readKey : fullKey);
+      if (previewInflight.has(key)) return previewInflight.get(key);
+      const req = postJSON("/api/preview", {
+        date: d,
+        readings_only: readingsOnly,
+        refresh: forceRefresh,
+        mass_language: lang,
+      })
+        .then((data) => {
+          if (data && data.ok !== false) {
+            // Prefer the language we asked for over heuristics — backend should
+            // stamp readings_language; fall back to request lang when missing.
+            const stamped = String(data.readings_language || "").trim().toLowerCase();
+            if (stamped === "tagalog" || stamped === "english") {
+              data.readings_language = stamped;
+            } else {
+              data.readings_language = readingsLanguageOf(data) || lang;
+            }
+          }
+          if (payloadMatchesLanguage(data, lang)) {
+            previewCache.set(readingsOnly ? readKey : fullKey, data);
+            if (!readingsOnly) previewCache.set(fullKey, data);
+            if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
+          }
+          previewInflight.delete(key);
+          return data;
+        })
+        .catch((err) => {
+          previewInflight.delete(key);
+          throw err;
+        });
+      previewInflight.set(key, req);
+      return req;
+    }
+
+    /** Skip member-only API calls when auth is enabled but the user is not signed in yet. */
+    function memberApiAvailable() {
+      const auth = window.VerbumAuth;
+      if (!auth) return true;
+      const cfg = auth.getConfig ? auth.getConfig() : null;
+      if (!cfg || !cfg.auth_enabled) return true;
+      if (auth.isReady && !auth.isReady()) return false;
+      if (auth.getUser && !auth.getUser()) return false;
+      return true;
+    }
+
+    /** Programmatic file download (works for private /api/files and signed storage URLs). */
+    function isPrivateFileUrl(url) {
+      return typeof url === "string" && url.startsWith("/api/files/");
+    }
+
+    async function authorizedFetch(url, opts) {
+      const options = opts || {};
+      const headers = Object.assign({}, options.headers || {});
+      if (isPrivateFileUrl(url) && window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+        Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+      }
+      return fetch(url, Object.assign({}, options, { headers }));
+    }
+
+    async function triggerBrowserDownload(url, filename) {
+      if (!url) return;
+      const res = await authorizedFetch(url);
+      if (!res.ok) throw new Error("Could not download file.");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename || "download";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    }
+
+    document.addEventListener("click", (e) => {
+      const anchor = e.target.closest("a[href^='/api/files/']");
+      if (!anchor) return;
+      e.preventDefault();
+      const url = anchor.getAttribute("href");
+      const name = anchor.getAttribute("download") || anchor.textContent.trim() || "download";
+      triggerBrowserDownload(url, name).catch(() => {
+        notify("Could not download file. Sign in and try again.", "error");
+      });
+    });
+
+    var THEME_STORAGE_KEY = "verbumColorTheme";
+    var TOGGLE_DARK_STORAGE_KEY = "verbumToggleDarkMode";
+    var ACCENT_STORAGE_KEY = "verbumAccentColor";
+    var HOME_NEWS_ENABLED_KEY = "verbumHomeNewsEnabled";
+    var HOME_NEWS_VATICAN_KEY = "verbumHomeNewsVatican";
+    var HOME_NEWS_CNA_KEY = "verbumHomeNewsCna";
+    var NAV_TABS_ENABLED_KEY = "verbumNavTabsEnabled";
+    var NAV_TABS_HIDDEN_KEY = "verbumNavTabsHidden"; // legacy — migrated on read
+    var NAV_TABS_MEDIA_OPTIONAL_KEY = "verbumNavTabsMediaOptionalV1";
+    var NAV_TAB_DEFS = [
+      { id: "home", label: "Home", required: true },
+      { id: "mass", label: "Mass", required: true },
+      { id: "library", label: "Lyrics Library", required: true },
+      { id: "themes", label: "Themes", required: true },
+      // Media (Live Radio) + Posters can be hidden from the nav.
+      { id: "radio", label: "Media", defaultOn: true },
+      { id: "media", label: "Posters" },
+      { id: "calendar", label: "Calendar" },
+      { id: "design", label: "Design" },
+    ];
+
+    function getOptionalNavTabIds() {
+      return NAV_TAB_DEFS.filter((def) => !def.required).map((def) => def.id);
+    }
+
+    function getDefaultOnOptionalNavTabIds() {
+      return NAV_TAB_DEFS.filter((def) => !def.required && def.defaultOn).map((def) => def.id);
+    }
+
+    function migrateNavTabPrefs() {
+      try {
+        if (localStorage.getItem(NAV_TABS_ENABLED_KEY) === null) {
+          const optional = getOptionalNavTabIds();
+          const raw = localStorage.getItem(NAV_TABS_HIDDEN_KEY);
+          if (raw === null) {
+            // Fresh prefs: keep defaultOn optional tabs visible (e.g. Media).
+            localStorage.setItem(
+              NAV_TABS_ENABLED_KEY,
+              JSON.stringify(getDefaultOnOptionalNavTabIds())
+            );
+          } else {
+            const hidden = JSON.parse(raw);
+            if (!Array.isArray(hidden)) {
+              localStorage.setItem(
+                NAV_TABS_ENABLED_KEY,
+                JSON.stringify(getDefaultOnOptionalNavTabIds())
+              );
+            } else {
+              const hiddenSet = new Set(hidden.filter((id) => optional.includes(id)));
+              localStorage.setItem(
+                NAV_TABS_ENABLED_KEY,
+                JSON.stringify(optional.filter((id) => !hiddenSet.has(id)))
+              );
+            }
+          }
+        }
+      } catch (_e) { /* ignore */ }
+      // One-time: Media was previously required — keep it on for existing accounts
+      // until the user turns it off in Settings → Preferences.
+      try {
+        if (localStorage.getItem(NAV_TABS_MEDIA_OPTIONAL_KEY) === "1") return;
+        localStorage.setItem(NAV_TABS_MEDIA_OPTIONAL_KEY, "1");
+        const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) return;
+        if (!parsed.includes("radio")) {
+          parsed.push("radio");
+          localStorage.setItem(NAV_TABS_ENABLED_KEY, JSON.stringify(parsed));
+        }
+      } catch (_e2) { /* ignore */ }
+    }
+
+    function getHomeNewsPrefs() {
+      const readBool = (key, defaultOn) => {
+        try {
+          const v = localStorage.getItem(key);
+          if (v === null) return defaultOn;
+          return v === "1" || v === "true";
+        } catch (_e) {
+          return defaultOn;
+        }
+      };
+      return {
+        enabled: readBool(HOME_NEWS_ENABLED_KEY, true),
+        vatican: readBool(HOME_NEWS_VATICAN_KEY, true),
+        cna: readBool(HOME_NEWS_CNA_KEY, true),
+      };
+    }
+
+    function saveHomeNewsPrefs(prefs) {
+      try {
+        localStorage.setItem(HOME_NEWS_ENABLED_KEY, prefs.enabled ? "1" : "0");
+        localStorage.setItem(HOME_NEWS_VATICAN_KEY, prefs.vatican ? "1" : "0");
+        localStorage.setItem(HOME_NEWS_CNA_KEY, prefs.cna ? "1" : "0");
+      } catch (_e) { /* ignore */ }
+    }
+
+    function syncHomeNewsSettingsUI() {
+      const prefs = getHomeNewsPrefs();
+      const en = $("settings-home-news-enabled");
+      const va = $("settings-home-news-vatican");
+      const cna = $("settings-home-news-cna");
+      if (en) en.checked = prefs.enabled;
+      if (va) {
+        va.checked = prefs.vatican;
+        va.disabled = !prefs.enabled;
+      }
+      if (cna) {
+        cna.checked = prefs.cna;
+        cna.disabled = !prefs.enabled;
+      }
+    }
+
+    function getEnabledOptionalNavTabIds() {
+      migrateNavTabPrefs();
+      const optional = new Set(getOptionalNavTabIds());
+      const defaults = () => new Set(getDefaultOnOptionalNavTabIds().filter((id) => optional.has(id)));
+      try {
+        const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
+        if (!raw) return defaults();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return defaults();
+        return new Set(parsed.filter((id) => optional.has(id)));
+      } catch (_e) {
+        return defaults();
+      }
+    }
+
+    function saveEnabledOptionalNavTabIds(enabled) {
+      const optional = new Set(getOptionalNavTabIds());
+      try {
+        localStorage.setItem(
+          NAV_TABS_ENABLED_KEY,
+          JSON.stringify([...enabled].filter((id) => optional.has(id)))
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function isNavTabVisible(tabId) {
+      if (tabId === "notifications") return isMobileChromeLayout();
+      const def = NAV_TAB_DEFS.find((row) => row.id === tabId);
+      if (!def) return false;
+      if (def.required) return true;
+      return getEnabledOptionalNavTabIds().has(tabId);
+    }
+
+    function routeToNavTabId(route) {
+      const r = normalizeRoute(route || "");
+      if (r === "/home") return "home";
+      if (r === "/notifications") return "notifications";
+      if (r === "/radio") return "radio";
+      if (r === "/mass/calendar") return "calendar";
+      if (r.startsWith("/mass/")) return "mass";
+      // Practice is a primary mobile dock tab — not settings-gated (gating sent users to Home)
+      if (r === "/library/practice") return null;
+      if (r.startsWith("/library/")) return "library";
+      if (r.startsWith("/media/")) return "media";
+      if (r === "/themes" || r.startsWith("/themes/")) return "themes";
+      if (r.startsWith("/design/")) return "design";
+      if (r.startsWith("/settings/")) return null;
+      return null;
+    }
+
+    function syncNavTabSettingsUI() {
+      const list = $("settings-nav-tabs-list");
+      if (!list) return;
+      const enabled = getEnabledOptionalNavTabIds();
+      list.innerHTML = NAV_TAB_DEFS.map((def) => {
+        const locked = !!def.required;
+        const checked = locked || enabled.has(def.id);
+        const id = "settings-nav-tab-" + def.id;
+        const cls = "toggle" + (locked ? " is-locked" : "");
+        const note = locked ? " <span class=\"muted\" style=\"font-size:0.78rem;\">(always on)</span>" : "";
+        return (
+          "<label class=\"" + cls + "\">" +
+            "<input type=\"checkbox\" id=\"" + id + "\" data-nav-tab-toggle=\"" + escapeHtml(def.id) + "\" " +
+              (checked ? "checked" : "") + (locked ? " disabled" : "") + " />" +
+            escapeHtml(def.label) + note +
+          "</label>"
+        );
+      }).join("");
+    }
+
+    function applyNavTabVisibility() {
+      document.querySelectorAll("[data-nav-tab]").forEach((el) => {
+        // Mobile top-nav order owns visibility for bar links
+        if (isMobileChromeLayout() && el.closest && el.closest("#app-bottom-nav")) return;
+        // Extras / drawer links stay reachable on mobile even when optional tabs are off
+        if (isMobileChromeLayout() && el.closest && el.closest("#app-mobile-menu-pages, #app-more-sheet")) {
+          el.hidden = false;
+          return;
+        }
+        el.hidden = !isNavTabVisible(el.dataset.navTab);
+      });
+      const sidebarNav = document.querySelector(".app-sidebar__nav");
+      const bottomNav = $("app-bottom-nav");
+      if (sidebarNav) {
+        const visibleCount = sidebarNav.querySelectorAll(".app-sidebar__link:not([hidden])").length;
+        sidebarNav.classList.toggle("is-tab-balanced", visibleCount > 0 && visibleCount < NAV_TAB_DEFS.length);
+      }
+      if (bottomNav && !isMobileChromeLayout()) {
+        const visibleCount = bottomNav.querySelectorAll(".nav-link:not([hidden])").length;
+        bottomNav.classList.toggle("is-tab-balanced", visibleCount > 0);
+      }
+      const switcher = $("route-switcher");
+      if (switcher) {
+        switcher.querySelectorAll("option[data-nav-tab]").forEach((opt) => {
+          const visible = isNavTabVisible(opt.dataset.navTab);
+          opt.hidden = !visible;
+          opt.disabled = !visible;
+        });
+      }
+      if (typeof applyMobileNavOrder === "function") applyMobileNavOrder();
+    }
+
+    function shouldBlockHiddenNavRoute(route) {
+      const r = normalizeRoute(route || "");
+      if (r === "/library/practice") return false;
+      const tabId = routeToNavTabId(r);
+      if (!tabId || isNavTabVisible(tabId) || isSettingsRoute(r)) return false;
+      // On mobile, Extras is the access path for drawer pages — never bounce those to Home
+      if (isMobileChromeLayout() && typeof isDrawerNavRoute === "function" && isDrawerNavRoute(r)) {
+        return false;
+      }
+      return true;
+    }
+
+    function redirectIfHiddenNavRoute() {
+      const route = normalizeRoute(window.location.pathname);
+      if (shouldBlockHiddenNavRoute(route)) {
+        showRoute("/home", true);
+        return true;
+      }
+      return false;
+    }
+
+    function bindNavTabSettings() {
+      syncNavTabSettingsUI();
+      const list = $("settings-nav-tabs-list");
+      if (!list) return;
+      list.addEventListener("change", (e) => {
+        const inp = e.target.closest("[data-nav-tab-toggle]");
+        if (!inp) return;
+        const tabId = inp.dataset.navTabToggle;
+        const def = NAV_TAB_DEFS.find((row) => row.id === tabId);
+        if (!def || def.required) return;
+        const enabled = getEnabledOptionalNavTabIds();
+        if (inp.checked) enabled.add(tabId);
+        else enabled.delete(tabId);
+        saveEnabledOptionalNavTabIds(enabled);
+        applyNavTabVisibility();
+        if (redirectIfHiddenNavRoute()) {
+          notify("That section is hidden. Redirected to Home.", "info");
+        }
+      });
+    }
+
+    var EWTN_RADIO_STORAGE_KEY = "verbumEwtRadioStationId";
+    var EWTN_HLS_FALLBACK = {
+      us: "https://ewtn-sgrewind.streamguys1.com/sgrewind/english/chunks.m3u8",
+      extra: "https://ewtn-sgrewind.streamguys1.com/sgrewind/classics/chunks.m3u8",
+      gbie: "https://ewtn-sgrewind.streamguys1.com/sgrewind/sky/chunks.m3u8",
+      philippines: "https://ewtn-sgrewind.streamguys1.com/sgrewind/philippines/chunks.m3u8",
+      catolica: "https://ewtn-sgrewind.streamguys1.com/sgrewind/spanish/chunks.m3u8",
+    };
+    var ewtnRadioStations = [];
+    var ewtnRadioPlaying = false;
+    var ewtnHls = null;
+    var ewtnRadioActiveId = null;
+    var mediaHubPlayerMode = "radio";
+    var savedMediaLibrary = { music: [], video: [] };
+    var libraryPlaylist = [];
+    var libraryTrackIndex = -1;
+    var libraryActiveItem = null;
+    var libraryPlayObjectUrl = null;
+    var librarySeekDragging = false;
+
+    var MASS_SECTION_VIDEO_SLOTS = [
+      "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
+      "entrance", "offertory",
+      "communion_1", "communion_2", "communion_3", "communion_4", "communion_5",
+      "recessional",
+    ];
+    var MASS_SECTION_VIDEO_SLOT_SET = new Set(MASS_SECTION_VIDEO_SLOTS);
+    var MASS_RITE_OPTION_SECTIONS = new Set([
+      "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god", "penitential", "creed",
+    ]);
+    var MASS_RITE_VIDEO_MODE_SECTIONS = new Set([
+      "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
+    ]);
+    window.massRiteVideoMode = window.massRiteVideoMode || {};
+    window.massRiteVideoLang = window.massRiteVideoLang || {};
+    window.massSongVideoMode = window.massSongVideoMode || {};
+    window.__riteVideoSyncFns = window.__riteVideoSyncFns || {};
+    window.registerRiteVideoSync = function (section, fn) {
+      if (section && typeof fn === "function") window.__riteVideoSyncFns[section] = fn;
+    };
+    function syncRiteVideoUi(section) {
+      var map = window.__riteVideoSyncFns || {};
+      if (section && map[section]) map[section]();
+      else Object.keys(map).forEach((k) => map[k]());
+    }
+    window.syncRiteVideoUi = syncRiteVideoUi;
+    var MASS_SECTION_MEDIA_LABELS = {
+      kyrie: "Kyrie",
+      gloria: "Gloria",
+      sanctus: "Sanctus",
+      our_father: "Our Father",
+      lamb_of_god: "Lamb of God",
+      penitential: "Penitential Act",
+      creed: "Creed",
+      entrance: "Entrance",
+      offertory: "Offertory",
+      communion_1: "Communion 1",
+      communion_2: "Communion 2",
+      communion_3: "Communion 3",
+      communion_4: "Communion 4",
+      communion_5: "Communion 5",
+      recessional: "Recessional",
+    };
+    var MASS_RITE_OPTION_LABELS = {
+      "kyrie::english": "Kyrie · English",
+      "kyrie::greek": "Kyrie · Greek",
+      "kyrie::latin": "Kyrie · Latin",
+      "kyrie::tagalog": "Kyrie · Tagalog",
+      "kyrie::tagalog-1": "Kyrie · Tagalog · Panginoon, Maawa Ka",
+      "kyrie::tagalog-2": "Kyrie · Tagalog · Panginoon, Kaawaan Mo Kami",
+      "gloria::english": "Gloria · English",
+      "gloria::latin": "Gloria · Latin",
+      "sanctus::default": "Sanctus · Holy, Holy, Holy",
+      "our_father::english": "Our Father · English",
+      "our_father::malay": "Our Father · Malay",
+      "our_father::tagalog": "Our Father · Tagalog",
+      "our_father::visaya": "Our Father · Visaya",
+      "our_father::korean": "Our Father · Korean",
+      "lamb_of_god::english": "Lamb of God · English",
+      "lamb_of_god::latin": "Lamb of God · Latin",
+      "penitential::confiteor": "Penitential Act · Confiteor",
+      "penitential::form-b": "Penitential Act · Form B",
+      "penitential::form-c": "Penitential Act · Form C",
+      "creed::nicene": "Creed · Nicene",
+      "creed::apostles": "Creed · Apostles'",
+    };
+    var MASS_RITE_OPTION_PREVIEW_TEXT = {
+      "kyrie::english": "Lord, have mercy.\nChrist, have mercy.\nLord, have mercy.",
+      "kyrie::greek": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
+      "kyrie::latin": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
+      "kyrie::tagalog": "PANGINOON, MAAWA KA.\nKRISTO, MAAWA KA.\nKRISTO, MAAWA KA SA AMIN.",
+      "kyrie::tagalog-1": "PANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\nKRISTO, MAAWA KA.\nKRISTO, MAAWA KA SA AMIN.",
+      "kyrie::tagalog-2": "Pari: Panginoon, Kaawaan Mo Kami.\nB: Panginoon, Kaawaan Mo Kami.\nPari: Kristo, Kaawaan Mo Kami.\nB: Kristo, Kaawaan Mo Kami.\nPari: Panginoon, Kaawaan Mo Kami.\nB: Panginoon, Kaawaan Mo Kami.",
+      "gloria::english": "Glory to God in the highest,\nand on earth peace to people of good will.\nWe praise you, we bless you, we adore you,\nwe glorify you, we give you thanks\nfor your great glory,\nLord God, heavenly King, O God, almighty Father.\n\nLord Jesus Christ, Only Begotten Son,\nLord God, Lamb of God, Son of the Father,\nyou take away the sins of the world, have mercy on us;\nyou take away the sins of the world, receive our prayer;\nyou are seated at the right hand of the Father, have mercy on us.\n\nFor you alone are the Holy One,\nyou alone are the Lord,\nyou alone are the Most High,\nJesus Christ,\nwith the Holy Spirit,\nin the glory of God the Father.\nAmen.",
+      "gloria::latin": "Gloria in excelsis Deo\net in terra pax hominibus bonae voluntatis.\nLaudamus te, benedicimus te, adoramus te,\nglorificamus te, gratias agimus tibi\npropter magnam gloriam tuam,\nDomine Deus, Rex caelestis, Deus Pater omnipotens.\n\nDomine Fili unigenite, Iesu Christe,\nDomine Deus, Agnus Dei, Filius Patris,\nqui tollis peccata mundi, miserere nobis;\nqui tollis peccata mundi, suscipe deprecationem nostram.\nQui sedes ad dexteram Patris, miserere nobis.\n\nQuoniam tu solus Sanctus, tu solus Dominus,\ntu solus Altissimus, Iesu Christe,\ncum Sancto Spiritu: in gloria Dei Patris.\nAmen.",
+      "sanctus::default": "Holy, Holy, Holy Lord God of hosts.\nHeaven and earth are full of your glory.\nHosanna in the highest.\nBlessed is he who comes in the name of the Lord.\nHosanna in the highest.",
+      "our_father::english": "Our Father, who art in heaven,\nhallowed be thy name;\nthy kingdom come,\nthy will be done,\non earth as it is in heaven.\nGive us this day our daily bread;\nand forgive us our trespasses,\nas we forgive those who trespass against us;\nand lead us not into temptation,\nbut deliver us from evil.",
+      "our_father::malay": "Bapa kami yang di syurga,\ndikuduskanlah nama-Mu,\ndatanglah kerajaan-Mu,\njadilah kehendak-Mu,\ndi atas bumi seperti di dalam syurga.\nBerilah kami rezeki pada hari ini,\ndan ampunilah kesalahan kami,\nseperti kami mengampuni orang yang bersalah kepada kami.\nDan janganlah masukkan kami ke dalam pencubaan,\ntetapi lepaskanlah kami daripada yang jahat.",
+      "our_father::tagalog": "Ama namin, sumasalangit ka,\nsambahin ang ngalan mo.\nMapasaamin ang kaharian mo.\nSundin ang loob mo,\ndito sa lupa para nang sa langit.\nBigyan mo kami ngayon ng aming kakanin sa araw-araw.\nAt patawarin mo kami sa aming mga sala,\npara nang pagpapatawad namin sa nagkakasala sa amin.\nAt huwag mo kaming ipahintulot sa tukso,\nat iadya mo kami sa lahat ng masama.",
+      "our_father::visaya": "Amahan namo nga anaa sa mga langit,\npagdaygon ang imong ngalan.\nUmabot kanamo ang imong gingharian.\nMatuman ang imong pagbuot,\ndinhi sa yuta maingon sa langit.\nAng kalan-on namo sa matag adlaw, ihatag kanamo karong adlawa.\nUg pasayloa kami sa among mga sala,\ningon nga nagapasaylo kami sa mga nakasala kanamo.\nUg dili mo kami itugyan sa mga panulay,\nhinonoa luwasa kami sa dautan.",
+      "our_father::korean": "하늘에 계신 우리 아버지,\n아버지의 이름이 거룩히 빛나시며\n아버지의 나라가 오시며\n아버지의 뜻이 하늘에서와 같이 땅에서도 이루어지소서.\n오늘 저희에게 일용할 양식을 주시고\n저희에게 잘못한 이를 저희가 용서하오니\n저희 죄를 용서하시고\n저희를 유혹에 빠지지 않게 하시고\n악에서 구하소서.",
+      "lamb_of_god::english": "Lamb of God,\nyou take away the sins of the world,\nhave mercy on us.\nLamb of God,\nyou take away the sins of the world,\nhave mercy on us.\nLamb of God,\nyou take away the sins of the world,\ngrant us peace.",
+      "lamb_of_god::latin": "Agnus Dei,\nqui tollis peccata mundi,\nmiserere nobis.\nAgnus Dei,\nqui tollis peccata mundi,\nmiserere nobis.\nAgnus Dei,\nqui tollis peccata mundi,\ndona nobis pacem.",
+      "penitential::confiteor": "I confess to almighty God\nand to you, my brothers and sisters,\nthat I have greatly sinned,\nin my thoughts and in my words,\nin what I have done and in what I have failed to do,\nthrough my fault, through my fault,\nthrough my most grievous fault;\ntherefore I ask blessed Mary ever-Virgin,\nall the Angels and Saints,\nand you, my brothers and sisters,\nto pray for me to the Lord our God.",
+      "penitential::form-b": "Have mercy on us, O Lord.\nFor we have sinned against you.\nShow us, O Lord, your mercy.\nAnd grant us your salvation.",
+      "penitential::form-c": "You were sent to heal the contrite of heart:\nLord, have mercy.\nYou came to call sinners:\nChrist, have mercy.\nYou are seated at the right hand of the Father to intercede for us:\nLord, have mercy.",
+      "creed::nicene": "I believe in one God,\nthe Father almighty,\nmaker of heaven and earth,\nof all things visible and invisible…\n\n(Full Nicene Creed appears on the Mass slides.)",
+      "creed::apostles": "I believe in God,\nthe Father almighty,\nCreator of heaven and earth,\nand in Jesus Christ, his only Son, our Lord…\n\n(Full Apostles' Creed appears on the Mass slides.)",
+    };
+    var massSectionMedia = { audio: {}, video: {} };
+    var massSectionAudioEl = null;
+    var massSectionAudioPlayingSlot = "";
+    var massSectionMediaObjectUrl = null;
+    // massMediaPickState / composerSongMedia declared with media-pick helpers below.
+
+    function revokeMassSectionMediaObjectUrl() {
+      if (massSectionMediaObjectUrl) {
+        URL.revokeObjectURL(massSectionMediaObjectUrl);
+        massSectionMediaObjectUrl = null;
+      }
+    }
+
+    async function resolveMassSectionMediaUrl(url, preferredMime) {
+      if (!url) return "";
+      if (typeof isPrivateFileUrl === "function" && isPrivateFileUrl(url) && typeof authorizedFetch === "function") {
+        const res = await authorizedFetch(url);
+        if (!res.ok) throw new Error("Could not load media.");
+        const buffer = await res.arrayBuffer();
+        const headerType = String(res.headers.get("content-type") || "").split(";")[0].trim();
+        const mime = headerType || preferredMime || "";
+        const playBlob = mime ? new Blob([buffer], { type: mime }) : new Blob([buffer]);
+        revokeMassSectionMediaObjectUrl();
+        massSectionMediaObjectUrl = URL.createObjectURL(playBlob);
+        return massSectionMediaObjectUrl;
+      }
+      return url;
+    }
+
+    function massMediaKey(section, option) {
+      const sec = String(section || "").trim().toLowerCase();
+      const opt = String(option || "").trim().toLowerCase();
+      if (!sec) return "";
+      return opt ? (sec + "::" + opt) : sec;
+    }
+
+    function parseMassMediaKey(key) {
+      const raw = String(key || "").trim();
+      const idx = raw.indexOf("::");
+      if (idx < 0) return { section: raw.toLowerCase(), option: "" };
+      return {
+        section: raw.slice(0, idx).toLowerCase(),
+        option: raw.slice(idx + 2).toLowerCase(),
+      };
+    }
+
+    function massMediaKeyAllowsVideo(key) {
+      const parsed = parseMassMediaKey(key);
+      if (!MASS_SECTION_VIDEO_SLOT_SET.has(parsed.section)) return false;
+      if (MASS_RITE_OPTION_SECTIONS.has(parsed.section) && !parsed.option) return false;
+      return true;
+    }
+
+    function selectedRiteMediaOption(section) {
+      if (section === "sanctus") {
+        if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
+          return (window.massRiteVideoLang && window.massRiteVideoLang.sanctus) || "default";
+        }
+        const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"])');
+        return (opt && (opt.getAttribute("data-val") || "default")) || "default";
+      }
+      const idMap = {
+        kyrie: "flow-kyrie-choice",
+        gloria: "flow-gloria-choice",
+        our_father: "flow-our-father-choice",
+        lamb_of_god: "flow-lamb-choice",
+        penitential: "flow-penitential-choice",
+        creed: "flow-creed-choice",
+      };
+      const el = $(idMap[section]);
+      return el && el.value ? String(el.value).trim().toLowerCase() : "";
+    }
+
+    function resolveVideoMediaKey(section) {
+      if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+        if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return "";
+        const opt = (window.massRiteVideoLang && window.massRiteVideoLang[section]) || selectedRiteMediaOption(section);
+        return opt ? massMediaKey(section, opt) : "";
+      }
+      if (MASS_RITE_OPTION_SECTIONS.has(section)) {
+        return "";
+      }
+      return section;
+    }
+
+    function parseYouTubeVideoId(value) {
+      let raw = String(value || "").trim();
+      if (!raw) return "";
+      if (raw.toLowerCase().indexOf("yt:") === 0) raw = raw.slice(3).trim();
+      if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+      const lowered = raw.toLowerCase();
+      if (raw.indexOf("://") < 0 && (
+        lowered.indexOf("youtube.com") === 0 ||
+        lowered.indexOf("youtu.be") === 0 ||
+        lowered.indexOf("m.youtube.com") === 0 ||
+        lowered.indexOf("music.youtube.com") === 0 ||
+        lowered.indexOf("www.youtube.com") === 0
+      )) {
+        raw = "https://" + raw;
+      }
+      let parsed;
+      try { parsed = new URL(raw); } catch (_e) { return ""; }
+      const host = String(parsed.hostname || "").toLowerCase();
+      if (!/(^|\.)youtube\.com$/.test(host) && !/(^|\.)youtu\.be$/.test(host) && !/(^|\.)youtube-nocookie\.com$/.test(host)) {
+        return "";
+      }
+      if (/(^|\.)youtu\.be$/.test(host)) {
+        const cand = parsed.pathname.replace(/^\/+/, "").split("/")[0] || "";
+        return /^[A-Za-z0-9_-]{11}$/.test(cand) ? cand : "";
+      }
+      const vid = parsed.searchParams.get("v") || "";
+      if (/^[A-Za-z0-9_-]{11}$/.test(vid)) return vid;
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      if (parts.length >= 2 && (parts[0] === "embed" || parts[0] === "shorts" || parts[0] === "live" || parts[0] === "v")) {
+        const cand = parts[1];
+        return /^[A-Za-z0-9_-]{11}$/.test(cand) ? cand : "";
+      }
+      return "";
+    }
+
+    function youtubeWatchUrl(id) {
+      return id ? ("https://www.youtube.com/watch?v=" + id) : "";
+    }
+
+    function youtubeEmbedUrl(id) {
+      const vid = String(id || "").trim();
+      if (!vid) return "";
+      // controls=1 restores the scrubber. End-card suggestions are limited via
+      // rel=0 + loop/playlist, with an API restart fallback in armYouTubeEmbed.
+      const origin =
+        typeof window !== "undefined" && window.location && window.location.origin
+          ? window.location.origin
+          : "";
+      const params = [
+        "autoplay=1",
+        "rel=0",
+        "playsinline=1",
+        "controls=1",
+        "fs=0",
+        "iv_load_policy=3",
+        "disablekb=0",
+        "enablejsapi=1",
+        "loop=1",
+        "playlist=" + encodeURIComponent(vid),
+      ];
+      if (origin && origin.indexOf("http") === 0) {
+        params.push("origin=" + encodeURIComponent(origin));
+      }
+      return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(vid) + "?" + params.join("&");
+    }
+
+    var ytEmbedGuardBound = false;
+
+    function youtubePostCommand(frame, func, args) {
+      if (!frame || !frame.contentWindow || !func) return;
+      try {
+        frame.contentWindow.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: func,
+            args: Array.isArray(args) ? args : [],
+          }),
+          "*"
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function armYouTubeEmbed(frame) {
+      if (!frame) return;
+      if (!ytEmbedGuardBound) {
+        ytEmbedGuardBound = true;
+        window.addEventListener("message", (event) => {
+          const origin = String(event.origin || "");
+          if (
+            origin.indexOf("youtube.com") === -1 &&
+            origin.indexOf("youtube-nocookie.com") === -1
+          ) {
+            return;
+          }
+          let data = event.data;
+          if (typeof data === "string") {
+            try {
+              data = JSON.parse(data);
+            } catch (_e) {
+              return;
+            }
+          }
+          if (!data || typeof data !== "object") return;
+          let state = null;
+          if (data.event === "onStateChange") {
+            state = typeof data.info === "number" ? data.info : null;
+          } else if (data.info && typeof data.info.playerState === "number") {
+            state = data.info.playerState;
+          }
+          // 0 = ended — restart/pause before suggestion cards settle in.
+          if (state !== 0) return;
+          const live = $("song-media-preview-youtube");
+          if (!live || !live.getAttribute("src")) return;
+          youtubePostCommand(live, "seekTo", [0, true]);
+          youtubePostCommand(live, "playVideo");
+        });
+      }
+      const ping = () => {
+        try {
+          frame.contentWindow.postMessage(
+            JSON.stringify({ event: "listening", id: frame.id || "verbum-yt" }),
+            "*"
+          );
+        } catch (_e) { /* ignore */ }
+      };
+      const onLoad = () => {
+        ping();
+        window.setTimeout(ping, 250);
+        window.setTimeout(ping, 900);
+      };
+      frame.removeEventListener("load", frame._verbumYtArmLoad || (() => {}));
+      frame._verbumYtArmLoad = onLoad;
+      frame.addEventListener("load", onLoad);
+      if (frame.getAttribute("src")) onLoad();
+    }
+
+    function isYouTubeMediaRef(item) {
+      if (!item || typeof item !== "object") return false;
+      if (item.source === "preview") return false;
+      const basename = String(item.basename || "").trim();
+      if (basename && !/^yt:/i.test(basename) && /\.[a-z0-9]{2,5}$/i.test(basename)) {
+        // Real audio/video files may carry youtube_id provenance — not a practice link.
+        return false;
+      }
+      if (item.source === "youtube" || /^yt:/i.test(basename)) return true;
+      return !!(item.youtube_id || parseYouTubeVideoId(item.youtube_url || item.url || ""));
+    }
+
+
+    function canLinkYouTubeMedia() {
+      return !!(
+        document.body.classList.contains("is-superadmin") ||
+        (typeof churchMembershipState !== "undefined" &&
+          churchMembershipState &&
+          churchMembershipState.is_superadmin)
+      );
+    }
+    window.canLinkYouTubeMedia = canLinkYouTubeMedia;
+
+    function youtubeIdFromMediaRef(item) {
+      if (!item || typeof item !== "object") return "";
+      if (!isYouTubeMediaRef(item)) return "";
+      return parseYouTubeVideoId(item.youtube_id || item.youtube_url || item.url || item.basename || "");
+    }
+
+    function youtubeMediaRefFromInput(value, displayName) {
+      const id = parseYouTubeVideoId(value);
+      if (!id) return null;
+      const name = String(displayName || "").trim() || "YouTube";
+      return {
+        basename: "yt:" + id,
+        display_name: name,
+        url: youtubeWatchUrl(id),
+        source: "youtube",
+        youtube_id: id,
+        youtube_url: youtubeWatchUrl(id),
+      };
+    }
+
+    function serializeSongMediaRef(item) {
+      const norm = normalizeComposerMediaRef(item);
+      if (!norm) return null;
+      const out = {
+        basename: norm.basename,
+        display_name: norm.display_name || norm.basename,
+      };
+      if (isYouTubeMediaRef(norm)) {
+        out.source = "youtube";
+        out.youtube_id = youtubeIdFromMediaRef(norm);
+        out.youtube_url = youtubeWatchUrl(out.youtube_id);
+      }
+      return out;
+    }
+
+    function normalizeMassMediaItem(item) {
+      return normalizeComposerMediaRef(item);
+    }
+
+    function getMassSectionMedia(kind, slot) {
+      const bucket = massSectionMedia[kind === "video" ? "video" : "audio"];
+      return bucket && bucket[slot] ? bucket[slot] : null;
+    }
+
+    function setMassSectionMedia(kind, slot, item) {
+      const key = kind === "video" ? "video" : "audio";
+      if (key === "video" && !massMediaKeyAllowsVideo(slot)) return;
+      if (!massSectionMedia[key]) massSectionMedia[key] = {};
+      const norm = normalizeMassMediaItem(item);
+      if (norm) massSectionMedia[key][slot] = norm;
+      else {
+        delete massSectionMedia[key][slot];
+        if (key === "video" && typeof setMassSongVideoMode === "function") {
+          setMassSongVideoMode(slot, false, { quiet: true });
+        }
+      }
+      refreshMassSectionMediaUi();
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+
+    function serializeMassSectionMedia() {
+      return JSON.parse(JSON.stringify(massSectionMedia || { audio: {}, video: {} }));
+    }
+
+    function applyMassSectionMedia(data) {
+      const next = { audio: {}, video: {} };
+      if (data && typeof data === "object") {
+        ["audio", "video"].forEach((kind) => {
+          const src = data[kind];
+          if (!src || typeof src !== "object") return;
+          Object.keys(src).forEach((slot) => {
+            const norm = normalizeMassMediaItem(src[slot]);
+            if (!norm) return;
+            if (kind === "video" && !massMediaKeyAllowsVideo(slot) && !MASS_SECTION_VIDEO_SLOT_SET.has(slot)) return;
+            // Keep legacy section-only rite keys for migrate-on-resolve.
+            next[kind][slot] = norm;
+          });
+        });
+      }
+      massSectionMedia = next;
+      refreshMassSectionMediaUi();
+    }
+
+    function resetMassSectionMedia() {
+      stopMassSectionAudio();
+      massSectionMedia = { audio: {}, video: {} };
+      window.massRiteVideoMode = {};
+      window.massRiteVideoLang = {};
+      window.massSongVideoMode = {};
+      if (typeof syncRiteVideoUi === "function") syncRiteVideoUi();
+      refreshMassSectionMediaUi();
+    }
+
+    function serializeRiteVideoState() {
+      return {
+        mode: JSON.parse(JSON.stringify(window.massRiteVideoMode || {})),
+        lang: JSON.parse(JSON.stringify(window.massRiteVideoLang || {})),
+      };
+    }
+
+    function getMassSongVideoMode(slot) {
+      const key = String(slot || "").trim();
+      return !!(key && window.massSongVideoMode && window.massSongVideoMode[key]);
+    }
+
+    function setMassSongVideoMode(slot, on, opts) {
+      const key = String(slot || "").trim();
+      if (!key || !MASS_SECTION_VIDEO_SLOT_SET.has(key)) return;
+      if (!window.massSongVideoMode) window.massSongVideoMode = {};
+      if (on) window.massSongVideoMode[key] = true;
+      else delete window.massSongVideoMode[key];
+      if (!(opts && opts.quiet)) {
+        refreshMassSectionMediaUi();
+        if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+      }
+    }
+
+    function serializeSongVideoState() {
+      return {
+        mode: JSON.parse(JSON.stringify(window.massSongVideoMode || {})),
+      };
+    }
+
+    function applySongVideoState(data) {
+      window.massSongVideoMode = {};
+      const mode = data && typeof data === "object" ? (data.mode || data.songVideoMode || data) : null;
+      if (mode && typeof mode === "object") {
+        Object.keys(mode).forEach((slot) => {
+          if (mode[slot] && MASS_SECTION_VIDEO_SLOT_SET.has(slot)) {
+            window.massSongVideoMode[slot] = true;
+          }
+        });
+      }
+      refreshMassSectionMediaUi();
+    }
+
+    function slotHasSongVideoAvailable(slotKey) {
+      if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) return false;
+      if (getMassSectionMedia("video", slotKey)) return true;
+      const songId = (selectedLyricsSongs && selectedLyricsSongs[slotKey]) || "";
+      if (!songId) return false;
+      const row = typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      return !!(row && row.video_media && (row.video_media.basename || row.video_media));
+    }
+
+    var massSongVideoPickPendingSlot = "";
+    var massRiteVideoPickPending = null;
+
+    function massRiteOptionMediaInnerHtml(mediaKey, section, lang) {
+      const key = String(mediaKey || "").trim();
+      const sec = String(section || "").trim().toLowerCase();
+      const opt = String(lang || "").trim().toLowerCase();
+      const video = key ? getMassSectionMedia("video", key) : null;
+      const videoOn = !!video;
+      const activeLang = String(
+        (window.massRiteVideoLang && window.massRiteVideoLang[sec]) || ""
+      ).trim().toLowerCase();
+      const useVideo = !!(
+        window.massRiteVideoMode &&
+        window.massRiteVideoMode[sec] &&
+        activeLang === opt
+      );
+      return (
+        "<div class=\"mass-song-slide-mode-row\">" +
+          "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this rite\" " +
+            "data-mass-rite-slide-mode=\"" + escapeHtml(sec) + "\">" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+              "data-mass-rite-slide-mode-val=\"lyrics\" " +
+              "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
+              "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
+              "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+              "data-mass-rite-slide-mode-val=\"video\" " +
+              "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
+              "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
+              "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+          "</div>" +
+          "<button type=\"button\" class=\"mw-option__text mw-rite-video-play" + (videoOn ? " is-ready" : "") + "\" " +
+            "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
+            (useVideo ? "" : "hidden ") +
+            (videoOn ? "" : "disabled ") +
+            "aria-label=\"Play video preview\" " +
+            "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : "Link video from the option title first") + "\">▶</button>" +
+        "</div>"
+      );
+    }
+
+    async function chooseMassRiteSlideMode(section, lang, mode) {
+      const sec = String(section || "").trim().toLowerCase();
+      const opt = String(lang || "").trim().toLowerCase();
+      if (!sec || !opt || !MASS_RITE_VIDEO_MODE_SECTIONS.has(sec)) return;
+      const idMap = {
+        kyrie: "flow-kyrie-choice",
+        gloria: "flow-gloria-choice",
+        our_father: "flow-our-father-choice",
+        lamb_of_god: "flow-lamb-choice",
+      };
+      const sel = idMap[sec] ? $(idMap[sec]) : null;
+      if (sel && opt) {
+        sel.value = opt;
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (sec === "sanctus") {
+        const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
+        if (wrap) {
+          wrap.querySelectorAll(".mw-option").forEach((c) => {
+            if (c.getAttribute("data-val") === "__video") return;
+            c.setAttribute("aria-checked", String(c.getAttribute("data-val") === opt));
+          });
+        }
+      }
+      if (mode !== "video") {
+        massRiteVideoPickPending = null;
+        if (window.massRiteVideoMode) window.massRiteVideoMode[sec] = false;
+        if (typeof syncRiteVideoUi === "function") syncRiteVideoUi(sec);
+        refreshMassSectionMediaUi();
+        if (typeof notify === "function") {
+          notify("Using lyric slides for " + (MASS_SECTION_MEDIA_LABELS[sec] || sec) + ".", "ok");
+        }
+        if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+        return;
+      }
+      const mediaKey = massMediaKey(sec, opt);
+      if (!getMassSectionMedia("video", mediaKey)) {
+        massRiteVideoPickPending = { section: sec, lang: opt, slot: mediaKey };
+        if (typeof notify === "function") {
+          notify("Choose or upload a video for this option, then Video mode will apply.", "info");
+        }
+        await openMassMediaPickModal("video", mediaKey);
+        return;
+      }
+      massRiteVideoPickPending = null;
+      window.massRiteVideoMode = window.massRiteVideoMode || {};
+      window.massRiteVideoLang = window.massRiteVideoLang || {};
+      window.massRiteVideoMode[sec] = true;
+      window.massRiteVideoLang[sec] = opt;
+      if (typeof syncRiteVideoUi === "function") syncRiteVideoUi(sec);
+      refreshMassSectionMediaUi();
+      if (typeof notify === "function") {
+        notify("PowerPoint will use the video slide for " + (MASS_SECTION_MEDIA_LABELS[sec] || sec) + ".", "ok");
+      }
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+
+    function ensureSongSlotVideoFromCatalog(slotKey) {
+      if (getMassSectionMedia("video", slotKey)) return true;
+      const songId = (selectedLyricsSongs && selectedLyricsSongs[slotKey]) || "";
+      if (!songId) return false;
+      const row = typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      const videoRef = row ? normalizeComposerMediaRef(row.video_media) : null;
+      if (!videoRef) return false;
+      setMassSectionMedia("video", slotKey, resolveLibraryMediaRow("video", videoRef));
+      return !!getMassSectionMedia("video", slotKey);
+    }
+
+    async function chooseMassSongSlideMode(slotKey, mode) {
+      const slot = String(slotKey || "").trim();
+      if (!slot || !MASS_SECTION_VIDEO_SLOT_SET.has(slot)) return;
+      if (mode !== "video") {
+        massSongVideoPickPendingSlot = "";
+        setMassSongVideoMode(slot, false);
+        if (typeof notify === "function") {
+          notify("Using lyric slides for " + massMediaDisplayLabel(slot) + ".", "ok");
+        }
+        return;
+      }
+      if (!getMassSectionMedia("video", slot)) {
+        ensureSongSlotVideoFromCatalog(slot);
+      }
+      if (!getMassSectionMedia("video", slot)) {
+        massSongVideoPickPendingSlot = slot;
+        if (typeof notify === "function") {
+          notify("Choose or upload a video for this song, then Video mode will apply.", "info");
+        }
+        await openMassMediaPickModal("video", slot);
+        return;
+      }
+      massSongVideoPickPendingSlot = "";
+      setMassSongVideoMode(slot, true);
+      if (typeof notify === "function") {
+        notify("PowerPoint will use the video slide for " + massMediaDisplayLabel(slot) + ".", "ok");
+      }
+    }
+
+    function applyRiteVideoState(data) {
+      window.massRiteVideoMode = {};
+      window.massRiteVideoLang = {};
+      if (data && typeof data === "object") {
+        const mode = data.mode || data.riteVideoMode || {};
+        const lang = data.lang || data.riteVideoLang || {};
+        if (mode && typeof mode === "object") {
+          Object.keys(mode).forEach((section) => {
+            if (mode[section] && MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+              window.massRiteVideoMode[section] = true;
+            }
+          });
+        }
+        if (lang && typeof lang === "object") {
+          Object.keys(lang).forEach((section) => {
+            const val = String(lang[section] || "").trim().toLowerCase();
+            if (val && MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+              window.massRiteVideoLang[section] = val;
+            }
+          });
+        }
+      }
+      if (typeof syncRiteVideoUi === "function") syncRiteVideoUi();
+      // Keep language selects aligned with restored rite video lang.
+      const idMap = {
+        kyrie: "flow-kyrie-choice",
+        gloria: "flow-gloria-choice",
+        our_father: "flow-our-father-choice",
+        lamb_of_god: "flow-lamb-choice",
+      };
+      Object.keys(idMap).forEach((section) => {
+        const lang = window.massRiteVideoLang && window.massRiteVideoLang[section];
+        const sel = $(idMap[section]);
+        if (sel && lang) {
+          const has = Array.prototype.some.call(sel.options, (o) => String(o.value).toLowerCase() === lang);
+          if (has) sel.value = lang;
+        }
+      });
+      if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
+        const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
+        if (wrap) {
+          wrap.querySelectorAll(".mw-option").forEach((c) => {
+            if (c.getAttribute("data-val") === "__video") return;
+            c.setAttribute(
+              "aria-checked",
+              String(c.getAttribute("data-val") === ((window.massRiteVideoLang && window.massRiteVideoLang.sanctus) || "default"))
+            );
+          });
+        }
+      }
+      refreshMassSectionMediaUi();
+    }
+
+    function buildVideoReplacementsPayload() {
+      const out = {};
+      const gloriaOmit = (() => {
+        const sel = $("flow-gloria-choice");
+        return !!(sel && String(sel.value || "").trim().toLowerCase() === "none");
+      })();
+      MASS_SECTION_VIDEO_SLOTS.forEach((section) => {
+        if (section === "gloria" && gloriaOmit) return;
+        if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+          if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return;
+        } else if (!getMassSongVideoMode(section)) {
+          // Song slots default to lyrics slides unless user chooses Video.
+          return;
+        }
+        const key = resolveVideoMediaKey(section);
+        let item = key ? getMassSectionMedia("video", key) : null;
+        if (!item && MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+          item = getMassSectionMedia("video", section);
+        } else if (!item && !MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+          item = getMassSectionMedia("video", section);
+        }
+        if (item && item.basename && /\.mp4$/i.test(item.basename)) {
+          out[section] = item.basename;
+        }
+      });
+      return Object.keys(out).length ? out : null;
+    }
+
+    function massMediaDisplayLabel(key) {
+      if (key === "kyrie::tagalog") {
+        const slideSel = $("flow-kyrie-tagalog-slide");
+        const slideKey = slideSel && slideSel.value === "2" ? "kyrie::tagalog-2" : "kyrie::tagalog-1";
+        if (MASS_RITE_OPTION_LABELS[slideKey]) return MASS_RITE_OPTION_LABELS[slideKey];
+      }
+      if (MASS_RITE_OPTION_LABELS[key]) return MASS_RITE_OPTION_LABELS[key];
+      const parsed = parseMassMediaKey(key);
+      const base = MASS_SECTION_MEDIA_LABELS[parsed.section] || parsed.section;
+      return parsed.option ? (base + " · " + parsed.option) : base;
+    }
+
+    function stripMassPreviewMarkers(text) {
+      return String(text || "")
+        .replace(/<<[APD]>>/g, "")
+        .replace(/\r\n/g, "\n")
+        .replace(/[ \t]+\n/g, "\n")
+        .trim();
+    }
+
+    var riteSlidePreviewCache = {};
+
+    async function fetchRiteSlidePreview(section, option) {
+      const sec = String(section || "").trim().toLowerCase();
+      let opt = String(option || "").trim().toLowerCase() || "default";
+      if (sec === "kyrie" && opt === "tagalog") {
+        const slideSel = $("flow-kyrie-tagalog-slide");
+        opt = slideSel && slideSel.value === "2" ? "tagalog-2" : "tagalog-1";
+      }
+      const cacheKey = sec + "::" + opt;
+      if (riteSlidePreviewCache[cacheKey]) return riteSlidePreviewCache[cacheKey];
+      const qs = "section=" + encodeURIComponent(sec) + "&option=" + encodeURIComponent(opt);
+      const res = await fetch("/api/rite-preview-text?" + qs);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error((data && data.detail) || "Could not load slide text.");
+      }
+      riteSlidePreviewCache[cacheKey] = data;
+      return data;
+    }
+    window.fetchRiteSlidePreview = fetchRiteSlidePreview;
+
+    function getMassMediaPreviewText(key) {
+      if (key === "kyrie::tagalog") {
+        const slideSel = $("flow-kyrie-tagalog-slide");
+        const slideKey = slideSel && slideSel.value === "2" ? "kyrie::tagalog-2" : "kyrie::tagalog-1";
+        if (MASS_RITE_OPTION_PREVIEW_TEXT[slideKey]) return MASS_RITE_OPTION_PREVIEW_TEXT[slideKey];
+      }
+      if (MASS_RITE_OPTION_PREVIEW_TEXT[key]) return MASS_RITE_OPTION_PREVIEW_TEXT[key];
+      const parsed = parseMassMediaKey(key);
+      if (MASS_SECTION_VIDEO_SLOT_SET.has(parsed.section) && !parsed.option) {
+        const id = selectedLyricsSongs && selectedLyricsSongs[parsed.section];
+        if (!id) return "";
+        let row = massPlanAllSongs && massPlanAllSongs.find((s) => String(s.id) === String(id));
+        if (!row && typeof rebuildMassPlanSongPool === "function") {
+          rebuildMassPlanSongPool();
+          row = massPlanAllSongs && massPlanAllSongs.find((s) => String(s.id) === String(id));
+        }
+        const lyrics = row && (row.lyrics || row.lyric_text || row.text || "");
+        return stripMassPreviewMarkers(lyrics);
+      }
+      return "";
+    }
+
+    function formatRiteSlidesForPreview(slides) {
+      const pages = Array.isArray(slides) ? slides.filter(Boolean) : [];
+      if (!pages.length) return "";
+      if (pages.length === 1) return pages[0];
+      return pages.map((page, i) => "— Slide " + (i + 1) + " —\n" + page).join("\n\n");
+    }
+
+    async function openMassRiteTextPreview(key) {
+      const parsed = parseMassMediaKey(key);
+      const title = massMediaDisplayLabel(key) || "Text preview";
+      try {
+        const data = await fetchRiteSlidePreview(parsed.section, parsed.option || "default");
+        const text = formatRiteSlidesForPreview(data.slides) || data.text || "";
+        const count = data.slide_count || (data.slides && data.slides.length) || 0;
+        const modalTitle = count > 1 ? (title + " · " + count + " slides") : title;
+        if (typeof window.openMwTextPreview === "function") {
+          window.openMwTextPreview(modalTitle, text, {});
+        }
+      } catch (_e) {
+        const fallback = getMassMediaPreviewText(key);
+        if (fallback && typeof window.openMwTextPreview === "function") {
+          window.openMwTextPreview(title, fallback, {});
+          return;
+        }
+        if (typeof notify === "function") notify("Could not load slide text for this option.", "error");
+      }
+    }
+
+    function massMediaChipHtml(kind, slot) {
+      const item = getMassSectionMedia(kind, slot);
+      const on = !!item;
+      const label = kind === "video" ? "Video" : "Audio";
+      const name = on ? (item.display_name || item.basename) : "Link…";
+      const playAttr = kind === "video" ? "data-mw-play-video" : "data-mw-play-audio";
+      return (
+        "<div class=\"mw-media-group\">" +
+          "<button type=\"button\" class=\"mw-media-chip mw-media-chip--sa" + (on ? " is-on" : "") + "\" " +
+            "data-mw-link-media=\"" + escapeHtml(kind) + "\" data-mw-media-slot=\"" + escapeHtml(slot) + "\" " +
+            "title=\"" + escapeHtml(on ? (label + ": " + name) : ("Link " + label.toLowerCase() + " from Media library")) + "\">" +
+            "<span>" + escapeHtml(label) + "</span>" +
+            (on ? "<span class=\"mw-media-chip__name\">" + escapeHtml(name) + "</span>" : "") +
+          "</button>" +
+          "<button type=\"button\" class=\"mw-media-play" + (on ? " is-ready" : "") + "\" " + playAttr + " " +
+            "data-mw-media-slot=\"" + escapeHtml(slot) + "\" " +
+            (on ? "" : "disabled ") +
+            "aria-label=\"" + escapeHtml(kind === "video" ? "Play video preview" : "Play audio preview") + "\" " +
+            "title=\"" + escapeHtml(on ? ("Play " + label.toLowerCase()) : ("Link " + label.toLowerCase() + " first")) + "\">▶</button>" +
+        "</div>"
+      );
+    }
+
+    function massSongMediaEyeHtml() {
+      return (
+        "<svg class=\"mass-song-slide-mode__glyph\" xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
+          "<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/>" +
+          "<circle cx=\"12\" cy=\"12\" r=\"3\"/>" +
+        "</svg>"
+      );
+    }
+
+    function massSongMediaRowHtml(slotKey) {
+      const youtube = massSlotYoutubeRef(slotKey);
+      const audioYoutube = !!youtube;
+      const canLinkYt = canLinkYouTubeMedia();
+      const youtubePlayBtn =
+        "<button type=\"button\" class=\"mw-media-play" + (audioYoutube ? " is-ready" : "") + "\" " +
+          "data-mw-play-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+          (audioYoutube ? "" : "disabled ") +
+          "aria-label=\"Play YouTube full song\" " +
+          "title=\"" + escapeHtml(audioYoutube ? ("Play YouTube · " + (youtube.display_name || "YouTube")) : (canLinkYt ? "Link YouTube first" : "No YouTube linked")) + "\">▶</button>";
+      const audioYoutubeBtn = canLinkYt
+        ? ("<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audioYoutube ? " is-on" : "") + "\" " +
+            "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+            "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>")
+        : (audioYoutube
+          ? ("<span class=\"mass-song-media-btn is-on\" title=\"" +
+              escapeHtml("YouTube · " + (youtube.display_name || "YouTube")) +
+              "\">YouTube</span>")
+          : "");
+      const youtubeGroup = (canLinkYt || audioYoutube)
+        ? ("<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
+            audioYoutubeBtn +
+            youtubePlayBtn +
+          "</div>")
+        : "";
+      if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
+        if (!youtubeGroup) return "";
+        return (
+          "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
+            youtubeGroup +
+          "</div>"
+        );
+      }
+      const video = getMassSectionMedia("video", slotKey);
+      const videoOn = !!video;
+      const useVideo = getMassSongVideoMode(slotKey);
+      const videoAvailable = !!(videoOn || slotHasSongVideoAvailable(slotKey));
+      const songId = selectedLyricsSongs[slotKey] || "";
+      let songRow = songId ? massPlanAllSongs.find((s) => String(s.id) === String(songId)) : null;
+      if (songId && !songRow && typeof rebuildMassPlanSongPool === "function") {
+        rebuildMassPlanSongPool();
+        songRow = massPlanAllSongs.find((s) => String(s.id) === String(songId));
+      }
+      const canPreviewLyrics = !!(songId && songRow && songRow.has_lyrics);
+      const videoPlayBtn =
+        "<button type=\"button\" class=\"mw-media-play mass-song-slide-mode__play" + (videoOn ? " is-ready" : "") + "\" " +
+          "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+          (videoOn ? "" : "disabled ") +
+          "aria-label=\"Play video preview\" " +
+          "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : (videoAvailable ? "Link or apply song video first" : "Link video first")) + "\">▶</button>";
+      const lyricsPreviewBtn =
+        "<button type=\"button\" class=\"mass-song-slide-mode__icon" + (canPreviewLyrics ? " is-ready" : "") + "\" " +
+          "data-mass-song-lyrics-preview=\"" + escapeHtml(slotKey) + "\" " +
+          (canPreviewLyrics ? "" : "disabled ") +
+          "aria-label=\"Preview lyrics\" title=\"" +
+          escapeHtml(canPreviewLyrics ? "Preview lyrics" : (songId ? "Lyrics unavailable" : "Choose a song first")) + "\">" +
+          massSongMediaEyeHtml() +
+        "</button>";
+      return (
+        "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
+          "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this song\" " +
+            "data-mass-song-slide-mode=\"" + escapeHtml(slotKey) + "\">" +
+            "<span class=\"mass-song-slide-mode__cell" + (!useVideo ? " is-active" : "") + "\">" +
+              "<button type=\"button\" class=\"mass-song-slide-mode__btn\" " +
+                "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+                "data-mass-song-slide-mode-val=\"lyrics\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+                "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+              lyricsPreviewBtn +
+            "</span>" +
+            "<span class=\"mass-song-slide-mode__cell" + (useVideo ? " is-active" : "") + "\">" +
+              "<button type=\"button\" class=\"mass-song-slide-mode__btn\" " +
+                "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+                "data-mass-song-slide-mode-val=\"video\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+                "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+              videoPlayBtn +
+            "</span>" +
+          "</div>" +
+          youtubeGroup +
+        "</div>"
+      );
+    }
+
+    function refreshMassSectionMediaUi() {
+      document.querySelectorAll("[data-mw-media-row]").forEach((row) => {
+        const slot = row.getAttribute("data-mw-media-row");
+        if (!slot) return;
+        if (row.getAttribute("data-mw-rite-media") === "1") {
+          const section = row.getAttribute("data-mw-media-section") || "";
+          const lang = row.getAttribute("data-mw-media-lang") || "";
+          row.innerHTML = massRiteOptionMediaInnerHtml(slot, section, lang);
+          return;
+        }
+        const kindAttr = (row.getAttribute("data-mw-media-kind") || "").toLowerCase();
+        if (kindAttr === "audio") {
+          row.innerHTML = massMediaChipHtml("audio", slot);
+          return;
+        }
+        if (kindAttr === "video") {
+          row.innerHTML = massMediaKeyAllowsVideo(slot) ? massMediaChipHtml("video", slot) : "";
+          return;
+        }
+        const allowVideo = massMediaKeyAllowsVideo(slot);
+        row.innerHTML = massMediaChipHtml("audio", slot) + (allowVideo ? massMediaChipHtml("video", slot) : "");
+      });
+      document.querySelectorAll("[data-mass-media-row]").forEach((row) => {
+        const slot = row.getAttribute("data-mass-media-row");
+        if (!slot) return;
+        const parent = row.parentNode;
+        const html = massSongMediaRowHtml(slot);
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const next = tmp.firstElementChild;
+        if (next && parent) parent.replaceChild(next, row);
+      });
+      document.querySelectorAll("[data-mw-play-audio]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot");
+        const has = !!(key && massSlotAudioSnippetRef(key));
+        play.disabled = !has;
+        play.classList.toggle("is-ready", has);
+        play.classList.toggle("is-playing", !!(key && massSectionAudioPlayingSlot === key));
+      });
+      document.querySelectorAll("[data-mw-play-youtube]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot");
+        const has = !!(key && massSlotYoutubeRef(key));
+        const playingKey = key ? youtubePlayingSlot(key) : "";
+        play.disabled = !has;
+        play.classList.toggle("is-ready", has);
+        play.classList.toggle("is-playing", !!(playingKey && massSectionAudioPlayingSlot === playingKey));
+      });
+      document.querySelectorAll("[data-mw-play-video]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot");
+        const has = !!(key && getMassSectionMedia("video", key));
+        play.disabled = !has;
+        play.classList.toggle("is-ready", has);
+      });
+      document.querySelectorAll(".mw-option__row [data-mw-play-audio]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot") || "";
+        const item = key ? getMassSectionMedia("audio", key) : null;
+        const playing = !!(key && massSectionAudioPlayingSlot === key);
+        play.classList.toggle("is-ready", !!item);
+        play.classList.toggle("is-playing", playing);
+        play.disabled = !item && play.classList.contains("mw-rite-preview__action");
+        if (play.classList.contains("mw-rite-preview__action")) {
+          play.textContent = playing ? "Stop sound" : "Play sound";
+        } else {
+          play.textContent = playing ? "❚❚" : "▶";
+        }
+        play.title = playing
+          ? "Stop audio preview"
+          : (item ? ("Play " + (item.display_name || item.basename)) : "Link audio from the option title first");
+      });
+      document.querySelectorAll(".mw-media-dd--link").forEach((dd) => {
+        const label = dd.querySelector(".mw-option__label");
+        const slot = label && label.getAttribute("data-mw-media-slot");
+        const audioItem = dd.querySelector("[data-mw-link-media=\"audio\"]");
+        const videoItem = dd.querySelector("[data-mw-link-media=\"video\"]");
+        const audio = slot ? getMassSectionMedia("audio", slot) : null;
+        const video = slot ? getMassSectionMedia("video", slot) : null;
+        if (label) {
+          label.classList.toggle("is-linked", !!(audio || video));
+          label.title = "Link audio or video for this option";
+        }
+        if (audioItem) audioItem.textContent = audio ? "Change audio" : "Link audio";
+        if (videoItem) videoItem.textContent = video ? "Change video" : "Link video";
+      });
+      document.dispatchEvent(new CustomEvent("mw:aside-refresh"));
+      document.querySelectorAll(".mass-song-audio-btn[data-mass-song-audio]").forEach((btn) => {
+        const slot = btn.getAttribute("data-mass-song-audio");
+        const hasAudio = !!(slot && massSlotAudioSnippetRef(slot));
+        const playing = !!(slot && massSectionAudioPlayingSlot === slot);
+        btn.disabled = !hasAudio;
+        btn.classList.toggle("is-ready", hasAudio);
+        btn.classList.toggle("is-playing", playing);
+        btn.textContent = playing ? "❚❚" : "▶";
+        btn.title = playing
+          ? "Stop audio clip"
+          : (hasAudio ? "Play 5–10s chorus preview" : "Link an audio clip via the song title first");
+        btn.setAttribute("aria-label", playing ? "Stop audio clip" : "Play audio clip");
+        btn.setAttribute("aria-disabled", hasAudio ? "false" : "true");
+      });
+      if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
+      if (typeof window.placeRiteSettingsBesideVideo === "function") {
+        window.placeRiteSettingsBesideVideo();
+      }
+    }
+
+    function stopMassSectionAudio() {
+      if (massSectionAudioEl) {
+        try { massSectionAudioEl.pause(); } catch (_e) {}
+        try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_e2) {}
+        massSectionAudioEl = null;
+      }
+      massSectionAudioPlayingSlot = "";
+      revokeMassSectionMediaObjectUrl();
+      if (typeof closeComposerYouTubeDock === "function") closeComposerYouTubeDock({ silent: true });
+      document.querySelectorAll(
+        "[data-mw-play-audio].is-playing, [data-mw-play-youtube].is-playing, .mass-song-audio-btn.is-playing, .composer-media-play.is-playing, .song-row-play.is-playing, [data-sa-preview-play].is-playing"
+      ).forEach((el) => {
+        el.classList.remove("is-playing");
+        if (el.classList.contains("mass-song-audio-btn")) el.textContent = "▶";
+      });
+      const hint = $("mw-preview-audio-hint");
+      if (hint) hint.hidden = true;
+      if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      lyricSongSlots.forEach((slot) => {
+        if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(slot.key);
+      });
+    }
+
+    var COMPOSER_SONG_MEDIA_SLOT = "song-composer";
+    var COMPOSER_SONG_YOUTUBE_SLOT = "song-composer:yt";
+
+    function youtubePlayingSlot(slot) {
+      return String(slot || "") + ":yt";
+    }
+
+    function confirmUnlinkMedia(kindLabel) {
+      const label = String(kindLabel || "this media link").trim() || "this media link";
+      return window.confirm("Unlink " + label + "?\n\nThis cannot be undone until you link it again.");
+    }
+
+    var songMediaPreviewObjectUrl = null;
+
+    function revokeSongMediaPreviewObjectUrl() {
+      if (songMediaPreviewObjectUrl) {
+        try { URL.revokeObjectURL(songMediaPreviewObjectUrl); } catch (_e) {}
+        songMediaPreviewObjectUrl = null;
+      }
+    }
+
+    function fallbackSavedMediaUrl(kind, basename) {
+      const name = String(basename || "").trim();
+      if (!name || name.indexOf("yt:") === 0) return "";
+      const folder = kind === "video" ? "saved_media/video" : "saved_media/music";
+      return "/api/files/uploads/" + folder + "/" + encodeURIComponent(name);
+    }
+
+    function normalizeAudioPreviewRef(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const basename = String(raw.basename || "").trim();
+      if (!basename || basename.indexOf("yt:") === 0) return null;
+      const durationRaw = parseInt(raw.duration_sec, 10);
+      const duration = Math.max(5, Math.min(10, Number.isFinite(durationRaw) ? durationRaw : 10));
+      const start = Number(raw.start_sec);
+      return {
+        basename: basename,
+        display_name: String(raw.display_name || "").trim() || (duration + "s preview"),
+        duration_sec: duration,
+        start_sec: Number.isFinite(start) ? start : 0,
+        url: String(raw.url || "").trim() || fallbackSavedMediaUrl("music", basename),
+        source: "preview",
+      };
+    }
+
+    function catalogRowPreviewRef(row) {
+      return row ? normalizeAudioPreviewRef(row.audio_preview) : null;
+    }
+
+    function catalogSongForSlot(slot) {
+      const id = selectedLyricsSongs && selectedLyricsSongs[slot];
+      if (!id) return null;
+      const hit = (massPlanAllSongs || []).find((s) => String(s.id) === String(id));
+      if (hit) return hit;
+      if (typeof lookupMassPlanSong === "function") return lookupMassPlanSong(id);
+      return null;
+    }
+
+    function massSlotPreviewRef(slot) {
+      return catalogRowPreviewRef(catalogSongForSlot(slot));
+    }
+
+    function massSlotYoutubeRef(slot) {
+      const item = getMassSectionMedia("audio", slot);
+      if (isYouTubeMediaRef(item)) return item;
+      const row = catalogSongForSlot(slot);
+      const cat = row && row.audio_media ? normalizeComposerMediaRef(row.audio_media) : null;
+      return isYouTubeMediaRef(cat) ? cat : null;
+    }
+
+    function massSlotAudioSnippetRef(slot) {
+      const preview = massSlotPreviewRef(slot);
+      if (preview) return preview;
+      const item = getMassSectionMedia("audio", slot);
+      if (item && item.basename && !isYouTubeMediaRef(item)) return item;
+      const row = catalogSongForSlot(slot);
+      const cat = row && row.audio_media ? normalizeComposerMediaRef(row.audio_media) : null;
+      if (cat && cat.basename && !isYouTubeMediaRef(cat)) return cat;
+      return null;
+    }
+
+    function fileToAudioPreviewRef(item) {
+      const norm = normalizeComposerMediaRef(item);
+      if (!norm || isYouTubeMediaRef(norm) || !norm.basename) return null;
+      return normalizeAudioPreviewRef({
+        basename: norm.basename,
+        display_name: norm.display_name || norm.basename,
+        url: norm.url || fallbackSavedMediaUrl("music", norm.basename),
+        source: "preview",
+        duration_sec: 10,
+      });
+    }
+
+    function serializeAudioPreviewRef(item) {
+      const norm = normalizeAudioPreviewRef(item);
+      if (!norm) return null;
+      const out = {
+        basename: norm.basename,
+        display_name: norm.display_name || norm.basename,
+        duration_sec: norm.duration_sec || 10,
+        start_sec: norm.start_sec || 0,
+        source: "preview",
+      };
+      if (item && item.youtube_id) out.youtube_id = item.youtube_id;
+      if (item && item.youtube_url) out.youtube_url = item.youtube_url;
+      else if (norm.youtube_id) {
+        out.youtube_id = norm.youtube_id;
+        out.youtube_url = norm.youtube_url;
+      }
+      return out;
+    }
+
+    function composerYoutubeRef() {
+      return isYouTubeMediaRef(composerSongMedia && composerSongMedia.audio)
+        ? composerSongMedia.audio
+        : null;
+    }
+
+    function composerAudioSnippetRef() {
+      const preview = composerSongMedia && composerSongMedia.preview;
+      if (preview && preview.basename) return preview;
+      const audio = composerSongMedia && composerSongMedia.audio;
+      if (audio && audio.basename && !isYouTubeMediaRef(audio)) return audio;
+      return null;
+    }
+
+    function massSlotHasPlayableAudio(slot) {
+      if (massSlotAudioSnippetRef(slot)) return true;
+      if (massSlotYoutubeRef(slot)) return true;
+      const item = getMassSectionMedia("audio", slot);
+      return !!(item && item.basename);
+    }
+
+    function catalogPreviewPlayingSlot(section, id) {
+      return "catalog:" + String(section || "") + ":" + String(id || "");
+    }
+
+    async function resolveSavedMusicRefForPlayback(ref) {
+      let item = normalizeAudioPreviewRef(ref) || (ref && ref.basename
+        ? {
+            basename: String(ref.basename || "").trim(),
+            display_name: ref.display_name || ref.basename,
+            url: ref.url || fallbackSavedMediaUrl("music", ref.basename),
+          }
+        : null);
+      if (!item || !item.basename) return null;
+      // Prefer same-origin /api/files/... — authorizedFetch turns it into a blob:
+      // URL (CSP media-src allows blob). On Render the server hydrates missing
+      // local files from shared/parish Supabase storage.
+      const localUrl = fallbackSavedMediaUrl("music", item.basename);
+      if (localUrl) {
+        return Object.assign({}, item, { url: localUrl });
+      }
+      const looksLocal = (u) => typeof isPrivateFileUrl === "function" && isPrivateFileUrl(u);
+      try {
+        if (typeof ensureSavedMediaLibrary === "function") {
+          await ensureSavedMediaLibrary(false);
+        }
+      } catch (_lib0) { /* continue */ }
+      let libRow = typeof resolveLibraryMediaRow === "function"
+        ? resolveLibraryMediaRow("music", item)
+        : null;
+      if ((!libRow || !libRow.url || looksLocal(libRow.url)) && typeof ensureSavedMediaLibrary === "function") {
+        try {
+          await ensureSavedMediaLibrary(true);
+          libRow = resolveLibraryMediaRow("music", item);
+        } catch (_lib1) { /* fall through */ }
+      }
+      if (libRow && libRow.url) {
+        return Object.assign({}, item, {
+          url: libRow.url,
+          display_name: libRow.display_name || item.display_name,
+        });
+      }
+      return item.url ? item : null;
+    }
+
+    async function playSavedMusicRef(ref, slotId, playEl) {
+      let item = null;
+      try {
+        item = await resolveSavedMusicRefForPlayback(ref);
+      } catch (_resolveErr) {
+        item = null;
+      }
+      if (!item || !item.url) {
+        if (typeof notify === "function") notify("Could not play that audio preview.", "error");
+        return false;
+      }
+      if (massSectionAudioPlayingSlot === slotId) {
+        stopMassSectionAudio();
+        return true;
+      }
+      stopMassSectionAudio();
+      if (typeof closeSongMediaPreviewModal === "function") closeSongMediaPreviewModal();
+      massSectionAudioPlayingSlot = slotId;
+      if (playEl) playEl.classList.add("is-playing");
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+      if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      try {
+        const playUrl = await resolveMassSectionMediaUrl(item.url, "audio/mpeg");
+        if (massSectionAudioPlayingSlot !== slotId) return true;
+        massSectionAudioEl = new Audio(playUrl);
+        massSectionAudioEl.preload = "auto";
+        const clearPlaying = () => {
+          if (massSectionAudioPlayingSlot === slotId) {
+            massSectionAudioPlayingSlot = "";
+            if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+            if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+            document.querySelectorAll(".song-row-play.is-playing, [data-sa-preview-play].is-playing").forEach((el) => {
+              el.classList.remove("is-playing");
+            });
+          }
+        };
+        massSectionAudioEl.addEventListener("ended", clearPlaying);
+        massSectionAudioEl.addEventListener("pause", () => {
+          if (massSectionAudioEl && massSectionAudioEl.ended) clearPlaying();
+        });
+        massSectionAudioEl.addEventListener("error", () => {
+          clearPlaying();
+          if (typeof notify === "function") notify("Could not play that audio preview.", "error");
+        });
+        await massSectionAudioEl.play();
+        if (massSectionAudioPlayingSlot !== slotId) {
+          try { massSectionAudioEl.pause(); } catch (_e0) {}
+          return true;
+        }
+        return true;
+      } catch (_e) {
+        if (massSectionAudioPlayingSlot !== slotId) return true;
+        stopMassSectionAudio();
+        if (typeof notify === "function") notify("Could not play that audio preview.", "error");
+        return false;
+      }
+    }
+
+    async function resolvePlayableMediaUrl(url, preferredMime) {
+      if (!url) return "";
+      if (typeof isPrivateFileUrl === "function" && isPrivateFileUrl(url) && typeof authorizedFetch === "function") {
+        const res = await authorizedFetch(url);
+        if (!res.ok) throw new Error("Could not load media.");
+        const buffer = await res.arrayBuffer();
+        const headerType = String(res.headers.get("content-type") || "").split(";")[0].trim();
+        const mime = headerType || preferredMime || "";
+        const playBlob = mime ? new Blob([buffer], { type: mime }) : new Blob([buffer]);
+        revokeSongMediaPreviewObjectUrl();
+        songMediaPreviewObjectUrl = URL.createObjectURL(playBlob);
+        return songMediaPreviewObjectUrl;
+      }
+      return url;
+    }
+
+    function closeSongMediaPreviewModal() {
+      const m = $("song-media-preview-modal");
+      const vid = $("song-media-preview-video");
+      const status = $("song-media-preview-status");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      if (vid) {
+        try { vid.pause(); } catch (_e0) {}
+        vid.removeAttribute("src");
+        try { vid.load(); } catch (_e1) {}
+        vid.hidden = false;
+      }
+      if (frame) {
+        frame.removeAttribute("src");
+      }
+      ensureYouTubeFrameInModal();
+      if (wrap) wrap.hidden = true;
+      setSongMediaPreviewPipVisible(false);
+      if (status) {
+        status.hidden = true;
+        status.textContent = "";
+      }
+      if (m) {
+        m.setAttribute("data-open", "false");
+        m.setAttribute("aria-hidden", "true");
+      }
+      revokeSongMediaPreviewObjectUrl();
+      closeComposerYouTubeDock({ silent: true, keepPlayback: false });
+      if (massSectionAudioPlayingSlot) {
+        const slot = massSectionAudioPlayingSlot;
+        const isYtSlot = slot === COMPOSER_SONG_YOUTUBE_SLOT || String(slot).slice(-3) === ":yt";
+        if (isYtSlot) {
+          massSectionAudioPlayingSlot = "";
+          if ((slot === COMPOSER_SONG_YOUTUBE_SLOT || slot === COMPOSER_SONG_MEDIA_SLOT) &&
+              typeof renderComposerSongMediaFields === "function") {
+            renderComposerSongMediaFields();
+          } else if (typeof refreshMassSectionMediaUi === "function") {
+            refreshMassSectionMediaUi();
+          }
+        }
+      }
+    }
+
+    function placeYouTubeFrameIn(container, frame) {
+      if (!container || !frame) return;
+      const firstMask = container.querySelector(".yt-embed-shell__mask");
+      if (firstMask) container.insertBefore(frame, firstMask);
+      else if (frame.parentElement !== container) container.appendChild(frame);
+      else container.insertBefore(frame, container.firstChild);
+    }
+
+    function ensureYouTubeFrameInModal() {
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      if (wrap && frame && frame.parentElement !== wrap) {
+        placeYouTubeFrameIn(wrap, frame);
+      }
+      return frame;
+    }
+
+    function setSongMediaPreviewPipVisible(show) {
+      const pip = $("song-media-preview-pip");
+      if (pip) pip.hidden = !show;
+    }
+
+    function isComposerYouTubeDockOpen() {
+      const dock = $("composer-youtube-dock");
+      const stage = $("composer-youtube-dock-stage");
+      const frame = $("song-media-preview-youtube");
+      return !!(
+        dock &&
+        !dock.hidden &&
+        stage &&
+        frame &&
+        frame.parentElement === stage &&
+        frame.getAttribute("src")
+      );
+    }
+
+    function resetComposerYouTubeDockPosition() {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return;
+      dock.classList.remove("is-dragged", "is-resized", "is-dragging", "is-resizing", "is-chrome-hidden", "is-chrome-pinned", "is-animating");
+      dock.style.left = "";
+      dock.style.top = "";
+      dock.style.right = "";
+      dock.style.bottom = "";
+      dock.style.width = "";
+      dock.style.height = "";
+      dock.style.transition = "";
+    }
+
+    function closeComposerYouTubeDock(opts) {
+      const options = opts || {};
+      const dock = $("composer-youtube-dock");
+      const frame = $("song-media-preview-youtube");
+      clearComposerYouTubeDockChromeTimer();
+      if (!options.keepPlayback && frame) {
+        frame.removeAttribute("src");
+      }
+      ensureYouTubeFrameInModal();
+      if (dock) {
+        dock.hidden = true;
+        dock.classList.remove("is-expanded");
+        dock.setAttribute("aria-hidden", "true");
+      }
+      if (!options.keepPlayback) resetComposerYouTubeDockPosition();
+      if (!options.silent && !options.keepPlayback && massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) {
+        massSectionAudioPlayingSlot = "";
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      }
+    }
+
+    var composerYtDockDragState = null;
+    var composerYtDockResizeState = null;
+    var composerYtDockChromeTimer = null;
+    var COMPOSER_YT_DOCK_MIN_W = 200;
+    var COMPOSER_YT_DOCK_MAX_W = 720;
+    var COMPOSER_YT_DOCK_CHROME_MS = 1800;
+
+    function clearComposerYouTubeDockChromeTimer() {
+      if (composerYtDockChromeTimer) {
+        window.clearTimeout(composerYtDockChromeTimer);
+        composerYtDockChromeTimer = null;
+      }
+    }
+
+    function revealComposerYouTubeDockChrome(opts) {
+      const options = opts || {};
+      const dock = $("composer-youtube-dock");
+      if (!dock || dock.hidden) return;
+      dock.classList.remove("is-chrome-hidden");
+      clearComposerYouTubeDockChromeTimer();
+      if (options.pin) {
+        dock.classList.add("is-chrome-pinned");
+        return;
+      }
+      if (options.persist) return;
+      scheduleHideComposerYouTubeDockChrome();
+    }
+
+    function scheduleHideComposerYouTubeDockChrome() {
+      const dock = $("composer-youtube-dock");
+      if (!dock || dock.hidden) return;
+      if (dock.classList.contains("is-chrome-pinned")) return;
+      if (dock.classList.contains("is-dragging") || dock.classList.contains("is-resizing")) return;
+      clearComposerYouTubeDockChromeTimer();
+      composerYtDockChromeTimer = window.setTimeout(() => {
+        composerYtDockChromeTimer = null;
+        if (!dock || dock.hidden) return;
+        if (dock.classList.contains("is-chrome-pinned")) return;
+        if (dock.classList.contains("is-dragging") || dock.classList.contains("is-resizing")) return;
+        dock.classList.add("is-chrome-hidden");
+      }, COMPOSER_YT_DOCK_CHROME_MS);
+    }
+
+    function composerYouTubeDockMaxWidth() {
+      return Math.min(COMPOSER_YT_DOCK_MAX_W, Math.max(COMPOSER_YT_DOCK_MIN_W, window.innerWidth - 24));
+    }
+
+    function clampComposerYouTubeDockSize(width) {
+      const maxW = composerYouTubeDockMaxWidth();
+      const w = Math.min(maxW, Math.max(COMPOSER_YT_DOCK_MIN_W, width));
+      return { width: w, height: Math.round((w * 9) / 16) };
+    }
+
+    function applyComposerYouTubeDockSize(width, anchorLeft, anchorTop) {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return null;
+      const size = clampComposerYouTubeDockSize(width);
+      dock.classList.add("is-resized");
+      dock.style.width = size.width + "px";
+      dock.style.height = size.height + "px";
+      if (anchorLeft != null && anchorTop != null) {
+        applyComposerYouTubeDockPosition(anchorLeft, anchorTop);
+      } else if (dock.classList.contains("is-dragged")) {
+        const left = parseFloat(dock.style.left) || 0;
+        const top = parseFloat(dock.style.top) || 0;
+        applyComposerYouTubeDockPosition(left, top);
+      }
+      return size;
+    }
+
+    function clampComposerYouTubeDockPosition(left, top) {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return { left: left, top: top };
+      const pad = 8;
+      const rect = dock.getBoundingClientRect();
+      const maxLeft = Math.max(pad, window.innerWidth - rect.width - pad);
+      const maxTop = Math.max(pad, window.innerHeight - rect.height - pad);
+      return {
+        left: Math.min(maxLeft, Math.max(pad, left)),
+        top: Math.min(maxTop, Math.max(pad, top)),
+      };
+    }
+
+    function applyComposerYouTubeDockPosition(left, top) {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return;
+      const pos = clampComposerYouTubeDockPosition(left, top);
+      dock.classList.add("is-dragged");
+      dock.style.left = pos.left + "px";
+      dock.style.top = pos.top + "px";
+      dock.style.right = "auto";
+      dock.style.bottom = "auto";
+    }
+
+    function endComposerYouTubeDockDrag() {
+      if (!composerYtDockDragState) return;
+      const dock = $("composer-youtube-dock");
+      if (dock) dock.classList.remove("is-dragging");
+      try {
+        if (composerYtDockDragState.pointerId != null && composerYtDockDragState.target) {
+          composerYtDockDragState.target.releasePointerCapture(composerYtDockDragState.pointerId);
+        }
+      } catch (_e) { /* ignore */ }
+      composerYtDockDragState = null;
+      scheduleHideComposerYouTubeDockChrome();
+    }
+
+    function endComposerYouTubeDockResize() {
+      if (!composerYtDockResizeState) return;
+      const dock = $("composer-youtube-dock");
+      if (dock) dock.classList.remove("is-resizing");
+      try {
+        if (composerYtDockResizeState.pointerId != null && composerYtDockResizeState.target) {
+          composerYtDockResizeState.target.releasePointerCapture(composerYtDockResizeState.pointerId);
+        }
+      } catch (_e) { /* ignore */ }
+      composerYtDockResizeState = null;
+      scheduleHideComposerYouTubeDockChrome();
+    }
+
+    function bindComposerYouTubeDockDrag() {
+      const dock = $("composer-youtube-dock");
+      const bar = $("composer-youtube-dock-drag");
+      const resize = $("composer-youtube-dock-resize");
+      const hit = $("composer-youtube-dock-hit");
+      if (!dock || dock.dataset.pipBound === "1") return;
+      dock.dataset.pipBound = "1";
+
+      const onReveal = () => revealComposerYouTubeDockChrome();
+      dock.addEventListener("pointerenter", onReveal);
+      dock.addEventListener("pointermove", onReveal);
+      if (hit) {
+        hit.addEventListener("pointerdown", (e) => {
+          onReveal();
+          // Allow an immediate drag from the video surface when chrome is hidden.
+          if (e.button != null && e.button !== 0) return;
+          const rect = dock.getBoundingClientRect();
+          if (!dock.classList.contains("is-dragged")) {
+            applyComposerYouTubeDockPosition(rect.left, rect.top);
+          }
+          composerYtDockDragState = {
+            pointerId: e.pointerId,
+            target: hit,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+          };
+          dock.classList.add("is-dragging");
+          revealComposerYouTubeDockChrome({ pin: true });
+          try { hit.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+          e.preventDefault();
+        });
+        hit.addEventListener("pointermove", (e) => {
+          if (!composerYtDockDragState || composerYtDockDragState.target !== hit) {
+            onReveal();
+            return;
+          }
+          if (composerYtDockDragState.pointerId !== e.pointerId) return;
+          applyComposerYouTubeDockPosition(
+            e.clientX - composerYtDockDragState.offsetX,
+            e.clientY - composerYtDockDragState.offsetY
+          );
+        });
+        hit.addEventListener("pointerup", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+        hit.addEventListener("pointercancel", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+      }
+      dock.addEventListener("focusin", () => revealComposerYouTubeDockChrome({ persist: true }));
+      dock.addEventListener("focusout", () => {
+        window.setTimeout(() => {
+          if (!dock.contains(document.activeElement)) scheduleHideComposerYouTubeDockChrome();
+        }, 0);
+      });
+      dock.addEventListener("pointerleave", () => {
+        if (composerYtDockDragState || composerYtDockResizeState) return;
+        scheduleHideComposerYouTubeDockChrome();
+      });
+
+      if (bar) {
+        bar.addEventListener("pointerdown", (e) => {
+          if (e.button != null && e.button !== 0) return;
+          if (e.target && e.target.closest && e.target.closest("button")) return;
+          if (dock.hidden) return;
+          const rect = dock.getBoundingClientRect();
+          if (!dock.classList.contains("is-dragged")) {
+            applyComposerYouTubeDockPosition(rect.left, rect.top);
+          }
+          composerYtDockDragState = {
+            pointerId: e.pointerId,
+            target: bar,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+          };
+          dock.classList.add("is-dragging");
+          revealComposerYouTubeDockChrome({ pin: true });
+          try { bar.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+          e.preventDefault();
+        });
+        bar.addEventListener("pointermove", (e) => {
+          if (!composerYtDockDragState || composerYtDockDragState.pointerId !== e.pointerId) return;
+          applyComposerYouTubeDockPosition(
+            e.clientX - composerYtDockDragState.offsetX,
+            e.clientY - composerYtDockDragState.offsetY
+          );
+        });
+        bar.addEventListener("pointerup", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+        bar.addEventListener("pointercancel", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+      }
+
+      if (resize) {
+        resize.addEventListener("pointerdown", (e) => {
+          if (e.button != null && e.button !== 0) return;
+          if (dock.hidden) return;
+          const rect = dock.getBoundingClientRect();
+          if (!dock.classList.contains("is-dragged")) {
+            applyComposerYouTubeDockPosition(rect.left, rect.top);
+          }
+          composerYtDockResizeState = {
+            pointerId: e.pointerId,
+            target: resize,
+            startX: e.clientX,
+            startW: rect.width,
+            left: rect.left,
+            top: rect.top,
+          };
+          dock.classList.add("is-resizing");
+          revealComposerYouTubeDockChrome({ pin: true });
+          try { resize.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+          e.preventDefault();
+          e.stopPropagation();
+        });
+        resize.addEventListener("pointermove", (e) => {
+          if (!composerYtDockResizeState || composerYtDockResizeState.pointerId !== e.pointerId) return;
+          const nextW = composerYtDockResizeState.startW + (e.clientX - composerYtDockResizeState.startX);
+          applyComposerYouTubeDockSize(
+            nextW,
+            composerYtDockResizeState.left,
+            composerYtDockResizeState.top
+          );
+        });
+        resize.addEventListener("pointerup", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockResize();
+        });
+        resize.addEventListener("pointercancel", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockResize();
+        });
+      }
+
+      window.addEventListener("resize", () => {
+        if (!dock || dock.hidden) return;
+        if (dock.classList.contains("is-resized")) {
+          const w = parseFloat(dock.style.width) || dock.getBoundingClientRect().width;
+          applyComposerYouTubeDockSize(
+            w,
+            dock.classList.contains("is-dragged") ? (parseFloat(dock.style.left) || 0) : null,
+            dock.classList.contains("is-dragged") ? (parseFloat(dock.style.top) || 0) : null
+          );
+        } else if (dock.classList.contains("is-dragged")) {
+          const left = parseFloat(dock.style.left) || 0;
+          const top = parseFloat(dock.style.top) || 0;
+          applyComposerYouTubeDockPosition(left, top);
+        }
+      });
+    }
+
+    function popoutComposerYouTubeToMini() {
+      const m = $("song-media-preview-modal");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      const dock = $("composer-youtube-dock");
+      const stage = $("composer-youtube-dock-stage");
+      const titleEl = $("composer-youtube-dock-title");
+      const modalTitle = $("song-media-preview-title");
+      if (!frame || !dock || !stage || !frame.getAttribute("src")) {
+        if (typeof notify === "function") notify("Play YouTube first, then use Mini player.", "warn");
+        return false;
+      }
+
+      const fromEl = wrap && !wrap.hidden ? wrap : (m && m.querySelector(".song-media-preview-modal__card"));
+      const fromRect = fromEl ? fromEl.getBoundingClientRect() : null;
+      const targetSize = clampComposerYouTubeDockSize(Math.min(300, window.innerWidth - 24));
+      const targetLeft = Math.round((window.innerWidth - targetSize.width) / 2);
+      const targetTop = Math.round((window.innerHeight - targetSize.height) / 2);
+      const reduceMotion =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      placeYouTubeFrameIn(stage, frame);
+      armYouTubeEmbed(frame);
+      if (titleEl) {
+        titleEl.textContent =
+          (modalTitle && modalTitle.textContent) ||
+          (composerYoutubeRef() && composerYoutubeRef().display_name) ||
+          "YouTube";
+      }
+      if (wrap) wrap.hidden = true;
+      if (m) {
+        m.setAttribute("data-open", "false");
+        m.setAttribute("aria-hidden", "true");
+      }
+      setSongMediaPreviewPipVisible(false);
+      resetComposerYouTubeDockPosition();
+
+      const startLeft = fromRect ? fromRect.left : targetLeft;
+      const startTop = fromRect ? fromRect.top : targetTop;
+      const startW = fromRect ? Math.max(160, fromRect.width) : targetSize.width;
+      const startH = fromRect ? Math.max(90, fromRect.height) : targetSize.height;
+
+      dock.classList.add("is-dragged", "is-resized");
+      dock.style.left = startLeft + "px";
+      dock.style.top = startTop + "px";
+      dock.style.right = "auto";
+      dock.style.bottom = "auto";
+      dock.style.width = startW + "px";
+      dock.style.height = startH + "px";
+      dock.hidden = false;
+      dock.setAttribute("aria-hidden", "false");
+      bindComposerYouTubeDockDrag();
+      revealComposerYouTubeDockChrome({ persist: true });
+
+      const finishShrink = () => {
+        dock.classList.remove("is-animating", "is-chrome-pinned");
+        applyComposerYouTubeDockSize(targetSize.width, targetLeft, targetTop);
+        revealComposerYouTubeDockChrome();
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      };
+
+      if (reduceMotion) {
+        finishShrink();
+        return true;
+      }
+
+      dock.classList.add("is-animating");
+      // Force layout so the start rect paints before the shrink transition.
+      void dock.offsetWidth;
+      requestAnimationFrame(() => {
+        applyComposerYouTubeDockSize(targetSize.width, targetLeft, targetTop);
+      });
+
+      let settled = false;
+      const onEnd = (e) => {
+        if (settled) return;
+        if (e && e.target !== dock) return;
+        if (e && e.propertyName && e.propertyName !== "width" && e.propertyName !== "left") return;
+        settled = true;
+        dock.removeEventListener("transitionend", onEnd);
+        finishShrink();
+      };
+      dock.addEventListener("transitionend", onEnd);
+      window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        dock.removeEventListener("transitionend", onEnd);
+        finishShrink();
+      }, 520);
+
+      return true;
+    }
+
+    function expandComposerYouTubeFromMini() {
+      const m = $("song-media-preview-modal");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      const dock = $("composer-youtube-dock");
+      const vid = $("song-media-preview-video");
+      const titleEl = $("song-media-preview-title");
+      const dockTitle = $("composer-youtube-dock-title");
+      if (!frame || !m || !wrap || !frame.getAttribute("src")) return false;
+      placeYouTubeFrameIn(wrap, frame);
+      wrap.hidden = false;
+      if (vid) vid.hidden = true;
+      if (titleEl) {
+        titleEl.textContent =
+          (dockTitle && dockTitle.textContent) ||
+          (composerYoutubeRef() && composerYoutubeRef().display_name) ||
+          "YouTube preview";
+      }
+      if (dock) {
+        dock.hidden = true;
+        dock.setAttribute("aria-hidden", "true");
+      }
+      endComposerYouTubeDockDrag();
+      endComposerYouTubeDockResize();
+      clearComposerYouTubeDockChromeTimer();
+      setSongMediaPreviewPipVisible(true);
+      m.setAttribute("data-open", "true");
+      m.setAttribute("aria-hidden", "false");
+      if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      return true;
+    }
+
+    function isYouTubePreviewOpen() {
+      if (isComposerYouTubeDockOpen()) return true;
+      const m = $("song-media-preview-modal");
+      const frame = $("song-media-preview-youtube");
+      return !!(m && m.getAttribute("data-open") === "true" && frame && frame.getAttribute("src"));
+    }
+
+    function openYouTubePreviewModal(videoId, title) {
+      const id = parseYouTubeVideoId(videoId);
+      const m = $("song-media-preview-modal");
+      const vid = $("song-media-preview-video");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const titleEl = $("song-media-preview-title");
+      const status = $("song-media-preview-status");
+      const frame = ensureYouTubeFrameInModal();
+      if (!id || !m || !frame || !wrap) return false;
+      if (window.LiturgyFlowConsent && !window.LiturgyFlowConsent.has("media")) {
+        if (window.LiturgyFlowConsent.openPreferences) {
+          window.LiturgyFlowConsent.openPreferences();
+        }
+        if (titleEl) titleEl.textContent = title || "YouTube preview";
+        if (status) {
+          status.hidden = false;
+          status.textContent = "Enable “Media embeds” in Cookie settings to preview YouTube videos.";
+          status.className = "status song-media-preview-modal__status error";
+        }
+        wrap.hidden = true;
+        frame.removeAttribute("src");
+        setSongMediaPreviewPipVisible(false);
+        m.setAttribute("data-open", "true");
+        m.setAttribute("aria-hidden", "false");
+        return false;
+      }
+      closeComposerYouTubeDock({ silent: true, keepPlayback: false });
+      if (massSectionAudioEl) {
+        try { massSectionAudioEl.pause(); } catch (_eA) {}
+        try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_eB) {}
+        massSectionAudioEl = null;
+      }
+      if (vid) {
+        try { vid.pause(); } catch (_e0) {}
+        vid.removeAttribute("src");
+        try { vid.load(); } catch (_e1) {}
+        vid.hidden = true;
+      }
+      if (titleEl) titleEl.textContent = title || "YouTube preview";
+      if (status) {
+        status.hidden = true;
+        status.textContent = "";
+      }
+      wrap.hidden = false;
+      setSongMediaPreviewPipVisible(true);
+      placeYouTubeFrameIn(wrap, frame);
+      frame.src = youtubeEmbedUrl(id);
+      armYouTubeEmbed(frame);
+      m.setAttribute("data-open", "true");
+      m.setAttribute("aria-hidden", "false");
+      return true;
+    }
+
+    async function openSongMediaVideoPreview(title, sourceUrl) {
+      const m = $("song-media-preview-modal");
+      const vid = $("song-media-preview-video");
+      const titleEl = $("song-media-preview-title");
+      const status = $("song-media-preview-status");
+      if (!m || !vid || !sourceUrl) return false;
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = ensureYouTubeFrameInModal();
+      if (frame) frame.removeAttribute("src");
+      if (wrap) wrap.hidden = true;
+      setSongMediaPreviewPipVisible(false);
+      closeComposerYouTubeDock({ silent: true });
+      vid.hidden = false;
+      if (titleEl) titleEl.textContent = title || "Video preview";
+      if (status) {
+        status.hidden = false;
+        status.textContent = "Loading video…";
+        status.className = "status song-media-preview-modal__status";
+      }
+      m.setAttribute("data-open", "true");
+      m.setAttribute("aria-hidden", "false");
+      try { vid.pause(); } catch (_e0) {}
+      let playUrl = sourceUrl;
+      try {
+        playUrl = await resolvePlayableMediaUrl(sourceUrl, "video/mp4");
+      } catch (_e) {
+        if (status) {
+          status.hidden = false;
+          status.textContent = "Could not load that video file.";
+          status.className = "status error song-media-preview-modal__status";
+        }
+        return false;
+      }
+      vid.src = playUrl;
+      try { vid.load(); } catch (_e1) {}
+      const onReady = () => {
+        if (status) {
+          status.hidden = true;
+          status.textContent = "";
+        }
+      };
+      const onError = () => {
+        if (status) {
+          status.hidden = false;
+          status.textContent = "This video could not be played in the browser.";
+          status.className = "status error song-media-preview-modal__status";
+        }
+      };
+      vid.addEventListener("loadeddata", onReady, { once: true });
+      vid.addEventListener("error", onError, { once: true });
+      const playPromise = vid.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(() => {
+          if (status) {
+            status.hidden = false;
+            status.textContent = "Press play on the video to start preview.";
+            status.className = "status song-media-preview-modal__status";
+          }
+        });
+      }
+      return true;
+    }
+
+    async function resolveComposerPlayableMedia(kind) {
+      const key = kind === "video" ? "video" : "audio";
+      const ref = composerSongMedia && composerSongMedia[key];
+      if (!ref || !ref.basename) return null;
+      try {
+        if (typeof ensureSavedMediaLibrary === "function") {
+          await ensureSavedMediaLibrary(false);
+        }
+      } catch (_e) { /* continue */ }
+      const primaryKind = key === "video" ? "video" : "music";
+      const secondaryKind = key === "video" ? "music" : "video";
+      let row = typeof resolveLibraryMediaRow === "function"
+        ? resolveLibraryMediaRow(primaryKind, ref)
+        : null;
+      if ((!row || !row.url) && typeof resolveLibraryMediaRow === "function") {
+        const alt = resolveLibraryMediaRow(secondaryKind, ref);
+        if (alt && alt.url) row = alt;
+      }
+      if ((!row || !row.url)) {
+        try {
+          if (typeof ensureSavedMediaLibrary === "function") {
+            await ensureSavedMediaLibrary(true);
+            row = resolveLibraryMediaRow(primaryKind, ref);
+            if ((!row || !row.url)) {
+              const alt = resolveLibraryMediaRow(secondaryKind, ref);
+              if (alt && alt.url) row = alt;
+            }
+          }
+        } catch (_e2) { /* fall through */ }
+      }
+      if (row && row.url) {
+        return Object.assign({}, row, { kind: row.kind || primaryKind });
+      }
+      if (ref.url) {
+        return Object.assign({}, ref, { kind: primaryKind });
+      }
+      const fallback = fallbackSavedMediaUrl(primaryKind, ref.basename);
+      if (!fallback) return null;
+      return {
+        basename: ref.basename,
+        display_name: ref.display_name || ref.basename,
+        url: fallback,
+        kind: primaryKind,
+      };
+    }
+
+    async function playComposerSongMedia(kind, playEl) {
+      const key = kind === "video" ? "video" : "audio";
+      if (key === "audio") {
+        if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) {
+          stopMassSectionAudio();
+          closeSongMediaPreviewModal();
+          if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+          return;
+        }
+        const snippet = composerAudioSnippetRef();
+        if (snippet && snippet.basename) {
+          await playSavedMusicRef(snippet, COMPOSER_SONG_MEDIA_SLOT, playEl);
+          if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+          return;
+        }
+        if (typeof notify === "function") {
+          notify("Link a 5–10s audio clip in Edit Details first.", "warn");
+        }
+        return;
+      }
+      const item = await resolveComposerPlayableMedia(key);
+      if (!item || !item.url) {
+        if (typeof notify === "function") {
+          notify("Link an MP4 from Media for this song first.", "warn");
+        }
+        return;
+      }
+      stopMassSectionAudio();
+      closeSongMediaPreviewModal();
+      const title =
+        (($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim() ||
+        (item.display_name || item.basename) ||
+        "Video preview";
+      try {
+        const opened = await openSongMediaVideoPreview(title, item.url);
+        if (!opened && typeof notify === "function") {
+          notify("Could not play that video.", "error");
+        }
+      } catch (_e) {
+        if (typeof notify === "function") notify("Could not play that video.", "error");
+      }
+      void playEl;
+    }
+
+    function playComposerYouTube(playEl) {
+      const ytSlot = COMPOSER_SONG_YOUTUBE_SLOT;
+      if (massSectionAudioPlayingSlot === ytSlot && isYouTubePreviewOpen()) {
+        closeComposerYouTubeDock({ silent: true });
+        closeSongMediaPreviewModal();
+        stopMassSectionAudio();
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+        return;
+      }
+      const ref = composerYoutubeRef();
+      if (!ref) {
+        if (typeof notify === "function") notify("Link a YouTube URL in Edit Details first.", "warn");
+        return;
+      }
+      stopMassSectionAudio();
+      massSectionAudioPlayingSlot = ytSlot;
+      const opened = openYouTubePreviewModal(youtubeIdFromMediaRef(ref), ref.display_name || "YouTube");
+      if (!opened) {
+        massSectionAudioPlayingSlot = "";
+      } else if (playEl) {
+        playEl.classList.add("is-playing");
+      }
+      if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+    }
+
+    async function playMassSectionAudio(slot, playEl) {
+      if (massSectionAudioPlayingSlot === slot) {
+        stopMassSectionAudio();
+        closeSongMediaPreviewModal();
+        return;
+      }
+      const preview = massSlotPreviewRef(slot);
+      const snippet = massSlotAudioSnippetRef(slot);
+      if (preview || snippet) {
+        await playSavedMusicRef(preview || snippet, slot, playEl);
+        return;
+      }
+      if (typeof notify === "function") {
+        notify(
+          document.body.classList.contains("is-superadmin")
+            ? "Click the song title to link a 5–10s audio clip first."
+            : "No audio clip is linked for this option yet.",
+          "warn"
+        );
+      }
+    }
+
+    function playMassSectionYouTube(slot, playEl) {
+      const ytSlot = youtubePlayingSlot(slot);
+      if (massSectionAudioPlayingSlot === ytSlot && isYouTubePreviewOpen()) {
+        closeSongMediaPreviewModal();
+        stopMassSectionAudio();
+        return;
+      }
+      const youtube = massSlotYoutubeRef(slot);
+      if (!youtube) {
+        if (typeof notify === "function") notify("Link a YouTube URL for this option first.", "warn");
+        return;
+      }
+      stopMassSectionAudio();
+      massSectionAudioPlayingSlot = ytSlot;
+      openYouTubePreviewModal(youtubeIdFromMediaRef(youtube), youtube.display_name || "YouTube");
+      if (playEl) playEl.classList.add("is-playing");
+      refreshMassSectionMediaUi();
+    }
+
+    async function playMassSectionVideo(slot, playEl) {
+      let item = getMassSectionMedia("video", slot);
+      if ((!item || !item.url) && typeof ensureSongSlotVideoFromCatalog === "function") {
+        ensureSongSlotVideoFromCatalog(slot);
+        item = getMassSectionMedia("video", slot);
+      }
+      if (item && item.basename && !item.url) {
+        item = Object.assign({}, item, {
+          url: fallbackSavedMediaUrl("video", item.basename),
+        });
+        setMassSectionMedia("video", slot, item);
+      }
+      if (!item || !item.url) {
+        if (typeof notify === "function") {
+          notify(
+            document.body.classList.contains("is-superadmin")
+              ? "Link an MP4 from Media for this option first."
+              : "No video is linked for this option yet.",
+            "warn"
+          );
+        }
+        return;
+      }
+      stopMassSectionAudio();
+      const title = massMediaDisplayLabel(slot) || item.display_name || item.basename || "Video preview";
+      try {
+        const opened = await openSongMediaVideoPreview(title, item.url);
+        if (!opened && typeof notify === "function") {
+          notify("Could not play that video preview.", "error");
+        }
+      } catch (_e) {
+        if (typeof notify === "function") notify("Could not play that video preview.", "error");
+      }
+      void playEl;
+    }
+
+    var massMediaPickState = {
+      kind: "",
+      slot: "",
+      purpose: "mass", // mass | song
+      songField: "", // audio | video when purpose=song
+      loading: false,
+    };
+
+    function normalizeComposerMediaRef(raw) {
+      if (!raw || typeof raw !== "object") {
+        if (typeof raw === "string") return youtubeMediaRefFromInput(raw) || (
+          String(raw).trim() ? { basename: String(raw).trim(), display_name: String(raw).trim(), url: "" } : null
+        );
+        return null;
+      }
+      const source = String(raw.source || "").trim().toLowerCase();
+      const basename = String(raw.basename || "").trim();
+      // Preview clips and library files keep their basename; optional youtube_* is provenance only.
+      if (source === "preview" || (basename && !/^yt:/i.test(basename) && /\.[a-z0-9]{2,5}$/i.test(basename))) {
+        const out = {
+          basename: basename,
+          display_name: String(raw.display_name || "").trim() || basename,
+          url: String(raw.url || "").trim(),
+        };
+        if (source === "preview") out.source = "preview";
+        const ytProv = parseYouTubeVideoId(raw.youtube_id || raw.youtube_url || "");
+        if (ytProv) {
+          out.youtube_id = ytProv;
+          out.youtube_url = youtubeWatchUrl(ytProv);
+        }
+        return out;
+      }
+      const yt = youtubeMediaRefFromInput(
+        raw.youtube_id || raw.youtube_url || raw.url || (source === "youtube" ? basename : "") || "",
+        raw.display_name
+      );
+      if (yt) return yt;
+      if (!basename) return null;
+      const fromBase = youtubeMediaRefFromInput(basename, raw.display_name);
+      if (fromBase) return fromBase;
+      return {
+        basename: basename,
+        display_name: String(raw.display_name || "").trim() || basename,
+        url: String(raw.url || "").trim(),
+      };
+    }
+
+    var composerSongMedia = { audio: null, video: null, preview: null };
+
+    function setComposerSongMediaField(field, item) {
+      const key = field === "video" ? "video" : "audio";
+      composerSongMedia[key] = item ? normalizeComposerMediaRef(item) : null;
+      renderComposerSongMediaFields();
+      refreshMetadataModalPrimaryState();
+    }
+
+    function setComposerAudioSnippet(item) {
+      composerSongMedia.preview = fileToAudioPreviewRef(item) || (item ? normalizeAudioPreviewRef(item) : null);
+      renderComposerSongMediaFields();
+      refreshMetadataModalPrimaryState();
+    }
+
+    function setComposerYouTubeLink(ref) {
+      if (ref && !canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can link YouTube.", "warn");
+        return;
+      }
+      const current = composerSongMedia.audio;
+      if (current && !isYouTubeMediaRef(current) && !(composerSongMedia.preview && composerSongMedia.preview.basename)) {
+        composerSongMedia.preview = fileToAudioPreviewRef(current);
+      }
+      composerSongMedia.audio = ref ? normalizeComposerMediaRef(ref) : null;
+      renderComposerSongMediaFields();
+      refreshMetadataModalPrimaryState();
+    }
+
+    function clearComposerAudioSnippet() {
+      composerSongMedia.preview = null;
+      if (composerSongMedia.audio && !isYouTubeMediaRef(composerSongMedia.audio)) {
+        composerSongMedia.audio = null;
+      }
+      renderComposerSongMediaFields();
+      refreshMetadataModalPrimaryState();
+    }
+
+    function renderComposerSongMediaFields() {
+      const audioLabel = $("song-metadata-audio-label");
+      const videoLabel = $("song-metadata-video-label");
+      const audioClear = $("song-metadata-audio-clear");
+      const videoClear = $("song-metadata-video-clear");
+      const audioPlayMeta = $("song-metadata-audio-play");
+      const youtubePlayMeta = $("song-metadata-youtube-play");
+      const videoPlayMeta = $("song-metadata-video-play");
+      const mediaPlayRow = $("lyrics-composer-media-play");
+      const audioPlaySummary = $("lyrics-composer-play-audio");
+      const youtubePlaySummary = $("lyrics-composer-play-youtube");
+      const videoPlaySummary = $("lyrics-composer-play-video");
+      const youtubePlayFloat = $("lyrics-editor-float-youtube");
+      const video = composerSongMedia.video;
+      const preview = composerSongMedia.preview;
+      const snippet = composerAudioSnippetRef();
+      const youtube = composerYoutubeRef();
+      const snippetOn = !!(snippet && snippet.basename);
+      const youtubeOn = !!youtube;
+      const videoOn = !!(video && video.basename);
+      const audioPlaying = massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT;
+      const youtubePlaying = massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT;
+      if (audioLabel) {
+        audioLabel.textContent = snippetOn
+          ? (snippet.display_name || snippet.basename)
+          : "None linked";
+      }
+      const ytInp = $("song-metadata-audio-youtube");
+      const ytSearch = $("song-metadata-audio-youtube-search");
+      const ytClear = $("song-metadata-audio-youtube-clear");
+      const ytLinkBtnMeta = $("song-metadata-audio-youtube-link");
+      const ytBlock = document.querySelector(".song-metadata-media__youtube");
+      const canLinkYt = canLinkYouTubeMedia();
+      if (ytBlock) ytBlock.hidden = !canLinkYt && !youtubeOn;
+      if (ytInp) {
+        ytInp.readOnly = !canLinkYt;
+        ytInp.disabled = !canLinkYt;
+        if (document.activeElement !== ytInp) {
+          ytInp.value = youtube ? (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube))) : "";
+        }
+      }
+      if (ytSearch) ytSearch.hidden = !canLinkYt || !!youtube;
+      if (ytLinkBtnMeta) ytLinkBtnMeta.hidden = !canLinkYt;
+      if (ytClear) ytClear.hidden = !canLinkYt || !youtube;
+      if (videoLabel) {
+        videoLabel.textContent = video
+          ? (video.display_name || video.basename)
+          : "None linked";
+      }
+      if (audioClear) audioClear.hidden = !snippetOn;
+      if (videoClear) videoClear.hidden = !videoOn;
+      if (audioPlayMeta) {
+        audioPlayMeta.hidden = !snippetOn;
+        audioPlayMeta.disabled = !snippetOn;
+        audioPlayMeta.classList.toggle("is-ready", snippetOn);
+        audioPlayMeta.classList.toggle("is-playing", snippetOn && audioPlaying);
+        audioPlayMeta.textContent = snippetOn && audioPlaying ? "Pause" : "Play";
+      }
+      if (youtubePlayMeta) {
+        youtubePlayMeta.hidden = !youtubeOn;
+        youtubePlayMeta.disabled = !youtubeOn;
+        youtubePlayMeta.classList.toggle("is-ready", youtubeOn);
+        youtubePlayMeta.classList.toggle("is-playing", youtubeOn && youtubePlaying);
+        youtubePlayMeta.textContent = youtubeOn && youtubePlaying ? "Close" : "Play";
+      }
+      if (videoPlayMeta) {
+        videoPlayMeta.hidden = !videoOn;
+        videoPlayMeta.disabled = !videoOn;
+        videoPlayMeta.classList.toggle("is-ready", videoOn);
+      }
+      if (mediaPlayRow) mediaPlayRow.hidden = !(snippetOn || youtubeOn || videoOn);
+      if (audioPlaySummary) {
+        audioPlaySummary.disabled = !snippetOn;
+        audioPlaySummary.classList.toggle("is-ready", snippetOn);
+        audioPlaySummary.classList.toggle("is-playing", snippetOn && audioPlaying);
+        audioPlaySummary.textContent = snippetOn && audioPlaying
+          ? "❚❚ Pause clip"
+          : (snippetOn
+            ? ("▶ Play " + ((preview && preview.duration_sec) || 10) + "s clip")
+            : "▶ Play clip");
+        audioPlaySummary.title = snippetOn
+          ? (snippet.display_name || snippet.basename)
+          : "Link a 5–10s audio clip in Edit Details first";
+      }
+      if (youtubePlaySummary) {
+        youtubePlaySummary.hidden = !youtubeOn;
+        youtubePlaySummary.disabled = !youtubeOn;
+        youtubePlaySummary.classList.toggle("is-ready", youtubeOn);
+        youtubePlaySummary.classList.toggle("is-playing", youtubeOn && youtubePlaying);
+        youtubePlaySummary.textContent = youtubeOn && youtubePlaying ? "❚❚ Close YouTube" : "▶ Play YouTube";
+        youtubePlaySummary.title = youtubeOn
+          ? (youtube.display_name || "YouTube — plays in mini player while you edit")
+          : "Link YouTube in Edit Details first";
+      }
+      if (youtubePlayFloat) {
+        youtubePlayFloat.hidden = !youtubeOn;
+        youtubePlayFloat.disabled = !youtubeOn;
+        youtubePlayFloat.classList.toggle("is-ready", youtubeOn);
+        youtubePlayFloat.classList.toggle("is-playing", youtubeOn && youtubePlaying);
+        youtubePlayFloat.textContent = youtubeOn && youtubePlaying ? "❚❚ YT" : "▶ YT";
+        youtubePlayFloat.title = youtubeOn
+          ? (youtubePlaying
+            ? "Close YouTube mini player"
+            : ("Play “" + (youtube.display_name || "YouTube") + "” while editing lyrics"))
+          : "Link YouTube in Edit Details first";
+        youtubePlayFloat.setAttribute(
+          "aria-label",
+          youtubeOn && youtubePlaying ? "Close YouTube player" : "Play YouTube while editing lyrics"
+        );
+      }
+      if (videoPlaySummary) {
+        videoPlaySummary.disabled = !videoOn;
+        videoPlaySummary.classList.toggle("is-ready", videoOn);
+        videoPlaySummary.title = videoOn
+          ? (video.display_name || video.basename)
+          : "Link video in Edit Details first";
+      }
+    }
+
+    function setMassMediaPickLoading(active, message) {
+      const loading = $("mw-media-pick-loading");
+      const list = $("mw-media-pick-list");
+      const text = $("mw-media-pick-loading-text");
+      massMediaPickState.loading = !!active;
+      if (text && message) text.textContent = message;
+      if (loading) loading.hidden = !active;
+      if (list) list.hidden = !!active;
+    }
+
+    function currentComposerSongQuery() {
+      let title = "";
+      let author = "";
+      let lang = "";
+      const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
+      if (metaOpen) {
+        title = String(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "").trim();
+        author = String(($("song-metadata-edit-author") && $("song-metadata-edit-author").value) || "").trim();
+        lang = String(($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "").trim();
+      }
+      if (!title) title = String(($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim();
+      if (!author) author = String(($("lyrics-save-author") && $("lyrics-save-author").value) || "").trim();
+      if (!lang && typeof getComposerSongLanguage === "function") lang = getComposerSongLanguage() || "";
+      title = title.replace(/\s+/g, " ").trim();
+      if (!title) return "";
+      let query = title;
+      if (typeof songTitleWithLanguageForSearch === "function") {
+        query = songTitleWithLanguageForSearch(title, lang) || title;
+      } else if (lang && query.toLowerCase().indexOf(lang.toLowerCase()) === -1) {
+        query = query + " " + lang;
+      }
+      if (author && query.toLowerCase().indexOf(author.toLowerCase()) === -1) {
+        query = query + " " + author;
+      }
+      return query.replace(/\s+/g, " ").trim();
+    }
+
+    function currentMediaPickSongQuery() {
+      const state = massMediaPickState || {};
+      const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
+      if (state.purpose === "song" || metaOpen) {
+        return currentComposerSongQuery();
+      }
+      let title = "";
+      let author = "";
+      let lang = "";
+      const slot = String(state.slot || "").trim();
+      const songId = (typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs && selectedLyricsSongs[slot]) || "";
+      const row = songId && typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      if (row) {
+        title = String(row.title || "").trim();
+        author = String(row.author || "").trim();
+        lang = String(row.language || "").trim();
+      }
+      if (!title && songId && typeof catalogSongTitle === "function") {
+        const section = typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(slot) : slot;
+        title = catalogSongTitle(section, songId) || "";
+      }
+      title = title.replace(/\s+/g, " ").trim();
+      if (!title) return "";
+      let query = title;
+      if (typeof songTitleWithLanguageForSearch === "function") {
+        query = songTitleWithLanguageForSearch(title, lang) || title;
+      } else if (lang && query.toLowerCase().indexOf(lang.toLowerCase()) === -1) {
+        query = query + " " + lang;
+      }
+      if (author && query.toLowerCase().indexOf(author.toLowerCase()) === -1) {
+        query = query + " " + author;
+      }
+      return query.replace(/\s+/g, " ").trim();
+    }
+
+    function youtubeSearchUrlForQuery(query) {
+      const q = String(query || "").trim();
+      if (!q) return "https://www.youtube.com/";
+      return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+    }
+
+    function withInstrumentalSearchSuffix(query) {
+      const q = String(query || "").replace(/\s+/g, " ").trim();
+      if (!q) return "instrumental";
+      if (/\binstrumental\b/i.test(q)) return q;
+      return (q + " instrumental").replace(/\s+/g, " ").trim();
+    }
+
+    function openYouTubeSearchForCurrentSong(opts) {
+      const options = opts || {};
+      let query = currentMediaPickSongQuery();
+      if (options.instrumental) query = withInstrumentalSearchSuffix(query);
+      const url = youtubeSearchUrlForQuery(query);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened && typeof notify === "function") {
+        notify(
+          query
+            ? (options.instrumental
+              ? "Allow pop-ups to search YouTube for an instrumental version."
+              : "Allow pop-ups to search YouTube for this song.")
+            : "Allow pop-ups to open YouTube.",
+          "warn"
+        );
+      }
+    }
+
+    function openYouTubeSearchForComposerSong(opts) {
+      const options = opts || {};
+      let query = currentComposerSongQuery();
+      if (options.instrumental) query = withInstrumentalSearchSuffix(query);
+      const url = youtubeSearchUrlForQuery(query);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened && typeof notify === "function") {
+        notify(
+          query
+            ? (options.instrumental
+              ? "Allow pop-ups to search YouTube for an instrumental version."
+              : "Allow pop-ups to search YouTube for this song.")
+            : "Allow pop-ups to open YouTube.",
+          "warn"
+        );
+      }
+    }
+
+    function clearMassYouTubeLink(slot, opts) {
+      const options = opts || {};
+      if (!canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can change YouTube links.", "warn");
+        return false;
+      }
+      const key = String(slot || "").trim();
+      if (!key) return false;
+      const youtube = massSlotYoutubeRef(key);
+      if (!youtube) return false;
+      if (!options.skipConfirm && !confirmUnlinkMedia("this YouTube full-song link")) return false;
+      if (massSectionAudioPlayingSlot === youtubePlayingSlot(key)) {
+        closeSongMediaPreviewModal();
+        stopMassSectionAudio();
+      }
+      const item = getMassSectionMedia("audio", key);
+      if (isYouTubeMediaRef(item)) setMassSectionMedia("audio", key, null);
+      void persistMassSlotYoutubeToCatalogSong(key, null);
+      if (typeof notify === "function") notify("Cleared YouTube link.", "ok");
+      return true;
+    }
+
+    function clearComposerYouTubeLink(opts) {
+      const options = opts || {};
+      if (!canLinkYouTubeMedia()) {
+        if (typeof notify === "function") notify("Only superadmins can change YouTube links.", "warn");
+        return false;
+      }
+      if (!composerYoutubeRef()) return false;
+      if (!options.skipConfirm && !confirmUnlinkMedia("this YouTube full-song link")) return false;
+      if (massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) {
+        closeComposerYouTubeDock({ silent: true });
+        closeSongMediaPreviewModal();
+        stopMassSectionAudio();
+      }
+      setComposerYouTubeLink(null);
+      if (typeof persistComposerSongMediaToCatalog === "function") {
+        void persistComposerSongMediaToCatalog();
+      }
+      if (typeof notify === "function") notify("Cleared YouTube link.", "ok");
+      return true;
+    }
+
+    function refreshMassMediaPickYoutubeTabLabel() {
+      const ytTab = $("mw-media-pick-tab-youtube");
+      const query = currentMediaPickSongQuery();
+      if (ytTab) {
+        ytTab.title = query
+          ? ("Search YouTube for “" + query + "”")
+          : "Search YouTube for this song";
+      }
+    }
+
+    function setMassMediaPickTab(tab) {
+      const next = (tab === "upload" || tab === "youtube" || tab === "fetch") ? tab : "library";
+      const libTab = $("mw-media-pick-tab-library");
+      const fetchTab = $("mw-media-pick-tab-fetch");
+      const upTab = $("mw-media-pick-tab-upload");
+      const ytTab = $("mw-media-pick-tab-youtube");
+      const libPane = $("mw-media-pick-pane-library");
+      const fetchPane = $("mw-media-pick-pane-fetch");
+      const upPane = $("mw-media-pick-pane-upload");
+      const ytPane = $("mw-media-pick-pane-youtube");
+      if (libTab) {
+        libTab.classList.toggle("is-active", next === "library");
+        libTab.setAttribute("aria-selected", next === "library" ? "true" : "false");
+      }
+      if (fetchTab) {
+        fetchTab.classList.toggle("is-active", next === "fetch");
+        fetchTab.setAttribute("aria-selected", next === "fetch" ? "true" : "false");
+      }
+      if (upTab) {
+        upTab.classList.toggle("is-active", next === "upload");
+        upTab.setAttribute("aria-selected", next === "upload" ? "true" : "false");
+      }
+      if (ytTab) {
+        ytTab.classList.toggle("is-active", next === "youtube");
+        ytTab.setAttribute("aria-selected", next === "youtube" ? "true" : "false");
+      }
+      if (libPane) libPane.hidden = next !== "library";
+      if (fetchPane) fetchPane.hidden = next !== "fetch";
+      if (upPane) upPane.hidden = next !== "upload";
+      if (ytPane) ytPane.hidden = next !== "youtube";
+      if (next === "youtube") {
+        const inp = $("mw-media-pick-youtube-url");
+        if (inp) window.requestAnimationFrame(() => inp.focus());
+      }
+      if (next === "fetch") {
+        const inp = $("mw-media-pick-fetch-url");
+        if (inp) window.requestAnimationFrame(() => inp.focus());
+        refreshMassMediaPickFetchUi();
+      }
+      if (next === "library") {
+        void ensureAndRenderMassMediaPickLibrary();
+      }
+    }
+
+    async function ensureAndRenderMassMediaPickLibrary() {
+      const modal = $("mw-media-pick-modal");
+      if (!modal || modal.getAttribute("data-open") !== "true") return;
+      if (massMediaPickState.youtubeOnly) return;
+      if (massMediaPickState._libLoading) return;
+      const kind = massMediaPickState.kind === "video" ? "video" : "music";
+      const cached = (kind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || [];
+      const list = $("mw-media-pick-list");
+      const alreadyRendered = !!(list && list.querySelector("[data-pick-basename]"));
+      if (cached.length && alreadyRendered && !massMediaPickState.loading) {
+        renderMassMediaPickList();
+        return;
+      }
+      massMediaPickState._libLoading = true;
+      setMassMediaPickLoading(true, "Loading media library…");
+      try {
+        if (typeof ensureSavedMediaLibrary !== "function") {
+          throw new Error("Media library loader unavailable");
+        }
+        await ensureSavedMediaLibrary(false);
+        if ($("mw-media-pick-modal") && $("mw-media-pick-modal").getAttribute("data-open") === "true") {
+          setMassMediaPickLoading(false);
+          renderMassMediaPickList();
+        }
+      } catch (_e) {
+        setMassMediaPickLoading(false);
+        if (list) {
+          list.hidden = false;
+          list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
+        }
+        if (typeof notify === "function") notify("Could not load Media library.", "error");
+      } finally {
+        massMediaPickState._libLoading = false;
+      }
+    }
+    window.ensureAndRenderMassMediaPickLibrary = ensureAndRenderMassMediaPickLibrary;
+
+    function massMediaPickSongTarget() {
+      if (massMediaPickState.purpose === "song") {
+        if (composerLoadedSong && composerLoadedSong.id) {
+          return {
+            section: String(composerLoadedSong.section || "").trim(),
+            id: String(composerLoadedSong.id || "").trim(),
+            title: String(composerLoadedSong.title || "").trim(),
+            row: null,
+          };
+        }
+        return null;
+      }
+      const assigned = massSlotAssignedSong(massMediaPickState.slot);
+      if (!assigned || !assigned.id) return null;
+      return {
+        section: String(assigned.section || "").trim(),
+        id: String(assigned.id || "").trim(),
+        title: String((assigned.row && assigned.row.title) || "").trim(),
+        row: assigned.row || null,
+      };
+    }
+
+    function massMediaPickFetchIsInstrumental() {
+      return massMediaPickState.kind === "video" || massMediaPickState.songField === "video";
+    }
+
+    function syncMassMediaPickFetchPaneMode(isInstrumental) {
+      const instrumental = !!isInstrumental;
+      const hint = document.querySelector("#mw-media-pick-pane-fetch .mw-rite__hint");
+      const durWrap = $("mw-media-pick-fetch-duration");
+      const durField = durWrap ? durWrap.closest(".field") : null;
+      const urlLabel = document.querySelector("label[for=\"mw-media-pick-fetch-url\"]");
+      const runBtn = $("mw-media-pick-fetch-run");
+      const karaokeBtn = $("mw-media-pick-fetch-karaoke");
+      const searchBtn = $("mw-media-pick-fetch-search");
+      const searchSungBtn = $("mw-media-pick-fetch-search-sung");
+      if (hint) {
+        hint.textContent = instrumental
+          ? "Download video: search instrumental → raw MP4 (best karaoke bed). Make karaoke: search sung → Whisper times lyrics; uses instrumental bed if present, else strips vocals."
+          : "Paste a YouTube URL and fetch a 5–10s chorus clip. Captions are scanned for the chorus (or first verse). This does not replace the song’s full YouTube practice link.";
+      }
+      if (durField) durField.hidden = instrumental;
+      if (urlLabel) {
+        urlLabel.textContent = instrumental
+          ? "YouTube URL (instrumental for download · sung for karaoke)"
+          : "YouTube URL (clip source)";
+      }
+      if (runBtn && !runBtn.disabled) {
+        runBtn.textContent = instrumental ? "Download video" : "Fetch clip";
+      }
+      if (karaokeBtn) {
+        karaokeBtn.hidden = !instrumental;
+        if (!karaokeBtn.disabled) karaokeBtn.textContent = "Make karaoke";
+      }
+      if (searchBtn) {
+        searchBtn.title = instrumental
+          ? "Search YouTube for this song + instrumental"
+          : "Search YouTube for this song";
+        searchBtn.textContent = instrumental ? "Search instrumental" : "Search";
+      }
+      if (searchSungBtn) {
+        searchSungBtn.hidden = !instrumental;
+        searchSungBtn.title = "Search YouTube for a sung version (best for karaoke timing)";
+        searchSungBtn.textContent = "Search sung";
+      }
+    }
+    window.syncMassMediaPickFetchPaneMode = syncMassMediaPickFetchPaneMode;
+
+    function massMediaPickFetchDurationSec() {
+      const el = $("mw-media-pick-fetch-duration");
+      const n = el ? parseInt(el.value, 10) : 10;
+      return Math.max(5, Math.min(10, Number.isFinite(n) ? n : 10));
+    }
+
+    function refreshMassMediaPickFetchUi() {
+      const target = massMediaPickSongTarget();
+      const statusEl = $("mw-media-pick-fetch-status");
+      const playBtn = $("mw-media-pick-fetch-play");
+      const urlEl = $("mw-media-pick-fetch-url");
+      const instrumental = massMediaPickFetchIsInstrumental();
+      syncMassMediaPickFetchPaneMode(instrumental);
+      const targetKey = target && target.section && target.id
+        ? (String(target.section) + ":" + String(target.id))
+        : "";
+      let preview = null;
+      let video = null;
+      let youtube = null;
+      if (massMediaPickState.purpose === "song") {
+        preview = composerSongMedia && composerSongMedia.preview;
+        video = composerSongMedia && composerSongMedia.video;
+        youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : null;
+      } else {
+        preview = massSlotPreviewRef(massMediaPickState.slot);
+        video = getMassSectionMedia("video", massMediaPickState.slot);
+        youtube = massSlotYoutubeRef(massMediaPickState.slot);
+      }
+      preview = normalizeAudioPreviewRef(preview);
+      video = video ? normalizeComposerMediaRef(video) : null;
+      if (urlEl && document.activeElement !== urlEl) {
+        const prevKey = String(urlEl.dataset.songKey || "");
+        const songChanged = prevKey !== targetKey;
+        if (songChanged) {
+          urlEl.dataset.songKey = targetKey;
+          urlEl.value = "";
+        }
+        if (instrumental) {
+          // Never carry a pasted URL from another song. Leave empty unless this
+          // song's video_media already records a YouTube source.
+          if (songChanged || !String(urlEl.value || "").trim()) {
+            const fromVideo = video && (video.youtube_url || youtubeWatchUrl(video.youtube_id || ""));
+            urlEl.value = fromVideo || "";
+          }
+        } else {
+          const fromPreview = preview && (preview.youtube_url || "");
+          const fromYt = youtube && (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube)));
+          urlEl.value = fromPreview || fromYt || "";
+        }
+      } else if (urlEl && targetKey) {
+        urlEl.dataset.songKey = targetKey;
+      }
+      const ready = instrumental
+        ? !!(video && video.basename && !isYouTubeMediaRef(video))
+        : !!(preview && preview.basename);
+      if (playBtn) {
+        playBtn.hidden = !ready;
+        playBtn.disabled = !ready;
+        playBtn.classList.toggle("is-ready", ready);
+      }
+      if (statusEl && !statusEl.dataset.fetching) {
+        if (!target || !target.id) {
+          statusEl.textContent = instrumental
+            ? "Choose a song first, then download the video."
+            : "Choose a song first, then fetch a clip.";
+          statusEl.className = "status mw-media-pick-fetch-status";
+        } else if (ready) {
+          statusEl.textContent = instrumental
+            ? ((video.display_name || video.basename) + " ready.")
+            : ((preview.duration_sec || 10) + "s clip ready.");
+          statusEl.className = "status ok mw-media-pick-fetch-status";
+        } else {
+          statusEl.textContent = instrumental
+            ? "No instrumental video yet — paste a YouTube URL and download."
+            : "No clip yet — paste a YouTube URL and fetch.";
+          statusEl.className = "status mw-media-pick-fetch-status";
+        }
+      }
+    }
+
+    async function runMassMediaPickFetch() {
+      const target = massMediaPickSongTarget();
+      const statusEl = $("mw-media-pick-fetch-status");
+      const btn = $("mw-media-pick-fetch-run");
+      const urlEl = $("mw-media-pick-fetch-url");
+      const instrumental = massMediaPickFetchIsInstrumental();
+      if (!target || !target.section || !target.id) {
+        if (typeof notify === "function") notify("Choose a song first.", "warn");
+        return;
+      }
+      const youtubeUrl = String((urlEl && urlEl.value) || "").trim();
+      const ref = youtubeUrl ? youtubeMediaRefFromInput(youtubeUrl, target.title || "YouTube") : null;
+      if (!ref) {
+        if (typeof notify === "function") notify("Enter a valid YouTube URL to fetch from.", "warn");
+        return;
+      }
+      if (urlEl) urlEl.value = ref.youtube_url || youtubeUrl;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Queued…";
+      }
+      if (statusEl) {
+        statusEl.dataset.fetching = "1";
+        statusEl.textContent = instrumental
+          ? "Downloading full instrumental video…"
+          : "Scanning captions and fetching clip…";
+        statusEl.className = "status mw-media-pick-fetch-status";
+      }
+      previewFetchState.attempted[target.section + ":" + target.id] = true;
+      try {
+        if (instrumental) {
+          await startInstrumentalFetchJob({
+            section: target.section,
+            id: target.id,
+            title: target.title || "this song",
+            youtube_url: ref.youtube_url || youtubeUrl,
+            toast: true,
+          });
+        } else {
+          await startPreviewFetchJob({
+            section: target.section,
+            id: target.id,
+            title: target.title || "this song",
+            youtube_url: ref.youtube_url || youtubeUrl,
+            duration_sec: massMediaPickFetchDurationSec(),
+            toast: true,
+          });
+        }
+        if (statusEl) {
+          statusEl.textContent = "Fetch started — watch the progress bar below.";
+          statusEl.className = "status ok mw-media-pick-fetch-status";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || (instrumental
+            ? "Could not start video download."
+            : "Could not start clip fetch.");
+          statusEl.className = "status error mw-media-pick-fetch-status";
+        }
+        if (typeof notify === "function") {
+          notify(
+            (err && err.message) || (instrumental ? "Could not start video download." : "Could not start clip fetch."),
+            "warn"
+          );
+        }
+      } finally {
+        if (statusEl) delete statusEl.dataset.fetching;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = instrumental ? "Download video" : "Fetch clip";
+        }
+      }
+    }
+
+    function massMediaPickLinkedVocalVideo() {
+      const video = (() => {
+        if (massMediaPickState.purpose === "song") {
+          return composerSongMedia && composerSongMedia.video
+            ? normalizeComposerMediaRef(composerSongMedia.video)
+            : null;
+        }
+        const slotVideo = typeof getMassSectionMedia === "function"
+          ? getMassSectionMedia("video", massMediaPickState.slot)
+          : null;
+        return slotVideo ? normalizeComposerMediaRef(slotVideo) : null;
+      })();
+      if (!video || !video.basename) return null;
+      if (typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(video)) return null;
+      const bn = String(video.basename || "").toLowerCase();
+      if (bn.startsWith("karaoke_") || bn.startsWith("instrumental_")) return null;
+      return video;
+    }
+
+    async function runMassMediaPickKaraoke() {
+      const target = massMediaPickSongTarget();
+      const statusEl = $("mw-media-pick-fetch-status");
+      const btn = $("mw-media-pick-fetch-karaoke");
+      const runBtn = $("mw-media-pick-fetch-run");
+      const urlEl = $("mw-media-pick-fetch-url");
+      if (!massMediaPickFetchIsInstrumental()) {
+        if (typeof notify === "function") notify("Open video fetch first.", "warn");
+        return;
+      }
+      if (!target || !target.section || !target.id) {
+        if (typeof notify === "function") notify("Choose a song first.", "warn");
+        return;
+      }
+      const youtubeUrl = String((urlEl && urlEl.value) || "").trim();
+      const ref = youtubeUrl ? youtubeMediaRefFromInput(youtubeUrl, target.title || "YouTube") : null;
+      if (youtubeUrl && !ref) {
+        if (typeof notify === "function") notify("Enter a valid YouTube URL, or clear the field to use a saved sung video.", "warn");
+        return;
+      }
+      const hasVocalVideo = !!massMediaPickLinkedVocalVideo();
+      if (!ref && !hasVocalVideo) {
+        if (typeof notify === "function") {
+          notify("Paste a sung YouTube URL (with vocals), or use Search sung first.", "warn");
+        }
+        return;
+      }
+      if (urlEl && ref) urlEl.value = ref.youtube_url || youtubeUrl;
+      if (btn) { btn.disabled = true; btn.textContent = "Queued…"; }
+      if (runBtn) runBtn.disabled = true;
+      if (statusEl) {
+        statusEl.dataset.fetching = "1";
+        statusEl.textContent = hasVocalVideo && !ref
+          ? "Using saved sung video — timing lyrics, then removing vocals…"
+          : "Building karaoke (Whisper timing → strip vocals → lyrics)…";
+        statusEl.className = "status mw-media-pick-fetch-status";
+      }
+      previewFetchState.attempted[target.section + ":" + target.id + ":karaoke"] = true;
+      try {
+        await startKaraokeFetchJob({
+          section: target.section,
+          id: target.id,
+          title: target.title || "this song",
+          youtube_url: ref ? (ref.youtube_url || youtubeUrl) : "",
+          toast: true,
+        });
+        if (statusEl) {
+          statusEl.textContent = "Karaoke build started — watch the progress bar below.";
+          statusEl.className = "status ok mw-media-pick-fetch-status";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not start karaoke build.";
+          statusEl.className = "status error mw-media-pick-fetch-status";
+        }
+        if (typeof notify === "function") {
+          notify((err && err.message) || "Could not start karaoke build.", "warn");
+        }
+      } finally {
+        if (statusEl) delete statusEl.dataset.fetching;
+        if (btn) { btn.disabled = false; btn.textContent = "Make karaoke"; }
+        if (runBtn) runBtn.disabled = false;
+      }
+    }
+
+    function applyMassMediaPickSelection(row) {
+      if (!row || !row.basename) return;
+      if (massMediaPickState.kind === "video") {
+        if (videoAssignedToOtherDomain(row.basename)) {
+          if (typeof notify === "function") {
+            notify("That video is already used in another part of Mass. Pick a different file.", "warn");
+          }
+          return;
+        }
+        const taken = videoAssignmentElsewhere(row.basename);
+        if (taken) {
+          if (typeof notify === "function") {
+            notify("Already assigned to " + taken + ". Pick a different video.", "warn");
+          }
+          return;
+        }
+      }
+      if (massMediaPickState.purpose === "song") {
+        if ((massMediaPickState.songField || "audio") === "video") {
+          setComposerSongMediaField("video", row);
+        } else {
+          setComposerAudioSnippet(row);
+        }
+        closeMassMediaPickModal();
+        if (typeof persistComposerSongMediaToCatalog === "function") {
+          void persistComposerSongMediaToCatalog();
+        }
+        if (typeof notify === "function") {
+          notify(
+            (massMediaPickState.songField === "video" ? "Instrumental video" : "Audio clip") + " linked to this song.",
+            "ok"
+          );
+        }
+        return;
+      }
+      const pickKind = massMediaPickState.kind;
+      const pickSlot = massMediaPickState.slot;
+      if (!pickKind || !pickSlot) return;
+      if (pickKind === "audio") {
+        const current = getMassSectionMedia("audio", pickSlot);
+        if (!isYouTubeMediaRef(current)) setMassSectionMedia("audio", pickSlot, row);
+        void persistMassSlotPreviewToCatalogSong(pickSlot, row);
+        closeMassMediaPickModal();
+        if (typeof updateMassSlotChip === "function") updateMassSlotChip(pickSlot);
+        if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(pickSlot);
+        if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+        if (typeof notify === "function") {
+          notify("Audio clip linked — for ministry practice only (not added to the PowerPoint).", "ok");
+        }
+        return;
+      }
+      setMassSectionMedia(pickKind, pickSlot, row);
+      if (pickKind === "video" && typeof persistMassSlotVideoToCatalogSong === "function") {
+        void persistMassSlotVideoToCatalogSong(pickSlot, row);
+      }
+      const pendingSongVideo = pickKind === "video" && massSongVideoPickPendingSlot === pickSlot;
+      if (pendingSongVideo) {
+        massSongVideoPickPendingSlot = "";
+        setMassSongVideoMode(pickSlot, true);
+      }
+      const pendingRite =
+        pickKind === "video" &&
+        massRiteVideoPickPending &&
+        massRiteVideoPickPending.slot === pickSlot;
+      if (pendingRite) {
+        const sec = massRiteVideoPickPending.section;
+        const lang = massRiteVideoPickPending.lang;
+        massRiteVideoPickPending = null;
+        window.massRiteVideoMode = window.massRiteVideoMode || {};
+        window.massRiteVideoLang = window.massRiteVideoLang || {};
+        window.massRiteVideoMode[sec] = true;
+        window.massRiteVideoLang[sec] = lang;
+        if (typeof syncRiteVideoUi === "function") syncRiteVideoUi(sec);
+      }
+      closeMassMediaPickModal();
+      if (typeof notify === "function") {
+        if (pickKind === "video") {
+          notify(
+            pendingSongVideo || pendingRite || getMassSongVideoMode(pickSlot)
+              ? "PowerPoint will use this video instead of lyric slides."
+              : "Video file linked. Choose Video in Lyrics|Video to use it in the PowerPoint.",
+            "ok"
+          );
+        } else {
+          notify("Audio preview linked — for ministry practice only (not added to the PowerPoint).", "ok");
+        }
+      }
+    }
+
+    function closeMassMediaPickModal() {
+      const m = $("mw-media-pick-modal");
+      if (!m) return;
+      m.setAttribute("data-open", "false");
+      m.setAttribute("aria-hidden", "true");
+      massMediaPickState = {
+        kind: "",
+        slot: "",
+        purpose: "mass",
+        songField: "",
+        loading: false,
+        youtubeOnly: false,
+        fromTitle: false,
+      };
+      const card = document.querySelector(".mw-media-pick-card");
+      if (card) card.classList.remove("is-lyrics-access-only");
+      setMassMediaPickLoading(false);
+      const status = $("mw-media-pick-upload-status");
+      if (status) {
+        status.textContent = "";
+        status.className = "status mw-media-pick-upload-status";
+      }
+      if ($("mw-media-pick-file")) $("mw-media-pick-file").value = "";
+      refreshMassMediaPickLyricsUi();
+    }
+
+    function openMassSongLyricsModal(opts) {
+      const options = opts || {};
+      const modal = $("mass-song-lyrics-modal");
+      const titleEl = $("mass-song-lyrics-title");
+      const metaEl = $("mass-song-lyrics-meta");
+      const bodyEl = $("mass-song-lyrics-body");
+      const statusEl = $("mass-song-lyrics-status");
+      if (!modal || !bodyEl) return;
+      const title = String(options.title || "Lyrics").trim() || "Lyrics";
+      const language = String(options.language || "").trim();
+      const author = String(options.author || "").trim();
+      const lyrics = String(options.lyrics || "").trim();
+      if (titleEl) titleEl.textContent = title;
+      if (metaEl) {
+        const bits = [];
+        if (language) bits.push(language);
+        if (author) bits.push("Author: " + author);
+        if (bits.length) {
+          metaEl.hidden = false;
+          metaEl.textContent = bits.join(" · ");
+        } else {
+          metaEl.hidden = true;
+          metaEl.textContent = "";
+        }
+      }
+      bodyEl.textContent = lyrics || "No lyrics saved for this song.";
+      if (statusEl) statusEl.hidden = true;
+      modal.setAttribute("data-open", "true");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeMassSongLyricsModal() {
+      const modal = $("mass-song-lyrics-modal");
+      if (!modal) return;
+      modal.setAttribute("data-open", "false");
+      modal.setAttribute("aria-hidden", "true");
+      const bodyEl = $("mass-song-lyrics-body");
+      if (bodyEl) bodyEl.textContent = "";
+    }
+
+    async function openMassSongLyricsForSlot(slotKey) {
+      const key = String(slotKey || "").trim();
+      const assigned = massSlotAssignedSong(key);
+      if (!assigned || !assigned.id) {
+        if (typeof notify === "function") notify("Choose a song first.", "warn");
+        return;
+      }
+      const btn = $("mw-media-pick-view-lyrics");
+      const statusEl = $("mass-song-lyrics-status");
+      const bodyEl = $("mass-song-lyrics-body");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Loading…";
+      }
+      try {
+        const data = await fetchSongDetail(assigned.section, assigned.id);
+        const song = (data && data.song) || {};
+        const lyrics = String(song.lyrics || "").trim();
+        if (!lyrics) {
+          if (typeof notify === "function") notify("No lyrics saved for this song.", "warn");
+          return;
+        }
+        openMassSongLyricsModal({
+          title: song.title || (assigned.row && assigned.row.title) || "Lyrics",
+          author: song.author || "",
+          language: song.language || "",
+          lyrics: lyrics,
+        });
+      } catch (err) {
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.textContent = err.message || "Could not load lyrics.";
+          statusEl.className = "status error";
+        } else if (typeof notify === "function") {
+          notify(err.message || "Could not load lyrics.", "error");
+        }
+        if (bodyEl) bodyEl.textContent = "";
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "View lyrics";
+        }
+        refreshMassMediaPickLyricsUi();
+      }
+    }
+
+    async function openMassSongLyricsFromMediaPick() {
+      const slot = massMediaPickState && massMediaPickState.slot;
+      if (!slot) return;
+      await openMassSongLyricsForSlot(slot);
+    }
+
+    function refreshMassMediaPickLyricsUi() {
+      const btn = $("mw-media-pick-view-lyrics");
+      const card = document.querySelector(".mw-media-pick-card");
+      if (!btn) return;
+      const state = massMediaPickState || {};
+      const isMass = state.purpose === "mass";
+      const isSa = !!(document.body.classList.contains("is-superadmin") ||
+        (churchMembershipState && churchMembershipState.is_superadmin));
+      const lyricsOnly = isMass && !isSa && !state.youtubeOnly;
+      const target = isMass ? massMediaPickSongTarget() : null;
+      const hasLyrics = !!(target && target.row && target.row.has_lyrics);
+      if (card) card.classList.toggle("is-lyrics-access-only", lyricsOnly);
+      btn.hidden = !isMass || !target;
+      btn.disabled = !hasLyrics;
+      btn.title = hasLyrics ? "Open scrollable lyrics" : "No lyrics saved for this song";
+    }
+
+    function clearMassMediaPickSelection() {
+      const youtubeOnly = !!(massMediaPickState && massMediaPickState.youtubeOnly);
+      const kind = massMediaPickState.kind === "video" ? "video" : "audio";
+      const label = youtubeOnly
+        ? "this YouTube full-song link"
+        : (kind === "video" ? "this instrumental video" : "this audio clip");
+      if (!confirmUnlinkMedia(label)) return;
+      if (massMediaPickState.purpose === "song") {
+        if (youtubeOnly) {
+          clearComposerYouTubeLink({ skipConfirm: true });
+        } else if ((massMediaPickState.songField || "audio") === "video") {
+          setComposerSongMediaField("video", null);
+          if (typeof persistComposerSongMediaToCatalog === "function") {
+            void persistComposerSongMediaToCatalog();
+          }
+        } else {
+          if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) stopMassSectionAudio();
+          clearComposerAudioSnippet();
+          if (typeof persistComposerSongMediaToCatalog === "function") {
+            void persistComposerSongMediaToCatalog();
+          }
+        }
+        closeMassMediaPickModal();
+        if (typeof notify === "function") notify("Cleared media link.", "ok");
+        return;
+      }
+      if (!massMediaPickState.kind || !massMediaPickState.slot) return;
+      const slot = massMediaPickState.slot;
+      if (youtubeOnly) {
+        clearMassYouTubeLink(slot, { skipConfirm: true });
+      } else if (kind === "audio") {
+        if (massSectionAudioPlayingSlot === slot) stopMassSectionAudio();
+        const cur = getMassSectionMedia("audio", slot);
+        if (cur && !isYouTubeMediaRef(cur)) setMassSectionMedia("audio", slot, null);
+        void persistMassSlotPreviewToCatalogSong(slot, null);
+      } else {
+        setMassSectionMedia(kind, slot, null);
+        if (typeof persistMassSlotVideoToCatalogSong === "function") {
+          void persistMassSlotVideoToCatalogSong(slot, null);
+        }
+      }
+      closeMassMediaPickModal();
+      if (typeof notify === "function") notify("Cleared media link.", "ok");
+    }
+
+    function massVideoAssignmentDomain(slot) {
+      const parsed = parseMassMediaKey(slot);
+      const sec = String((parsed && parsed.section) || slot || "").trim().toLowerCase();
+      if (MASS_RITE_VIDEO_MODE_SECTIONS.has(sec) || MASS_RITE_OPTION_SECTIONS.has(sec)) return "rite";
+      return "music";
+    }
+
+    function mediaPickVideoDomain() {
+      if (massMediaPickState && massMediaPickState.purpose === "song") return "music";
+      return massVideoAssignmentDomain((massMediaPickState && massMediaPickState.slot) || "");
+    }
+
+    function massVideoAssignmentMap() {
+      const map = {};
+      const add = (basename, slot, label, domain) => {
+        const base = String(basename || "").trim();
+        if (!base) return;
+        if (!map[base]) map[base] = [];
+        map[base].push({
+          slot: String(slot || ""),
+          label: String(label || slot || "Mass"),
+          domain: domain || "music",
+        });
+      };
+      const bucket = (massSectionMedia && massSectionMedia.video) || {};
+      Object.keys(bucket).forEach((slot) => {
+        const item = bucket[slot];
+        add(
+          item && item.basename,
+          slot,
+          massMediaDisplayLabel(slot),
+          massVideoAssignmentDomain(slot)
+        );
+      });
+      const catalog = (typeof songCatalogData !== "undefined" && songCatalogData) ? songCatalogData : null;
+      if (catalog && typeof catalog === "object") {
+        Object.keys(catalog).forEach((sec) => {
+          (catalog[sec] || []).forEach((row) => {
+            if (!row || !row.video_media) return;
+            const ref = typeof normalizeComposerMediaRef === "function"
+              ? normalizeComposerMediaRef(row.video_media)
+              : row.video_media;
+            const base = ref && (ref.basename || ref);
+            if (!base) return;
+            const title = String(row.title || row.id || "Song").trim() || "Song";
+            add(base, "song:" + sec + ":" + String(row.id || ""), "Song · " + title, "music");
+          });
+        });
+      }
+      return map;
+    }
+
+    function videoAssignmentElsewhere(basename) {
+      const base = String(basename || "").trim();
+      if (!base) return "";
+      if (isCurrentMediaPickBasename(base)) return "";
+      const currentSlot = String((massMediaPickState && massMediaPickState.slot) || "");
+      const purpose = massMediaPickState && massMediaPickState.purpose;
+      const pickDomain = mediaPickVideoDomain();
+      const entries = (massVideoAssignmentMap()[base] || []).filter((entry) => {
+        if (entry.domain !== pickDomain) return false;
+        if (purpose === "song") return true;
+        return entry.slot !== currentSlot;
+      });
+      if (!entries.length) return "";
+      const labels = [];
+      entries.forEach((entry) => {
+        if (labels.indexOf(entry.label) < 0) labels.push(entry.label);
+      });
+      return labels.join(", ");
+    }
+
+    function videoAssignedToOtherDomain(basename) {
+      const base = String(basename || "").trim();
+      if (!base || isCurrentMediaPickBasename(base)) return false;
+      const pickDomain = mediaPickVideoDomain();
+      return (massVideoAssignmentMap()[base] || []).some((entry) => entry.domain !== pickDomain);
+    }
+
+    function isCurrentMediaPickBasename(basename) {
+      const base = String(basename || "").trim();
+      if (!base) return false;
+      if (massMediaPickState.purpose === "song") {
+        if (massMediaPickState.songField === "video") {
+          const cur = composerSongMedia && composerSongMedia.video;
+          return !!(cur && cur.basename === base);
+        }
+        const cur = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : null;
+        return !!(cur && cur.basename === base);
+      }
+      const cur = getMassSectionMedia(massMediaPickState.kind, massMediaPickState.slot);
+      return !!(cur && cur.basename === base);
+    }
+
+    function renderMassMediaPickList() {
+      const list = $("mw-media-pick-list");
+      if (!list) return;
+      const kind = massMediaPickState.kind === "video" ? "video" : "music";
+      const q = (($("mw-media-pick-q") && $("mw-media-pick-q").value) || "").trim().toLowerCase();
+      const rows = (kind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || [];
+      const filtered = rows.filter((item) => {
+        if (!q) return true;
+        const hay = ((item.display_name || "") + " " + (item.basename || "")).toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+      if (!filtered.length) {
+        list.innerHTML = "<li class=\"muted\">No " + (kind === "video" ? "videos" : "audio files") +
+          " found. Switch to Upload to add one.</li>";
+        return;
+      }
+      const lockAssigned = kind === "video";
+      const visible = filtered.filter((item) => {
+        if (!lockAssigned) return true;
+        if (isCurrentMediaPickBasename(item.basename)) return true;
+        return !videoAssignedToOtherDomain(item.basename);
+      });
+      if (!visible.length) {
+        list.innerHTML = "<li class=\"muted\">No " + (kind === "video" ? "videos" : "audio files") +
+          " found. Switch to Upload to add one.</li>";
+        return;
+      }
+      list.innerHTML = visible.map((item) => {
+        const title = item.display_name || item.basename || "Media";
+        const current = isCurrentMediaPickBasename(item.basename);
+        const usedWhere = lockAssigned && !current ? videoAssignmentElsewhere(item.basename) : "";
+        const taken = !!usedWhere;
+        const meta = taken
+          ? ("Assigned to " + usedWhere)
+          : (current ? "Linked here" : "");
+        return (
+          "<li><button type=\"button\" class=\"mw-media-pick-item" +
+            (taken ? " is-taken" : "") +
+            (current ? " is-current" : "") +
+            "\" data-pick-basename=\"" + escapeHtml(item.basename) + "\"" +
+            (taken ? " disabled aria-disabled=\"true\"" : "") +
+            (taken ? " title=\"" + escapeHtml("Already assigned to " + usedWhere) + "\"" : "") +
+            ">" +
+            "<span class=\"mw-media-pick-item__text\">" +
+              "<span class=\"mw-media-pick-item__title\">" + escapeHtml(title) + "</span>" +
+              (meta ? "<span class=\"mw-media-pick-item__used\">" + escapeHtml(meta) + "</span>" : "") +
+            "</span>" +
+          "</button></li>"
+        );
+      }).join("");
+      list.querySelectorAll("[data-pick-basename]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.disabled || btn.classList.contains("is-taken")) return;
+          const basename = btn.getAttribute("data-pick-basename");
+          const row = rows.find((r) => r.basename === basename);
+          if (!row) return;
+          applyMassMediaPickSelection(row);
+        });
+      });
+    }
+
+    function massSlotAssignedSong(slot) {
+      const key = String(slot || "").trim();
+      const songId = String((typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs && selectedLyricsSongs[key]) || "").trim();
+      if (!songId) return null;
+      const row = typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      const section = String(
+        (row && row.section) ||
+        (typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(key) : key) ||
+        ""
+      ).trim().toLowerCase();
+      return { id: songId, section: section, row: row };
+    }
+
+    function massSlotsForSongId(songId) {
+      const id = String(songId || "").trim();
+      const out = [];
+      if (!id || typeof selectedLyricsSongs === "undefined" || !selectedLyricsSongs) return out;
+      Object.keys(selectedLyricsSongs).forEach((slot) => {
+        if (String(selectedLyricsSongs[slot] || "") === id) out.push(slot);
+      });
+      return out;
+    }
+
+    function catalogRowForSongMedia(section, songId) {
+      const id = String(songId || "").trim();
+      if (!id) return null;
+      if (typeof lookupMassPlanSong === "function") {
+        const hit = lookupMassPlanSong(id);
+        if (hit) return hit;
+      }
+      const prefer = String(section || "").trim().toLowerCase();
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const ordered = prefer && secs.indexOf(prefer) >= 0
+        ? [prefer].concat(secs.filter((s) => s !== prefer))
+        : secs;
+      if (typeof songCatalogData === "undefined" || !songCatalogData) return null;
+      for (let i = 0; i < ordered.length; i++) {
+        const sec = ordered[i];
+        const rows = songCatalogData[sec] || [];
+        const row = rows.find((r) => String(r.id) === id);
+        if (row) return Object.assign({ section: sec }, row);
+      }
+      return null;
+    }
+
+    /**
+     * Keep Music Ministry slots + Song Composer on the same catalog media links.
+     * Catalog is the source of truth after any link/unlink.
+     */
+    function syncSongMediaSurfaces(section, songId, opts) {
+      const options = opts || {};
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const prefer = String(section || "").trim().toLowerCase();
+      if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+      const row = catalogRowForSongMedia(prefer, id);
+      massSlotsForSongId(id).forEach((slot) => {
+        if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(slot, id);
+        if (typeof updateMassSlotChip === "function") updateMassSlotChip(slot);
+        if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(slot);
+      });
+      if (
+        !options.skipComposer &&
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id || "") === id &&
+        (!prefer || String(composerLoadedSong.section || "").toLowerCase() === prefer || !composerLoadedSong.section)
+      ) {
+        if (row) {
+          const audio = normalizeComposerMediaRef(row.audio_media);
+          const video = normalizeComposerMediaRef(row.video_media);
+          const preview = normalizeAudioPreviewRef(row.audio_preview);
+          if (options.fromComposer) {
+            // Composer already holds the new values; only fill missing fields from catalog.
+            if (composerSongMedia.audio == null && audio) composerSongMedia.audio = audio;
+            if (composerSongMedia.video == null && video) composerSongMedia.video = video;
+            if (composerSongMedia.preview == null && preview) composerSongMedia.preview = preview;
+          } else {
+            composerSongMedia = {
+              audio: audio,
+              video: video,
+              preview: preview,
+            };
+          }
+        }
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+        if (typeof songMetaSnapshot !== "undefined" && songMetaSnapshot && typeof captureMetadataModalSnapshot === "function") {
+          /* keep dirty-check honest after external ministry edits */
+        }
+        if (typeof refreshMetadataModalPrimaryState === "function") refreshMetadataModalPrimaryState();
+      }
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+    }
+    window.syncSongMediaSurfaces = syncSongMediaSurfaces;
+
+    async function persistComposerSongMediaToCatalog(opts) {
+      const options = opts || {};
+      if (!composerLoadedSong || !composerLoadedSong.id) return false;
+      if (!(churchMembershipState && churchMembershipState.is_superadmin) && !options.force) {
+        // Parish users still sync ministry slots from local composer state via catalog merge below.
+        syncSongMediaSurfaces(composerLoadedSong.section, composerLoadedSong.id, { fromComposer: true });
+        return false;
+      }
+      const section = String(composerLoadedSong.section || "").trim().toLowerCase();
+      const id = String(composerLoadedSong.id || "").trim();
+      if (!section || !id) return false;
+      const youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : null;
+      const snippet = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : null;
+      const video = composerSongMedia && composerSongMedia.video;
+      const body = {};
+      if (youtube) body.audio_media = serializeSongMediaRef(youtube);
+      else body.clear_audio_media = true;
+      if (snippet) body.audio_preview = serializeAudioPreviewRef(snippet);
+      else body.clear_audio_preview = true;
+      if (video && video.basename && !isYouTubeMediaRef(video)) {
+        body.video_media = {
+          basename: video.basename,
+          display_name: video.display_name || video.basename,
+        };
+        if (video.youtube_id) body.video_media.youtube_id = video.youtube_id;
+        if (video.youtube_url) body.video_media.youtube_url = video.youtube_url;
+      } else {
+        body.clear_video_media = true;
+      }
+      try {
+        const headers = typeof catalogAuthHeaders === "function"
+          ? Object.assign({ "Content-Type": "application/json" }, await catalogAuthHeaders())
+          : { "Content-Type": "application/json" };
+        if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+        const res = await fetch(
+          "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
+          { method: "PATCH", headers: headers, body: JSON.stringify(body) }
+        );
+        if (!res.ok) return false;
+        if (typeof bustStoredSongDetail === "function") bustStoredSongDetail(section, id);
+        updateLocalCatalogSongAudio(section, id, youtube);
+        updateLocalCatalogSongPreview(section, id, snippet);
+        updateLocalCatalogSongVideo(section, id, (video && video.basename && !isYouTubeMediaRef(video)) ? video : null);
+        syncSongMediaSurfaces(section, id, { fromComposer: true, skipComposer: true });
+        massSlotsForSongId(id).forEach((slot) => {
+          if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(slot, id);
+        });
+        if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    }
+    window.persistComposerSongMediaToCatalog = persistComposerSongMediaToCatalog;
+
+    function updateLocalCatalogSongAudio(section, songId, audioRef) {
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const prefer = String(section || "").trim().toLowerCase();
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const targets = prefer && secs.indexOf(prefer) >= 0 ? [prefer] : secs;
+      const ref = audioRef ? normalizeComposerMediaRef(audioRef) : null;
+      if (typeof songCatalogData !== "undefined" && songCatalogData) {
+        targets.forEach((sec) => {
+          if (!Array.isArray(songCatalogData[sec])) return;
+          const idx = songCatalogData[sec].findIndex((r) => String(r.id) === id);
+          if (idx < 0) return;
+          const next = Object.assign({}, songCatalogData[sec][idx]);
+          next.audio_media = ref ? (serializeSongMediaRef(ref) || ref) : null;
+          songCatalogData[sec][idx] = next;
+        });
+      }
+      if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+      if (typeof songDetailCache !== "undefined" && typeof songDetailCacheKey === "function") {
+        targets.forEach((sec) => {
+          const key = songDetailCacheKey(sec, id);
+          if (!songDetailCache.has(key)) return;
+          const data = songDetailCache.get(key);
+          if (!data || !data.song) return;
+          data.song.audio_media = ref ? (serializeSongMediaRef(ref) || ref) : null;
+          songDetailCache.set(key, data);
+        });
+      }
+      if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id) === id &&
+        (!prefer || String(composerLoadedSong.section || "").toLowerCase() === prefer)
+      ) {
+        if (ref && isYouTubeMediaRef(ref) && composerSongMedia.audio && !isYouTubeMediaRef(composerSongMedia.audio) && !(composerSongMedia.preview && composerSongMedia.preview.basename)) {
+          composerSongMedia.preview = fileToAudioPreviewRef(composerSongMedia.audio);
+        }
+        composerSongMedia.audio = ref;
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+        if (typeof songMetaSnapshot !== "undefined" && songMetaSnapshot) {
+          songMetaSnapshot.audio = (typeof composerAudioSnippetRef === "function" && composerAudioSnippetRef())
+            ? String(composerAudioSnippetRef().basename || "")
+            : "";
+          songMetaSnapshot.youtube = ref && isYouTubeMediaRef(ref) ? String(ref.youtube_id || ref.basename || "") : "";
+        }
+        if (typeof refreshMetadataModalPrimaryState === "function") refreshMetadataModalPrimaryState();
+      }
+      massSlotsForSongId(id).forEach((slot) => {
+        if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(slot, id);
+        if (typeof updateMassSlotChip === "function") updateMassSlotChip(slot);
+        if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(slot);
+      });
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+    }
+

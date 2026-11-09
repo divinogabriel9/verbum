@@ -301,14 +301,13 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
         return None
 
 
-def fetch_tagalog_liturgical_data(
+def _vernacular_liturgical_payload(
     date: str,
     *,
-    use_readings_cache: bool = True,
-    force_refresh: bool = False,
+    readings_language: str,
+    blocks: dict,
 ) -> dict | None:
-    """Liturgical payload with Tagalog reading texts."""
-    from services.awit_at_papuri_readings import fetch_tagalog_readings_for_date
+    """Shared payload builder for Tagalog / Cebuano reading sources."""
     from services.liturgical_calendar import get_liturgical_color
 
     try:
@@ -317,19 +316,13 @@ def fetch_tagalog_liturgical_data(
         print("❌ Invalid date. Use YYYY-MM-DD.")
         return None
 
-    blocks = fetch_tagalog_readings_for_date(
-        date.strip(),
-        use_cache=use_readings_cache and not force_refresh,
-        force_refresh=force_refresh,
-    )
     gospel_text = (blocks.get("gospel") or "").strip()
     if not gospel_text and not (blocks.get("first_reading") or "").strip():
-        print(f"⚠️ Tagalog readings unavailable for {date.strip()}")
+        print(f"⚠️ {readings_language.title()} readings unavailable for {date.strip()}")
         return None
 
     liturgical_color = get_liturgical_color(date.strip())
     season = str(liturgical_color.get("season_label") or liturgical_color.get("season") or "Ordinary Time")
-    # Prefer human season label when present; fall back to key with spaces.
     if "_" in season and " " not in season:
         season = season.replace("_", " ").title()
 
@@ -338,7 +331,7 @@ def fetch_tagalog_liturgical_data(
     gospel_reference = (blocks.get("gospel_ref") or "").strip()
     gospel_slide_quote = extract_gospel_slide_quote(gospel_text, max_chars=300) if gospel_text else ""
 
-    payload = {
+    return {
         "title": title,
         "celebration": celebration,
         "season": season,
@@ -358,10 +351,43 @@ def fetch_tagalog_liturgical_data(
         # Do not expose upstream readings URLs / provider names to clients.
         "source": "",
         "quote_attribution": None,
-        "readings_language": "tagalog",
+        "readings_language": readings_language,
     }
+
+
+def fetch_tagalog_liturgical_data(
+    date: str,
+    *,
+    use_readings_cache: bool = True,
+    force_refresh: bool = False,
+) -> dict | None:
+    """Liturgical payload with Tagalog reading texts."""
+    from services.awit_at_papuri_readings import fetch_tagalog_readings_for_date
+
+    blocks = fetch_tagalog_readings_for_date(
+        date.strip(),
+        use_cache=use_readings_cache and not force_refresh,
+        force_refresh=force_refresh,
+    )
     # Keep Tagalog celebration titles — do not overlay English PH Proper names.
-    return payload
+    return _vernacular_liturgical_payload(date, readings_language="tagalog", blocks=blocks)
+
+
+def fetch_cebuano_liturgical_data(
+    date: str,
+    *,
+    use_readings_cache: bool = True,
+    force_refresh: bool = False,
+) -> dict | None:
+    """Liturgical payload with Cebuano (Sulugoon) reading texts."""
+    from services.sulugoon_readings import fetch_cebuano_readings_for_date
+
+    blocks = fetch_cebuano_readings_for_date(
+        date.strip(),
+        use_cache=use_readings_cache and not force_refresh,
+        force_refresh=force_refresh,
+    )
+    return _vernacular_liturgical_payload(date, readings_language="cebuano", blocks=blocks)
 
 
 def _normalize_payload_titles(payload: dict | None) -> dict | None:
@@ -397,11 +423,17 @@ def get_liturgical_data(
     Retries live fetches when readings are incomplete (USCCB/Bible API hiccups).
 
     When ``language`` is ``tagalog``, reads Awit at Papuri (separate JSON cache;
-    does not write English SQLite rows).
+    does not write English SQLite rows). ``cebuano`` reads Sulugoon the same way.
     """
     lang = normalize_mass_language(language)
     if lang == "tagalog":
         return fetch_tagalog_liturgical_data(
+            date,
+            use_readings_cache=use_cache,
+            force_refresh=force_refresh,
+        )
+    if lang == "cebuano":
+        return fetch_cebuano_liturgical_data(
             date,
             use_readings_cache=use_cache,
             force_refresh=force_refresh,

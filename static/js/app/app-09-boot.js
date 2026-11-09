@@ -2347,7 +2347,7 @@
     if (calLanguageSel) {
       try {
         const savedCalLang = localStorage.getItem("verbumCalLanguage");
-        if (savedCalLang === "tagalog" || savedCalLang === "english") {
+        if (savedCalLang === "tagalog" || savedCalLang === "english" || savedCalLang === "cebuano") {
           calLanguageSel.value = savedCalLang;
         }
       } catch (_e) { /* ignore */ }
