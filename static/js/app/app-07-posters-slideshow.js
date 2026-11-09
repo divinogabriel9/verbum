@@ -5528,8 +5528,13 @@
         // archives are missing after an in-place regenerate.
         const selectedVer = Number(weeklyPosterVersionState.active || 0);
         const catalogActiveVer = Number(
-          (data.versions && data.versions.active_version) || 0
+          (data.versions && data.versions.active_version)
+          || weeklyPosterVersionState.active
+          || 0
         );
+        // SA browsing an older archive (selected ≠ active). Extras always uses the
+        // live active catalog — partial version metadata (e.g. "cinematic only")
+        // must not hide other styles that are ready on disk.
         const viewingArchive = !!(
           weeklyPosterSaPanelOpen() &&
           selectedVer > 0 &&
@@ -5538,16 +5543,11 @@
         );
         const versionView = weeklyPosterViewCatalogForActiveVersion()
           || applyWeeklyPosterVersionReadyOverlay(data);
-        const versionHasReady = !!(
-          versionView
-          && Array.isArray(versionView.items)
-          && versionView.items.some((it) => it && it.ready && (it.thumb_url || it.proxy_url || it.full_url))
-        );
         const apiHasReady = Array.isArray(data.items)
           && data.items.some((it) => it && it.ready && (it.thumb_url || it.proxy_url || it.full_url));
         const view = viewingArchive
           ? (versionView || data)
-          : (versionHasReady ? versionView : (apiHasReady ? data : (versionView || data)));
+          : (apiHasReady ? data : (versionView || data));
         const sundayKey = String(view.sunday || dateNow);
         const activeVer = Number(weeklyPosterVersionState.active || (view.versions && view.versions.active_version) || 0);
         const ready = Number(view.ready_count || 0);
