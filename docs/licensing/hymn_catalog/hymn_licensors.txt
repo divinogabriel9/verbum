@@ -1,0 +1,722 @@
+LiturgyFlow hymn catalog — songs and who to license from
+Total unique songs: 125
+Source: data/hymn_library.json (licensor inferred from composer/title; verify before contracts)
+========================================================================
+
+SUMMARY
+------------------------------------------------------------------------
+ 56  JesCom (Jesuit Communications Foundation)
+ 16  Composer / local PH (verify)
+ 14  OCP / OneLicense
+ 12  Public domain text (verify arrangement)
+  6  GIA / OneLicense
+  4  Composer / local PH
+  2  Composer / local PH publisher
+  1  CCLI
+  1  CCLI (verify)
+  1  CCLI / Integrity Music
+  1  CCLI / Make Way Music
+  1  CCLI or OneLicense (verify)
+  1  Composer / local PH (Arboleda)
+  1  Composer / local PH (Ramirez)
+  1  Composer / local PH (Trina Belamide)
+  1  Composer estate / local PH
+  1  OCP / OneLicense (verify)
+  1  OCP or GIA / OneLicense (verify)
+  1  OneLicense / publisher of record (verify)
+  1  Public domain spiritual (verify arrangement)
+  1  Public domain text/tune (verify arrangement)
+  1  WLP / OneLicense (verify)
+
+========================================================================
+
+JesCom (Jesuit Communications Foundation) (56)
+------------------------------------------------------------------------
+Title:    Ama Namin (bukas Palad)
+Author:   Bukas Palad
+Sections: meditation
+License:  Bukas Palad Music Ministry via JesCom
+
+Title:    Ama Namin (francisco)
+Author:   Manoling Francisco
+Sections: meditation
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Ama Namin (hontiveros)
+Author:   Eduardo Hontiveros
+Sections: meditation
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Amare Et Servire
+Author:   (none listed)
+Sections: communion
+License:  Bukas Palad — JesCom
+
+Title:    Aming Ipinahahayag
+Author:   (none listed)
+Sections: communion
+License:  likely Jesuit Mass setting — verify
+
+Title:    Anima Christi
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco / Bukas Palad — JesCom (not PD Latin text arrangement)
+
+Title:    Awit Ng Paghahangad
+Author:   Charlie Cenzon
+Sections: communion
+License:  via JesCom
+
+Title:    Balang Araw
+Author:   Manoling Francisco
+Sections: entrance
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Bayan, Magsiawit Na!
+Author:   Arnel Aquino
+Sections: entrance
+License:  Jesuit Music Ministry via JesCom
+
+Title:    Buksan Ang Aming Puso
+Author:   Eduardo Hontiveros
+Sections: entrance
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Christify
+Author:   (none listed)
+Sections: offertory
+License:  Manoling Francisco — JesCom
+
+Title:    Confidite Ego Vici Mundum
+Author:   (none listed)
+Sections: meditation
+License:  Hangad / JesCom — verify
+
+Title:    Covenant Journey
+Author:   (none listed)
+Sections: recessional
+License:  Hangad / JesCom — verify
+
+Title:    Dakilang Amen (francisco)
+Author:   Manoling Francisco
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Fragile Vessel
+Author:   (none listed)
+Sections: communion
+License:  Hangad / JesCom circle — verify
+
+Title:    Halina At Lumapit
+Author:   (none listed)
+Sections: entrance
+License:  likely Hontiveros — verify
+
+Title:    Halina't Umawit
+Author:   (none listed)
+Sections: entrance
+License:  likely Hontiveros — verify
+
+Title:    Halina, Hesus, Halina
+Author:   Eduardo Hontiveros
+Sections: entrance
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Hesus Na Aking Kapatid
+Author:   Eduardo Hontiveros
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Hesus Ng Aking Buhay
+Author:   Arnel Aquino
+Sections: communion
+License:  Jesuit Music Ministry via JesCom
+
+Title:    Hindi Kita Malilimutan
+Author:   Manoling Francisco
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Humayo't Ihayag
+Author:   (none listed)
+Sections: recessional
+License:  Manoling Francisco — JesCom
+
+Title:    I Seek You For I Thirst
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco — JesCom
+
+Title:    Iesu Panis Vitae
+Author:   Bukas Palad Ministry
+Sections: communion
+License:  Bukas Palad Music Ministry via JesCom
+
+Title:    In Him Alone
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco — JesCom
+
+Title:    Isang Pananampalataya
+Author:   Eduardo Hontiveros
+Sections: entrance
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Kaawaan Mo Kami
+Author:   Arnel Aquino
+Sections: meditation
+License:  Jesuit Music Ministry via JesCom
+
+Title:    Kordero Ng Diyos (aquino)
+Author:   Arnel Aquino
+Sections: communion
+License:  Jesuit Music Ministry via JesCom
+
+Title:    Kordero Ng Diyos (bukas Palad)
+Author:   Bukas Palad
+Sections: communion
+License:  Bukas Palad Music Ministry via JesCom
+
+Title:    Kordero Ng Diyos (francisco)
+Author:   Manoling Francisco
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Kordero Ng Diyos (hontiveros)
+Author:   Eduardo Hontiveros
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Love Is The Answer
+Author:   (none listed)
+Sections: communion
+License:  Hangad / JesCom — verify
+
+Title:    Manalig Ka
+Author:   Tinig San Jose
+Sections: communion
+License:  verify with JesCom
+
+Title:    Mula Sa 'yo
+Author:   Manoling Francisco
+Sections: offertory
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Narito Ako, Panginoon
+Author:   Rene San Andres
+Sections: offertory
+License:  verify — often JesCom circle
+
+Title:    One More Gift
+Author:   (none listed)
+Sections: offertory
+License:  Manoling Francisco — JesCom
+
+Title:    Pag-aalaala
+Author:   Manoling Francisco
+Sections: entrance
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Paghahandog
+Author:   Rene San Andres
+Sections: offertory
+License:  verify — often JesCom circle
+
+Title:    Paghahandog Ng Sarili
+Author:   Eduardo Hontiveros
+Sections: offertory
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Pagkakaibigan
+Author:   Hangad
+Sections: communion
+License:  Hangad via JesCom
+
+Title:    Pagsibol
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco — JesCom
+
+Title:    Panginoon, Maawa Ka (bukas Palad)
+Author:   Bukas Palad
+Sections: meditation
+License:  Bukas Palad Music Ministry via JesCom
+
+Title:    Panginoon, Maawa Ka (francisco)
+Author:   Manoling Francisco
+Sections: meditation
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Panginoon, Maawa Ka (hontiveros)
+Author:   Eduardo Hontiveros
+Sections: meditation
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Prayer For Generosity
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco / Bukas Palad — JesCom
+
+Title:    Sa Hapag Ng Panginoon
+Author:   Manoling Francisco
+Sections: entrance
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Sa Krus Mo At Pagkabuhay
+Author:   Manoling Francisco
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Santo (francisco)
+Author:   Manoling Francisco
+Sections: meditation
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Santo (hontiveros)
+Author:   Eduardo Hontiveros
+Sections: meditation
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Santo, Santo, Santo (aquino)
+Author:   Arnel Aquino
+Sections: meditation
+License:  Jesuit Music Ministry via JesCom
+
+Title:    Sapagkat Sa'yo Ang Kaharian
+Author:   Eduardo Hontiveros
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Si Kristo Ay Namatay
+Author:   Eduardo Hontiveros
+Sections: communion
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Take And Receive
+Author:   Bukas Palad Ministry
+Sections: offertory
+License:  Bukas Palad Music Ministry via JesCom
+
+Title:    Tanging Yaman
+Author:   Manoling Francisco
+Sections: offertory
+License:  https://www.jescom.ph / Jesuit Music Ministry licensing
+
+Title:    Tinapay Ng Buhay
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco — JesCom
+
+Title:    Your Heart Today
+Author:   (none listed)
+Sections: communion
+License:  Manoling Francisco — JesCom
+
+
+Composer / local PH (verify) (16)
+------------------------------------------------------------------------
+Title:    Alay Ng Bayan
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+Title:    Alay Sa Diyos
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+Title:    Amen (world Youth Day)
+Author:   (none listed)
+Sections: communion
+License:  WYD Mass setting — identify version
+
+Title:    Amen (wybat)
+Author:   (none listed)
+Sections: communion
+License:  WYD/WYBAT Mass setting — identify version
+
+Title:    Ang Tanging Alay Ko
+Author:   (none listed)
+Sections: offertory
+License:  Classic Filipino offertory — identify publisher of the version you use
+
+Title:    Awit Ng Pagkakaisa
+Author:   (none listed)
+Sections: entrance
+License:  Identify composer/publisher of your version
+
+Title:    Isang Bansa
+Author:   (none listed)
+Sections: communion
+License:  Identify composer/publisher of your version
+
+Title:    Isang Pagwiwisik (asperges Me)
+Author:   (none listed)
+Sections: meditation
+License:  Identify composer/publisher of your version
+
+Title:    Kapuri-puri Ka
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+Title:    My Heart Thanksgiving
+Author:   (none listed)
+Sections: recessional
+License:  Identify composer/publisher of your version
+
+Title:    Pumasok Kayo
+Author:   (none listed)
+Sections: entrance
+License:  Identify composer/publisher of your version
+
+Title:    Sumasamo Kami Sa'yo
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+Title:    Take Oh Lord This Offering
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+Title:    Tanggapin Mo, Panginoon
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+Title:    Tayo'y Magpuri
+Author:   (none listed)
+Sections: entrance
+License:  Identify composer/publisher of your version
+
+Title:    Tinapay At Alak Naming Hatid
+Author:   (none listed)
+Sections: offertory
+License:  Identify composer/publisher of your version
+
+
+OCP / OneLicense (14)
+------------------------------------------------------------------------
+Title:    Bayan, Umapaw Sa Pag-asa
+Author:   Ricky Manalo
+Sections: entrance
+License:  Oregon Catholic Press — onelicense.net
+
+Title:    Be Not Afraid
+Author:   (none listed)
+Sections: communion
+License:  Bob Dufford, SJ
+
+Title:    City Of God
+Author:   (none listed)
+Sections: recessional
+License:  Dan Schutte
+
+Title:    Gift Of Finest Wheat
+Author:   (none listed)
+Sections: offertory
+License:  Robert E. Kreutz / OCP
+
+Title:    Glory and Praise to Our God
+Author:   Dan Schutte
+Sections: entrance
+License:  Oregon Catholic Press — onelicense.net
+
+Title:    Go Make a Difference
+Author:   (none listed)
+Sections: recessional
+License:  Steve Angrisano / Tom Tomaszek
+
+Title:    Here I Am, Lord
+Author:   (none listed)
+Sections: entrance
+License:  Dan Schutte
+
+Title:    Lead Me, Lord
+Author:   (none listed)
+Sections: recessional
+License:  John D. Becker
+
+Title:    Make Me a Channel of Your PEace
+Author:   (none listed)
+Sections: communion
+License:  Sebastian Temple
+
+Title:    One Bread, One Body
+Author:   (none listed)
+Sections: offertory, communion
+License:  John Foley, SJ
+
+Title:    Sing A New Song
+Author:   (none listed)
+Sections: entrance
+License:  Dan Schutte
+
+Title:    Sing To The Mountains
+Author:   (none listed)
+Sections: entrance
+License:  Bob Dufford, SJ
+
+Title:    Table Of Plenty
+Author:   (none listed)
+Sections: entrance
+License:  Dan Schutte
+
+Title:    You Are Near
+Author:   Dan Schutte
+Sections: communion
+License:  Oregon Catholic Press — onelicense.net
+
+
+Public domain text (verify arrangement) (12)
+------------------------------------------------------------------------
+Title:    Alleluia! Sing to Jesus
+Author:   (none listed)
+Sections: recessional
+License:  William C. Dix
+
+Title:    Crown Him With Many Crowns
+Author:   (none listed)
+Sections: entrance
+License:  Bridges / Elvey
+
+Title:    Doxology (praise God From Whom All Blessings Flow)
+Author:   (none listed)
+Sections: meditation
+License:  Thomas Ken
+
+Title:    God of Our Fathers
+Author:   (none listed)
+Sections: recessional
+License:  Roberts / Warren
+
+Title:    Holy, Holy, Holy
+Author:   (none listed)
+Sections: entrance
+License:  Heber / Dykes
+
+Title:    Jesus, My Lord, My God, My All
+Author:   (none listed)
+Sections: communion
+License:  Frederick Faber
+
+Title:    Joyful, Joyful, We Adore Thee
+Author:   (none listed)
+Sections: entrance
+License:  Van Dyke / Beethoven
+
+Title:    Onward, Christian Soldiers
+Author:   (none listed)
+Sections: recessional
+License:  Baring-Gould / Sullivan
+
+Title:    Praise To The Lord, The Almighty
+Author:   (none listed)
+Sections: entrance
+License:  Neander / Winkworth
+
+Title:    Soul of My Savior
+Author:   (none listed)
+Sections: communion
+License:  Anima Christi English hymn
+
+Title:    Take My Life and Let It Be
+Author:   (none listed)
+Sections: offertory
+License:  Frances Havergal
+
+Title:    We Give Thee But Thine Own
+Author:   (none listed)
+Sections: offertory
+License:  William W. How
+
+
+GIA / OneLicense (6)
+------------------------------------------------------------------------
+Title:    Eat This Bread
+Author:   (none listed)
+Sections: communion
+License:  Jacques Berthier / Taizé
+
+Title:    I Am the Bread of Life
+Author:   (none listed)
+Sections: offertory, communion
+License:  Suzanne Toolan
+
+Title:    Take, O Take Me As I Am
+Author:   (none listed)
+Sections: offertory
+License:  John L. Bell / Wild Goose / GIA
+
+Title:    Taste and See
+Author:   (none listed)
+Sections: communion
+License:  James E. Moore Jr. (verify arrangement)
+
+Title:    We Are Called
+Author:   David Haas
+Sections: recessional
+License:  GIA Publications — onelicense.net
+
+Title:    You Are Mine
+Author:   David Haas
+Sections: communion
+License:  GIA Publications — onelicense.net
+
+
+Composer / local PH (4)
+------------------------------------------------------------------------
+Title:    Bawat Sandali
+Author:   Arturo Perez
+Sections: communion
+License:  Arturo Perez / local publisher
+
+Title:    Magsiawit Sa Panginoon
+Author:   Danny Isidro
+Sections: entrance
+License:  Danny Isidro / local publisher
+
+Title:    Purihin Ang Panginoon
+Author:   Fr. Leo Nilo
+Sections: entrance
+License:  Fr. Leo Nilo / local publisher
+
+Title:    Unang Alay
+Author:   Rey Magnaye
+Sections: offertory
+License:  Rey Magnaye / local publisher
+
+
+Composer / local PH publisher (2)
+------------------------------------------------------------------------
+Title:    Alay Namin
+Author:   Carlo Magno Marcelo
+Sections: offertory
+License:  Contact composer or Philippine publisher of record
+
+Title:    Kordero Ng Diyos (marcelo)
+Author:   Carlo Magno Marcelo
+Sections: communion
+License:  Contact composer or Philippine publisher of record
+
+
+CCLI (1)
+------------------------------------------------------------------------
+Title:    Living Sacrifice
+Author:   Chris Christian
+Sections: offertory
+License:  songselect.ccli.com — verify publisher
+
+
+CCLI (verify) (1)
+------------------------------------------------------------------------
+Title:    Great Is Our God
+Author:   (none listed)
+Sections: entrance
+License:  Contemporary worship — match lyrics on SongSelect
+
+
+CCLI / Integrity Music (1)
+------------------------------------------------------------------------
+Title:    Here We Are
+Author:   Don Moen
+Sections: entrance
+License:  songselect.ccli.com
+
+
+CCLI / Make Way Music (1)
+------------------------------------------------------------------------
+Title:    Shine Jesus Shine
+Author:   (none listed)
+Sections: recessional
+License:  Graham Kendrick
+
+
+CCLI or OneLicense (verify) (1)
+------------------------------------------------------------------------
+Title:    Blessed Be God
+Author:   (none listed)
+Sections: offertory
+License:  Match lyrics to publisher
+
+
+Composer / local PH (Arboleda) (1)
+------------------------------------------------------------------------
+Title:    Kordero Ng Diyos (arboleda)
+Author:   (none listed)
+Sections: communion
+License:  Contact composer Arboleda / publisher
+
+
+Composer / local PH (Ramirez) (1)
+------------------------------------------------------------------------
+Title:    Santo (ramirez)
+Author:   (none listed)
+Sections: meditation
+License:  Contact composer Ramirez / publisher
+
+
+Composer / local PH (Trina Belamide) (1)
+------------------------------------------------------------------------
+Title:    Tell The World Of His Love
+Author:   (none listed)
+Sections: recessional
+License:  WYD 1995 anthem — contact songwriter / publisher of record
+
+
+Composer estate / local PH (1)
+------------------------------------------------------------------------
+Title:    Isang Pagkain, Isang Katawan, Isang Bayan
+Author:   Lucio San Pedro
+Sections: offertory
+License:  Estate of Lucio San Pedro
+
+
+OCP / OneLicense (verify) (1)
+------------------------------------------------------------------------
+Title:    All The Ends Of The World
+Author:   (none listed)
+Sections: recessional
+License:  Often Bob Dufford — verify version
+
+
+OCP or GIA / OneLicense (verify) (1)
+------------------------------------------------------------------------
+Title:    How Lovely Is Your Dwelling Place
+Author:   (none listed)
+Sections: communion
+License:  Multiple settings exist — match your lyrics to publisher
+
+
+OneLicense / publisher of record (verify) (1)
+------------------------------------------------------------------------
+Title:    Enter, Rejoice And Come In
+Author:   (none listed)
+Sections: entrance
+License:  Louise Ruspini setting common
+
+
+Public domain spiritual (verify arrangement) (1)
+------------------------------------------------------------------------
+Title:    Let Us Break Bread Together
+Author:   (none listed)
+Sections: communion
+License:  African American spiritual
+
+
+Public domain text/tune (verify arrangement) (1)
+------------------------------------------------------------------------
+Title:    All Creatures Of Our God And King
+Author:   (none listed)
+Sections: entrance
+License:  Lasst uns erfreuen — modern added verses may be copyrighted
+
+
+WLP / OneLicense (verify) (1)
+------------------------------------------------------------------------
+Title:    To Jesus Christ, Our Sovereign King
+Author:   (none listed)
+Sections: recessional
+License:  Martin B. Hellriegel — often WLP/GIA
+

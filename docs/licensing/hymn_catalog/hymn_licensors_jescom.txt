@@ -1,0 +1,338 @@
+JESCOM — 56 songs
+========================================================================
+
+Ama Namin (bukas Palad)
+  author:   Bukas Palad
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Bukas Palad Music Ministry via JesCom
+  sections: meditation
+
+Ama Namin (francisco)
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: meditation
+
+Ama Namin (hontiveros)
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: meditation
+
+Amare Et Servire
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Bukas Palad — JesCom
+  sections: communion
+
+Aming Ipinahahayag
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     likely Jesuit Mass setting — verify
+  sections: communion
+
+Anima Christi
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco / Bukas Palad — JesCom (not PD Latin text arrangement)
+  sections: communion
+
+Awit Ng Paghahangad
+  author:   Charlie Cenzon
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     via JesCom
+  sections: communion
+
+Balang Araw
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: entrance
+
+Bayan, Magsiawit Na!
+  author:   Arnel Aquino
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Jesuit Music Ministry via JesCom
+  sections: entrance
+
+Buksan Ang Aming Puso
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: entrance
+
+Christify
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: offertory
+
+Confidite Ego Vici Mundum
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Hangad / JesCom — verify
+  sections: meditation
+
+Covenant Journey
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Hangad / JesCom — verify
+  sections: recessional
+
+Dakilang Amen (francisco)
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Fragile Vessel
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Hangad / JesCom circle — verify
+  sections: communion
+
+Halina At Lumapit
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     likely Hontiveros — verify
+  sections: entrance
+
+Halina't Umawit
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     likely Hontiveros — verify
+  sections: entrance
+
+Halina, Hesus, Halina
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: entrance
+
+Hesus Na Aking Kapatid
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Hesus Ng Aking Buhay
+  author:   Arnel Aquino
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Jesuit Music Ministry via JesCom
+  sections: communion
+
+Hindi Kita Malilimutan
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Humayo't Ihayag
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: recessional
+
+I Seek You For I Thirst
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: communion
+
+Iesu Panis Vitae
+  author:   Bukas Palad Ministry
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Bukas Palad Music Ministry via JesCom
+  sections: communion
+
+In Him Alone
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: communion
+
+Isang Pananampalataya
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: entrance
+
+Kaawaan Mo Kami
+  author:   Arnel Aquino
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Jesuit Music Ministry via JesCom
+  sections: meditation
+
+Kordero Ng Diyos (aquino)
+  author:   Arnel Aquino
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Jesuit Music Ministry via JesCom
+  sections: communion
+
+Kordero Ng Diyos (bukas Palad)
+  author:   Bukas Palad
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Bukas Palad Music Ministry via JesCom
+  sections: communion
+
+Kordero Ng Diyos (francisco)
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Kordero Ng Diyos (hontiveros)
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Love Is The Answer
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Hangad / JesCom — verify
+  sections: communion
+
+Manalig Ka
+  author:   Tinig San Jose
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     verify with JesCom
+  sections: communion
+
+Mula Sa 'yo
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: offertory
+
+Narito Ako, Panginoon
+  author:   Rene San Andres
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     verify — often JesCom circle
+  sections: offertory
+
+One More Gift
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: offertory
+
+Pag-aalaala
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: entrance
+
+Paghahandog
+  author:   Rene San Andres
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     verify — often JesCom circle
+  sections: offertory
+
+Paghahandog Ng Sarili
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: offertory
+
+Pagkakaibigan
+  author:   Hangad
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Hangad via JesCom
+  sections: communion
+
+Pagsibol
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: communion
+
+Panginoon, Maawa Ka (bukas Palad)
+  author:   Bukas Palad
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Bukas Palad Music Ministry via JesCom
+  sections: meditation
+
+Panginoon, Maawa Ka (francisco)
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: meditation
+
+Panginoon, Maawa Ka (hontiveros)
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: meditation
+
+Prayer For Generosity
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco / Bukas Palad — JesCom
+  sections: communion
+
+Sa Hapag Ng Panginoon
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: entrance
+
+Sa Krus Mo At Pagkabuhay
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Santo (francisco)
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: meditation
+
+Santo (hontiveros)
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: meditation
+
+Santo, Santo, Santo (aquino)
+  author:   Arnel Aquino
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Jesuit Music Ministry via JesCom
+  sections: meditation
+
+Sapagkat Sa'yo Ang Kaharian
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Si Kristo Ay Namatay
+  author:   Eduardo Hontiveros
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: communion
+
+Take And Receive
+  author:   Bukas Palad Ministry
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Bukas Palad Music Ministry via JesCom
+  sections: offertory
+
+Tanging Yaman
+  author:   Manoling Francisco
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     https://www.jescom.ph / Jesuit Music Ministry licensing
+  sections: offertory
+
+Tinapay Ng Buhay
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: communion
+
+Your Heart Today
+  author:   (none listed)
+  licensor: JesCom (Jesuit Communications Foundation)
+  note:     Manoling Francisco — JesCom
+  sections: communion
