@@ -1280,7 +1280,7 @@ register_billing_routes(app)
 register_theme_marketplace_routes(app)
 register_email_job_routes(app)
 register_readings_job_routes(app)
-register_security_middleware(app)
+register_security_middleware(app, static_dir=_STATIC_DIR)
 
 
 @app.get("/api/files/media/{file_path:path}")

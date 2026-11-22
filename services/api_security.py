@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import mimetypes
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import HTTPException, Request, Response
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response as StarletteResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from services.auth_config import auth_enabled, auth_misconfigured
@@ -520,14 +523,104 @@ class SecurityHeadersMiddleware:
         await self.app(scope, receive, send_wrapper)
 
 
-def register_security_middleware(app) -> None:
+class StaticAssetsBypassMiddleware:
+    """Serve ``/static/*`` and ``/favicon.ico`` outside BaseHTTPMiddleware.
+
+    Nested ``BaseHTTPMiddleware`` (rate-limit / auth) still AssertionErrors on
+    image FileResponses in production even after disabling pathsend. Serving
+    these assets as plain in-memory responses at the outermost edge avoids that
+    stack entirely.
+    """
+
+    def __init__(self, app: ASGIApp, static_dir: Path, *, csp: str) -> None:
+        self.app = app
+        self.static_dir = Path(static_dir).resolve()
+        self.favicon_path = self.static_dir / "brand" / "favicon.ico"
+        self._csp = csp
+
+    def _resolve(self, url_path: str) -> Optional[Path]:
+        if url_path == "/favicon.ico":
+            return self.favicon_path if self.favicon_path.is_file() else None
+        if not url_path.startswith("/static/"):
+            return None
+        rel = url_path[len("/static/") :]
+        if not rel or ".." in rel.split("/"):
+            return None
+        candidate = (self.static_dir / rel).resolve()
+        try:
+            candidate.relative_to(self.static_dir)
+        except ValueError:
+            return None
+        return candidate if candidate.is_file() else None
+
+    @staticmethod
+    def _media_type(path: Path) -> str:
+        if path.suffix.lower() == ".ico":
+            return "image/vnd.microsoft.icon"
+        guessed, _ = mimetypes.guess_type(str(path))
+        return guessed or "application/octet-stream"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        method = (scope.get("method") or "GET").upper()
+        if method not in {"GET", "HEAD"}:
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path") or ""
+        file_path = self._resolve(path)
+        if file_path is None:
+            await self.app(scope, receive, send)
+            return
+
+        raw = file_path.read_bytes()
+        media_type = self._media_type(file_path)
+        headers = {
+            "content-length": str(len(raw)),
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "content-security-policy": self._csp,
+            "cross-origin-opener-policy": "same-origin",
+            "x-permitted-cross-domain-policies": "none",
+        }
+        if path.startswith("/static/"):
+            if scope.get("query_string"):
+                headers["cache-control"] = "public, max-age=31536000, immutable"
+            else:
+                headers["cache-control"] = "no-cache"
+
+        req_headers = Headers(scope=scope)
+        forwarded = (req_headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
+        if (scope.get("scheme") == "https") or (forwarded == "https"):
+            headers["strict-transport-security"] = "max-age=31536000; includeSubDomains"
+
+        response = StarletteResponse(
+            content=b"" if method == "HEAD" else raw,
+            status_code=200,
+            media_type=media_type,
+            headers=headers,
+        )
+        await response(scope, receive, send)
+
+
+def register_security_middleware(app, *, static_dir: Path | None = None) -> None:
     from services.rate_limit import RateLimitMiddleware
 
     # Middleware runs in reverse registration order on the request path.
-    # RateLimit (outermost) → UserChurch (verify JWT + load profile) → AuthGuard
+    # StaticBypass (outermost) → RateLimit → UserChurch → AuthGuard
     # → SecurityHeaders → StaticCache → route handlers.
     app.add_middleware(StaticCacheMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(AuthGuardMiddleware)
     app.add_middleware(UserChurchMiddleware)
     app.add_middleware(RateLimitMiddleware)
+    if static_dir is not None:
+        app.add_middleware(
+            StaticAssetsBypassMiddleware,
+            static_dir=static_dir,
+            csp=_build_csp(),
+        )
