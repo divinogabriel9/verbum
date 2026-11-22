@@ -1,0 +1,158 @@
+LOCAL PH — 26 songs
+========================================================================
+
+Alay Namin
+  author:   Carlo Magno Marcelo
+  licensor: Composer / local PH publisher
+  note:     Contact composer or Philippine publisher of record
+  sections: offertory
+
+Alay Ng Bayan
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Alay Sa Diyos
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Amen (world Youth Day)
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     WYD Mass setting — identify version
+  sections: communion
+
+Amen (wybat)
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     WYD/WYBAT Mass setting — identify version
+  sections: communion
+
+Ang Tanging Alay Ko
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Classic Filipino offertory — identify publisher of the version you use
+  sections: offertory
+
+Awit Ng Pagkakaisa
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: entrance
+
+Bawat Sandali
+  author:   Arturo Perez
+  licensor: Composer / local PH
+  note:     Arturo Perez / local publisher
+  sections: communion
+
+Isang Bansa
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: communion
+
+Isang Pagkain, Isang Katawan, Isang Bayan
+  author:   Lucio San Pedro
+  licensor: Composer estate / local PH
+  note:     Estate of Lucio San Pedro
+  sections: offertory
+
+Isang Pagwiwisik (asperges Me)
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: meditation
+
+Kapuri-puri Ka
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Kordero Ng Diyos (arboleda)
+  author:   (none listed)
+  licensor: Composer / local PH (Arboleda)
+  note:     Contact composer Arboleda / publisher
+  sections: communion
+
+Kordero Ng Diyos (marcelo)
+  author:   Carlo Magno Marcelo
+  licensor: Composer / local PH publisher
+  note:     Contact composer or Philippine publisher of record
+  sections: communion
+
+Magsiawit Sa Panginoon
+  author:   Danny Isidro
+  licensor: Composer / local PH
+  note:     Danny Isidro / local publisher
+  sections: entrance
+
+My Heart Thanksgiving
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: recessional
+
+Pumasok Kayo
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: entrance
+
+Purihin Ang Panginoon
+  author:   Fr. Leo Nilo
+  licensor: Composer / local PH
+  note:     Fr. Leo Nilo / local publisher
+  sections: entrance
+
+Santo (ramirez)
+  author:   (none listed)
+  licensor: Composer / local PH (Ramirez)
+  note:     Contact composer Ramirez / publisher
+  sections: meditation
+
+Sumasamo Kami Sa'yo
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Take Oh Lord This Offering
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Tanggapin Mo, Panginoon
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Tayo'y Magpuri
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: entrance
+
+Tell The World Of His Love
+  author:   (none listed)
+  licensor: Composer / local PH (Trina Belamide)
+  note:     WYD 1995 anthem — contact songwriter / publisher of record
+  sections: recessional
+
+Tinapay At Alak Naming Hatid
+  author:   (none listed)
+  licensor: Composer / local PH (verify)
+  note:     Identify composer/publisher of your version
+  sections: offertory
+
+Unang Alay
+  author:   Rey Magnaye
+  licensor: Composer / local PH
+  note:     Rey Magnaye / local publisher
+  sections: offertory
