@@ -9,7 +9,9 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from fastapi import HTTPException, Request, Response
+from starlette.datastructures import Headers, MutableHeaders
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from services.auth_config import auth_enabled, auth_misconfigured
 from services.supabase_auth import AuthUser, verify_supabase_token
@@ -449,49 +451,73 @@ def _build_csp() -> str:
     )
 
 
-class StaticCacheMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        response = await call_next(request)
-        if request.url.path.startswith("/static/"):
-            # Versioned assets (?v=…) may be cached long-term; unversioned
-            # paths stay short-lived so local CSS/JS edits show up on refresh.
-            if request.url.query:
-                response.headers.setdefault(
-                    "Cache-Control",
-                    "public, max-age=31536000, immutable",
-                )
-            else:
-                response.headers["Cache-Control"] = "no-cache"
-        return response
+class StaticCacheMiddleware:
+    """Pure ASGI cache headers for ``/static/`` (avoids BaseHTTPMiddleware + FileResponse)."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or not (scope.get("path") or "").startswith("/static/"):
+            await self.app(scope, receive, send)
+            return
+
+        versioned = bool(scope.get("query_string"))
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                if versioned:
+                    # Versioned assets (?v=…) may be cached long-term; unversioned
+                    # paths stay short-lived so local CSS/JS edits show up on refresh.
+                    headers.setdefault(
+                        "Cache-Control",
+                        "public, max-age=31536000, immutable",
+                    )
+                else:
+                    headers["Cache-Control"] = "no-cache"
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app) -> None:
-        super().__init__(app)
+class SecurityHeadersMiddleware:
+    """Pure ASGI security headers (safe with FileResponse / static mounts)."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
         self._csp = _build_csp()
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        response = await call_next(request)
-        response.headers.setdefault("X-Content-Type-Options", "nosniff")
-        response.headers.setdefault("X-Frame-Options", "DENY")
-        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.headers.setdefault(
-            "Permissions-Policy",
-            "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-        )
-        response.headers.setdefault("Content-Security-Policy", self._csp)
-        response.headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
-        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
-        if request.url.scheme == "https":
-            response.headers.setdefault(
-                "Strict-Transport-Security",
-                "max-age=31536000; includeSubDomains",
-            )
-        return response
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        req_headers = Headers(scope=scope)
+        forwarded = (req_headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
+        is_https = (scope.get("scheme") == "https") or (forwarded == "https")
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers.setdefault("X-Content-Type-Options", "nosniff")
+                headers.setdefault("X-Frame-Options", "DENY")
+                headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+                headers.setdefault(
+                    "Permissions-Policy",
+                    "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+                )
+                headers.setdefault("Content-Security-Policy", self._csp)
+                headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+                headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+                if is_https:
+                    headers.setdefault(
+                        "Strict-Transport-Security",
+                        "max-age=31536000; includeSubDomains",
+                    )
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
 
 def register_security_middleware(app) -> None:
@@ -499,7 +525,7 @@ def register_security_middleware(app) -> None:
 
     # Middleware runs in reverse registration order on the request path.
     # RateLimit (outermost) → UserChurch (verify JWT + load profile) → AuthGuard
-    # → SecurityHeaders → route handlers.
+    # → SecurityHeaders → StaticCache → route handlers.
     app.add_middleware(StaticCacheMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(AuthGuardMiddleware)

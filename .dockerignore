@@ -4,8 +4,11 @@ __pycache__
 .git
 outputs
 .pdf_extract
+# Generated deck/export archives — keep static UI assets (brand/icons/images).
 *.pptx
 !data/reference/**/*.pptx
-*.png
-!data/reference/**/*.png
 *.zip
+# Large one-off PNGs outside the web UI tree (reference extracts, etc.).
+# Do NOT ignore static/** — logos/icons must ship in the image.
+data/**/*.png
+!data/reference/**/*.png

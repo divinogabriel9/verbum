@@ -4,6 +4,12 @@ Starlette's default GZipMiddleware streams FileResponse bodies and can leave a
 stale Content-Length when the gzipped stream differs — uvicorn then raises
 ``RuntimeError: Response content longer than Content-Length``. Skipping images
 and other precompressed types avoids that path entirely.
+
+Also strips the uvicorn ``http.response.pathsend`` extension. Nested
+``BaseHTTPMiddleware`` (auth/rate-limit) + pathsend causes AssertionError on
+production (Python 3.14 / uvicorn), which broke every logo/icon under
+``/static/``. Streaming the file as normal ``http.response.body`` chunks is
+compatible with those middlewares.
 """
 
 from __future__ import annotations
@@ -34,6 +40,17 @@ def _should_skip_content_type(content_type: str) -> bool:
     return any(ct.startswith(prefix) for prefix in _SKIP_PREFIXES)
 
 
+def _scope_without_pathsend(scope: Scope) -> Scope:
+    extensions = scope.get("extensions")
+    if not extensions or "http.response.pathsend" not in extensions:
+        return scope
+    new_scope = dict(scope)
+    new_scope["extensions"] = {
+        key: value for key, value in extensions.items() if key != "http.response.pathsend"
+    }
+    return new_scope
+
+
 class SelectiveGZipMiddleware:
     def __init__(self, app: ASGIApp, minimum_size: int = 500, compresslevel: int = 9) -> None:
         self.app = app
@@ -44,6 +61,9 @@ class SelectiveGZipMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+
+        # Force body streaming so nested BaseHTTPMiddleware can wrap FileResponse.
+        scope = _scope_without_pathsend(scope)
 
         headers = Headers(scope=scope)
         if "gzip" in headers.get("Accept-Encoding", ""):
@@ -61,6 +81,7 @@ class _SelectiveGZipResponder(GZipResponder):
             self.initial_message = message
             headers = Headers(raw=self.initial_message["headers"])
             self.content_encoding_set = "content-encoding" in headers
+            # Parent only excludes text/event-stream; also skip images/fonts/etc.
             self.content_type_is_excluded = _should_skip_content_type(
                 headers.get("content-type", "")
             )
