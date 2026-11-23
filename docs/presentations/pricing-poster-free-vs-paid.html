@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LiturgyFlow — Free vs Paid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --berry: #a10f0d;
+      --berry-deep: #7a0b0a;
+      --ink: #15333d;
+      --muted: #5c6b75;
+      --line: #d8dee2;
+      --soft: #f3f6f8;
+      --canvas: #e8eef3;
+      --white: #ffffff;
+      --green: #166534;
+      --green-soft: #e8f5ec;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #c5d0d5;
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Tight export: open with ?export=1 or #export */
+    html.export, html.export body {
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    html.export .poster { margin: 0; }
+
+    /* Print / export canvas — landscape handout */
+    .poster {
+      width: 1600px;
+      height: 1000px;
+      margin: 24px auto;
+      background:
+        radial-gradient(ellipse 80% 60% at 12% 0%, rgba(161, 15, 13, 0.07), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 95% 100%, rgba(21, 51, 61, 0.08), transparent 50%),
+        linear-gradient(165deg, #f7f9fb 0%, var(--canvas) 48%, #e2e9ef 100%);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: 40px 48px 32px;
+    }
+
+    .poster::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(21, 51, 61, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(21, 51, 61, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent);
+      pointer-events: none;
+    }
+
+    .header {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 24px;
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(21, 51, 61, 0.12);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand__mark {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.8), 0 8px 24px rgba(161, 15, 13, 0.18);
+    }
+
+    .brand__name {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 42px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .brand__name em {
+      font-style: italic;
+      color: var(--berry);
+      font-weight: 500;
+    }
+
+    .brand__tag {
+      margin-top: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    .header__aside {
+      text-align: right;
+      max-width: 420px;
+    }
+
+    .header__kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--berry);
+      margin-bottom: 6px;
+    }
+
+    .header__lead {
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .columns {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 22px;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid rgba(21, 51, 61, 0.1);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 12px 40px rgba(21, 51, 61, 0.06);
+    }
+
+    .card--paid {
+      border-color: rgba(161, 15, 13, 0.28);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 16px 48px rgba(161, 15, 13, 0.1);
+    }
+
+    .card__head {
+      padding: 18px 24px 16px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card--free .card__head {
+      background: linear-gradient(180deg, #f8fafb, #eef2f5);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card--paid .card__head {
+      background: linear-gradient(135deg, var(--berry) 0%, var(--berry-deep) 100%);
+      color: var(--white);
+    }
+
+    .card__title {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .card__price {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .card--paid .card__price { color: rgba(255,255,255,0.92); }
+    .card--free .card__price { color: var(--muted); }
+
+    .card__body {
+      padding: 16px 22px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .group-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .card--paid .group-label:first-child { margin-top: 0; }
+
+    .features {
+      list-style: none;
+      display: grid;
+      gap: 5px;
+    }
+
+    .features li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 8px;
+      align-items: start;
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+
+    .features .mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .mark--yes {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .mark--no {
+      background: #f1e4e4;
+      color: var(--berry);
+    }
+
+    .mark--limited {
+      background: #eef2f5;
+      color: var(--muted);
+    }
+
+    .features strong { font-weight: 600; }
+
+    .features .sub {
+      display: block;
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .pricing-strip {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(21, 51, 61, 0.15);
+    }
+
+    .pricing-strip__label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .prices {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .price {
+      background: var(--soft);
+      border-radius: 10px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .price__plan {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .price__amount {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--berry);
+      letter-spacing: -0.02em;
+    }
+
+    .price__alt {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(21, 51, 61, 0.1);
+    }
+
+    .footer__cta {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 18px;
+      font-weight: 500;
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .footer__cta span { color: var(--berry); }
+
+    .footer__meta {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    @media print {
+      html, body { background: white; }
+      .poster { margin: 0; box-shadow: none; }
+    }
+  </style>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      if (q.get("export") === "1" || location.hash === "#export") {
+        document.documentElement.classList.add("export");
+      }
+    })();
+  </script>
+</head>
+<body>
+  <article class="poster" id="poster">
+    <header class="header">
+      <div class="brand">
+        <img class="brand__mark" src="../../static/brand/app-icon.png" alt="LiturgyFlow" width="56" height="56" />
+        <div>
+          <div class="brand__name">Liturgy<em>Flow</em></div>
+          <p class="brand__tag">Sunday Mass media for parish teams</p>
+        </div>
+      </div>
+      <div class="header__aside">
+        <p class="header__kicker">Plans for parishes</p>
+        <p class="header__lead">Start free. Upgrade when your parish needs weekly Mass decks, choir practice sharing, and branded media.</p>
+      </div>
+    </header>
+
+    <div class="columns">
+      <!-- FREE -->
+      <section class="card card--free" aria-labelledby="free-title">
+        <div class="card__head">
+          <h2 class="card__title" id="free-title">Free</h2>
+          <p class="card__price">Try it · limited allowance</p>
+        </div>
+        <div class="card__body">
+          <p class="group-label">Included</p>
+          <ul class="features">
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Mass PowerPoint generation</strong>
+                <span class="sub">Limited allowance · demo decks may show Liturgyflow.com watermark</span>
+              </span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Sunday readings &amp; Order of Mass</strong>
+                <span class="sub">Auto-loaded liturgy · Our Father language options</span>
+              </span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Gospel song suggestions</strong>
+                <span class="sub">Starter recommendations for this Sunday</span>
+              </span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Basic slide themes</strong>
+                <span class="sub">LiturgyFlow · Midnight · Paper</span>
+              </span>
+            </li>
+            <li>
+              <span class="mark mark--limited" aria-hidden="true">~</span>
+              <span><strong>A4 Mass leaflet</strong>
+                <span class="sub">Available in limited / demo generate</span>
+              </span>
+            </li>
+          </ul>
+
+          <p class="group-label">Not included</p>
+          <ul class="features">
+            <li>
+              <span class="mark mark--no" aria-hidden="true">×</span>
+              <span>Custom parish PowerPoint template</span>
+            </li>
+            <li>
+              <span class="mark mark--no" aria-hidden="true">×</span>
+              <span>Mass divider posters</span>
+            </li>
+            <li>
+              <span class="mark mark--no" aria-hidden="true">×</span>
+              <span><strong>Share Choir Lyrics</strong> (practice link + QR)</span>
+            </li>
+            <li>
+              <span class="mark mark--no" aria-hidden="true">×</span>
+              <span>Full song library, AI posters, parish branding</span>
+            </li>
+            <li>
+              <span class="mark mark--no" aria-hidden="true">×</span>
+              <span>Phone projection remote &amp; parish team workspace</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- PAID -->
+      <section class="card card--paid" aria-labelledby="paid-title">
+        <div class="card__head">
+          <h2 class="card__title" id="paid-title">Paid</h2>
+          <p class="card__price">Full weekly parish preparation</p>
+        </div>
+        <div class="card__body">
+          <p class="group-label">Mass &amp; media</p>
+          <ul class="features">
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Full Mass Builder</strong> — rites, readings, music, stewardship, review</span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Unlimited weekly Mass decks</strong> — watermark-free parish branding</span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Custom parish PowerPoint template</strong> + Mass divider posters</span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>A4 leaflet · PDF · posters · social media</strong> package</span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>AI gospel &amp; poster art</strong>
+                <span class="sub">Weekly generation quota</span>
+              </span>
+            </li>
+          </ul>
+
+          <p class="group-label">Choir &amp; library</p>
+          <ul class="features">
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Share Choir Lyrics</strong>
+                <span class="sub">Practice link + QR · no choir account needed · leader edit · voice colors</span>
+              </span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span><strong>Full song library</strong> — lyrics editor, Gospel-mood recommendations</span>
+            </li>
+          </ul>
+
+          <p class="group-label">Parish tools</p>
+          <ul class="features">
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span>Liturgical calendar · phone projection remote · parish team</span>
+            </li>
+            <li>
+              <span class="mark mark--yes" aria-hidden="true">✓</span>
+              <span>Church logo, celebrants, favorites, downloads history</span>
+            </li>
+          </ul>
+
+          <div class="pricing-strip">
+            <p class="pricing-strip__label">Public parish pricing</p>
+            <div class="prices">
+              <div class="price">
+                <div class="price__plan">Monthly</div>
+                <div class="price__amount">₱199</div>
+                <div class="price__alt">$6.99 · ₩9,900</div>
+              </div>
+              <div class="price">
+                <div class="price__plan">3-month</div>
+                <div class="price__amount">₱549</div>
+                <div class="price__alt">$18.99 · ₩27,000</div>
+              </div>
+              <div class="price">
+                <div class="price__plan">6-month</div>
+                <div class="price__amount">₱999</div>
+                <div class="price__alt">$34.99 · ₩49,000</div>
+              </div>
+              <div class="price">
+                <div class="price__plan">Annual</div>
+                <div class="price__amount">₱1,599</div>
+                <div class="price__alt">$59.99 · ₩79,000</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <p class="footer__cta">Try free today — <span>upgrade for choir + weekly Mass</span></p>
+      <p class="footer__meta">liturgyflow.com<br />MYR also available · RM19.90 / mo</p>
+    </footer>
+  </article>
+</body>
+</html>
