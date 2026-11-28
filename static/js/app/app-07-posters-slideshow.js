@@ -1218,10 +1218,10 @@
       const card = $("home-mass-card");
       const nextOpts = Object.assign({}, opts || {});
       // If already showing the fallback wallpaper and not explicitly forced, check quietly
-      // in the background (respecting cooldown + heavy-task pause) so the top-right button
-      // lights up if a wallpaper became available.
+      // right away on returning to Home (bypassing cooldown) so newly generated wallpapers
+      // light up the top-right button immediately.
       if (!nextOpts.forceReload && card && card.classList.contains("has-fallback-bg") && !card.classList.contains("has-poster-bg")) {
-        scheduleHomeCtaWallpaperCheckOnEvent();
+        scheduleHomeCtaWallpaperCheckOnEvent({ ignoreCooldown: true });
         startHomeCtaPosterBgPoll();
         return;
       }
@@ -1338,7 +1338,11 @@
       const slideshow = $("mass-slideshow");
       if (slideshow && slideshow.classList.contains("is-open")) return true;
       if (document.querySelector(".ui-overlay.is-open, .modal.visible")) return true;
-      if (document.querySelector('[aria-busy="true"]:not(#home-mass-poster-loading)')) return true;
+      const busyEls = document.querySelectorAll('[aria-busy="true"]:not(#home-mass-poster-loading)');
+      for (let i = 0; i < busyEls.length; i += 1) {
+        const el = busyEls[i];
+        if (el && !el.hidden && el.offsetParent !== null) return true;
+      }
       return false;
     }
 
@@ -1350,12 +1354,16 @@
       }
     }
 
-    function scheduleHomeCtaWallpaperCheckOnEvent() {
+    function scheduleHomeCtaWallpaperCheckOnEvent(opts) {
       const card = $("home-mass-card");
       if (!card || card.classList.contains("has-poster-bg")) return;
-      if (homeCtaPosterAvailableCount > 0) return;
+      if (homeCtaPosterAvailableCount > 0) {
+        if (card.classList.contains("has-fallback-bg")) syncHomeCtaPosterStatus("available");
+        return;
+      }
       if (isHomeCtaBgCheckDeferred()) return;
-      if (Date.now() - homeCtaPosterBgLastCheckAt < HOME_CTA_POSTER_BG_COOLDOWN_MS) return;
+      const ignoreCooldown = !!(opts && opts.ignoreCooldown);
+      if (!ignoreCooldown && (Date.now() - homeCtaPosterBgLastCheckAt < HOME_CTA_POSTER_BG_COOLDOWN_MS)) return;
       runWhenMainThreadIdle(() => {
         if (!isHomeCtaBgCheckDeferred()) void checkHomeCtaWallpaperAvailability();
       });
@@ -5682,6 +5690,30 @@
         }
         if (!lastCatalog) await refreshWeeklyStylePosters({ force: true });
         else await loadWeeklyPosterVersions(date);
+        // Notify Home CTA immediately when posters were generated for this upcoming Sunday.
+        try {
+          const homeSun = typeof homeCtaPosterSundayKey === "function"
+            ? homeCtaPosterSundayKey(typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "")
+            : "";
+          const genSun = typeof homeCtaPosterSundayKey === "function"
+            ? homeCtaPosterSundayKey((lastCatalog && lastCatalog.sunday) || date)
+            : date;
+          if (genCount > 0 && homeSun && genSun && homeSun === genSun) {
+            homeCtaPosterBgLastCheckAt = 0;
+            homeCtaPosterBgPollAttempt = 0;
+            homeCtaPosterAvailableCount = Math.max(
+              homeCtaPosterAvailableCount,
+              Number((lastCatalog && lastCatalog.ready_count) || genCount || 1)
+            );
+            const homeCard = $("home-mass-card");
+            if (homeCard && homeCard.classList.contains("has-fallback-bg") && !homeCard.classList.contains("has-poster-bg")) {
+              stopHomeCtaPosterBgPoll();
+              syncHomeCtaPosterStatus("available");
+            } else if (typeof refreshHomeMassCtaPosterBg === "function") {
+              void refreshHomeMassCtaPosterBg({ forceReload: true });
+            }
+          }
+        } catch (_eNotifyHome) { /* ignore */ }
         const verLabel = batchVersion ? ("v" + batchVersion) : "";
         if (status) {
           if (overwriteInPlace) {

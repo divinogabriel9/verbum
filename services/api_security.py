@@ -12,7 +12,6 @@ from typing import Any, Optional
 
 from fastapi import HTTPException, Request, Response
 from starlette.datastructures import Headers, MutableHeaders
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response as StarletteResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -305,12 +304,29 @@ def _is_lightweight_auth_get(path: str, method: str) -> bool:
     return False
 
 
-class UserChurchMiddleware(BaseHTTPMiddleware):
-    """Verify JWT once, load church profile, and attach session to the request."""
+class UserChurchMiddleware:
+    """Verify JWT once, load church profile, and attach session to the request.
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    Pure ASGI: ``BaseHTTPMiddleware`` re-streams response bodies and raised
+    AssertionError on image responses in production.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        request = Request(scope)
+        await self._attach_session(request)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            clear_church_profile()
+            request.state.auth_session = None
+
+    async def _attach_session(self, request: Request) -> None:
         from starlette.concurrency import run_in_threadpool
 
         clear_church_profile()
@@ -364,39 +380,46 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
                             _store_auth_context(token, session, church_profile)
                     except HTTPException:
                         pass
-        try:
-            return await call_next(request)
-        finally:
-            clear_church_profile()
-            request.state.auth_session = None
 
 
-class AuthGuardMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        if _is_protected_api(request.url.path, request.method):
-            if auth_misconfigured():
-                return Response(
-                    content=json.dumps({"detail": "Auth is required but not configured."}),
-                    status_code=503,
-                    media_type="application/json",
-                )
-            if not auth_enabled():
-                return await call_next(request)
-            if not getattr(request.state, "auth_session", None):
-                token = _extract_bearer(request.headers.get("authorization"))
-                detail = (
-                    "Invalid or expired session."
-                    if token
-                    else "Sign in required."
-                )
-                return Response(
-                    content=json.dumps({"detail": detail}),
-                    status_code=401,
-                    media_type="application/json",
-                )
-        return await call_next(request)
+class AuthGuardMiddleware:
+    """Pure ASGI guard for protected API prefixes (see ``UserChurchMiddleware``)."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        request = Request(scope)
+        blocked = self._blocked_response(request)
+        if blocked is not None:
+            await blocked(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+    @staticmethod
+    def _blocked_response(request: Request) -> Optional[Response]:
+        if not _is_protected_api(request.url.path, request.method):
+            return None
+        if auth_misconfigured():
+            return Response(
+                content=json.dumps({"detail": "Auth is required but not configured."}),
+                status_code=503,
+                media_type="application/json",
+            )
+        if not auth_enabled():
+            return None
+        if getattr(request.state, "auth_session", None):
+            return None
+        token = _extract_bearer(request.headers.get("authorization"))
+        detail = "Invalid or expired session." if token else "Sign in required."
+        return Response(
+            content=json.dumps({"detail": detail}),
+            status_code=401,
+            media_type="application/json",
+        )
 
 
 # Content-Security-Policy. The app loads the Supabase JS SDK from jsDelivr and

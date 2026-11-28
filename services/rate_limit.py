@@ -23,9 +23,9 @@ import uuid
 from collections import deque
 from typing import Deque, Dict, Optional, Tuple
 
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from services.redis_client import get_redis
 
@@ -314,40 +314,45 @@ def check_rate_limit_key(key: str, tier: str) -> Tuple[bool, int]:
     return _check_rate_limit(key, tier)
 
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app) -> None:
-        super().__init__(app)
+class RateLimitMiddleware:
+    """Pure ASGI — ``BaseHTTPMiddleware`` re-streams bodies and AssertionErrors on images."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
         self._enabled = (os.environ.get("RATE_LIMIT_ENABLED", "1").strip() != "0")
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        if not self._enabled:
-            return await call_next(request)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or not self._enabled:
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope)
 
         # Reject oversized bodies before they are buffered/processed.
         content_length = request.headers.get("content-length")
         if content_length:
             try:
                 if int(content_length) > MAX_BODY_BYTES:
-                    return Response(
+                    response = Response(
                         content='{"detail":"Request body too large."}',
                         status_code=413,
                         media_type="application/json",
                     )
+                    await response(scope, receive, send)
+                    return
             except ValueError:
                 pass
 
         tier = _tier_for(request.url.path, request.method)
-        if not tier:
-            return await call_next(request)
-
-        allowed, retry_after = _check_rate_limit(_client_key(request), tier)
-        if not allowed:
-            return Response(
-                content='{"detail":"Too many requests. Please slow down."}',
-                status_code=429,
-                media_type="application/json",
-                headers={"Retry-After": str(retry_after)},
-            )
-        return await call_next(request)
+        if tier:
+            allowed, retry_after = _check_rate_limit(_client_key(request), tier)
+            if not allowed:
+                response = Response(
+                    content='{"detail":"Too many requests. Please slow down."}',
+                    status_code=429,
+                    media_type="application/json",
+                    headers={"Retry-After": str(retry_after)},
+                )
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
