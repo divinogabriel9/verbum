@@ -26,8 +26,8 @@
     })();
   </script>
   <style id="home-cta-poster-loading-critical">
-    /* First-paint: dark loading chrome until a poster bg is painted (has-poster-bg). */
-    #home-mass-card:not(.has-poster-bg),
+    /* First-paint: dark loading chrome until a poster or fallback wallpaper is painted. */
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg),
     #home-mass-card.is-poster-loading {
       --rmc-ink-strong: #f5f5f5;
       --rmc-ink-body: #e0e0e0;
@@ -35,23 +35,23 @@
       background: #14161c !important;
       color: #f5f5f5;
     }
-    #home-mass-card:not(.has-poster-bg) .redesign-mass-bg--layer,
-    #home-mass-card:not(.has-poster-bg)::before,
-    #home-mass-card:not(.has-poster-bg)::after,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .redesign-mass-bg--layer,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg)::before,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg)::after,
     #home-mass-card.is-poster-loading .redesign-mass-bg--layer,
     #home-mass-card.is-poster-loading::before,
     #home-mass-card.is-poster-loading::after {
       display: none !important;
       opacity: 0 !important;
     }
-    #home-mass-card:not(.has-poster-bg) .rmc-hero-title,
-    #home-mass-card:not(.has-poster-bg) .rmc-welcome,
-    #home-mass-card:not(.has-poster-bg) .rmc-stat__value,
-    #home-mass-card:not(.has-poster-bg) .rmc-hero-sub,
-    #home-mass-card:not(.has-poster-bg) .rmc-cta-meta,
-    #home-mass-card:not(.has-poster-bg) .rmc-cta-secondary,
-    #home-mass-card:not(.has-poster-bg) .rmc-stat__label,
-    #home-mass-card:not(.has-poster-bg) .rmc-stat__sub,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-hero-title,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-welcome,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-stat__value,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-hero-sub,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-cta-meta,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-cta-secondary,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-stat__label,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) .rmc-stat__sub,
     #home-mass-card.is-poster-loading .rmc-hero-title,
     #home-mass-card.is-poster-loading .rmc-welcome,
     #home-mass-card.is-poster-loading .rmc-stat__value,
@@ -78,18 +78,20 @@
       z-index: 5;
       pointer-events: none;
     }
-    #home-mass-card:not(.has-poster-bg) #home-mass-poster-loading-veil,
-    #home-mass-card:not(.has-poster-bg) #home-mass-poster-loading,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) #home-mass-poster-loading-veil,
+    #home-mass-card:not(.has-poster-bg):not(.has-fallback-bg) #home-mass-poster-loading,
     #home-mass-card.is-poster-loading #home-mass-poster-loading-veil,
     #home-mass-card.is-poster-loading #home-mass-poster-loading {
       display: block !important;
     }
     #home-mass-card.has-poster-bg:not(.is-poster-loading) #home-mass-poster-loading-veil,
-    #home-mass-card.has-poster-bg:not(.is-poster-loading) #home-mass-poster-loading {
+    #home-mass-card.has-poster-bg:not(.is-poster-loading) #home-mass-poster-loading,
+    #home-mass-card.has-fallback-bg:not(.is-poster-loading) #home-mass-poster-loading-veil,
+    #home-mass-card.has-fallback-bg:not(.is-poster-loading) #home-mass-poster-loading {
       display: none !important;
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261018-sa-jump" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261128-cta-wallpaper-check" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
@@ -560,6 +562,11 @@
                 <button type="button" class="home-mass-poster-nav__btn" id="home-mass-poster-prev" aria-label="Previous poster style">←</button>
                 <span class="home-mass-poster-nav__label" id="home-mass-poster-style-label">Realistic</span>
                 <button type="button" class="home-mass-poster-nav__btn" id="home-mass-poster-next" aria-label="Next poster style">→</button>
+              </div>
+              <div class="home-mass-poster-status" id="home-mass-poster-status" data-state="unavailable" hidden>
+                <button type="button" class="home-mass-poster-status__btn" id="home-mass-poster-status-btn" disabled>
+                  <span class="home-mass-poster-status__text" id="home-mass-poster-status-text">Wallpaper not yet available for this week's Mass</span>
+                </button>
               </div>
               <div class="redesign-mass-inner">
                 <div class="home-mass-tour-banner" id="home-mass-tour-banner">
@@ -5403,7 +5410,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261109-extras-all5"></script>
+  <script src="/static/js/app.js?v=20261128-cta-bg-poll-cap"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

@@ -27995,9 +27995,16 @@
       if (!$("home-mass-card")) return;
       populateHomeMassSnippet("next", upcomingSundayISO());
       populateHomeMassSnippet("last", lastSundayISO());
-      // Home route should always re-attempt CTA art (do not depend on Extras visit).
       const card = $("home-mass-card");
       const nextOpts = Object.assign({}, opts || {});
+      // If already showing the fallback wallpaper and not explicitly forced, check quietly
+      // in the background (respecting cooldown + heavy-task pause) so the top-right button
+      // lights up if a wallpaper became available.
+      if (!nextOpts.forceReload && card && card.classList.contains("has-fallback-bg") && !card.classList.contains("has-poster-bg")) {
+        scheduleHomeCtaWallpaperCheckOnEvent();
+        startHomeCtaPosterBgPoll();
+        return;
+      }
       if (!nextOpts.forceReload && card && !card.classList.contains("has-poster-bg")) {
         nextOpts.forceReload = true;
       }
@@ -28012,8 +28019,18 @@
     var homeCtaPosterSyncingFromHome = false;
     var homeCtaPosterAwaitRetryTimer = null;
     var homeCtaPosterAwaitRetries = 0;
-    var HOME_CTA_POSTER_AWAIT_MAX = 8;
-    var HOME_CTA_POSTER_AWAIT_MS = 8000;
+    var HOME_CTA_POSTER_AWAIT_MAX = 2;
+    var HOME_CTA_POSTER_AWAIT_MS = 6000;
+    var HOME_CTA_POSTER_FALLBACK_MS = 5000;
+    var homeCtaPosterFallbackTimer = null;
+    var HOME_CTA_POSTER_BG_POLL_DELAYS = [30000, 60000, 120000];
+    var HOME_CTA_POSTER_BG_COOLDOWN_MS = 60000;
+    var homeCtaPosterBgPollTimer = null;
+    var homeCtaPosterBgPollAttempt = 0;
+    var homeCtaPosterBgLastCheckAt = 0;
+    var homeCtaPosterBgCheckInflight = null;
+    var homeCtaPosterStatusBound = false;
+    var homeCtaPosterAvailableCount = 0;
     var homeCtaPosterState = {
       sunday: "",
       items: [],
@@ -28072,22 +28089,242 @@
       }
     }
 
+    function stopHomeCtaPosterFallbackTimer() {
+      if (homeCtaPosterFallbackTimer) {
+        clearTimeout(homeCtaPosterFallbackTimer);
+        homeCtaPosterFallbackTimer = null;
+      }
+    }
+
+    function stopHomeCtaPosterBgPoll() {
+      if (homeCtaPosterBgPollTimer) {
+        clearTimeout(homeCtaPosterBgPollTimer);
+        homeCtaPosterBgPollTimer = null;
+      }
+    }
+
+    function isHomeCtaBgCheckDeferred() {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+      if (document.visibilityState !== "visible") return true;
+      const homePage = $("home-page");
+      if (homePage && !homePage.classList.contains("active")) return true;
+      if (
+        (typeof weeklyPosterEnsureInflight !== "undefined" && weeklyPosterEnsureInflight) ||
+        (typeof weeklyPosterForceInflight !== "undefined" && weeklyPosterForceInflight) ||
+        (typeof weeklyPosterOverwriteInflight !== "undefined" && weeklyPosterOverwriteInflight)
+      ) {
+        return true;
+      }
+      const slideshow = $("mass-slideshow");
+      if (slideshow && slideshow.classList.contains("is-open")) return true;
+      if (document.querySelector(".ui-overlay.is-open, .modal.visible")) return true;
+      if (document.querySelector('[aria-busy="true"]:not(#home-mass-poster-loading)')) return true;
+      return false;
+    }
+
+    function runWhenMainThreadIdle(fn) {
+      if (typeof requestIdleCallback === "function") {
+        requestIdleCallback(() => fn(), { timeout: 2000 });
+      } else {
+        setTimeout(fn, 0);
+      }
+    }
+
+    function scheduleHomeCtaWallpaperCheckOnEvent() {
+      const card = $("home-mass-card");
+      if (!card || card.classList.contains("has-poster-bg")) return;
+      if (homeCtaPosterAvailableCount > 0) return;
+      if (isHomeCtaBgCheckDeferred()) return;
+      if (Date.now() - homeCtaPosterBgLastCheckAt < HOME_CTA_POSTER_BG_COOLDOWN_MS) return;
+      runWhenMainThreadIdle(() => {
+        if (!isHomeCtaBgCheckDeferred()) void checkHomeCtaWallpaperAvailability();
+      });
+    }
+
+    function syncHomeCtaPosterStatus(mode) {
+      const wrap = $("home-mass-poster-status");
+      const btn = $("home-mass-poster-status-btn");
+      const text = $("home-mass-poster-status-text");
+      if (!wrap) return;
+      const card = $("home-mass-card");
+      if (mode === "hidden" || (card && card.classList.contains("has-poster-bg"))) {
+        wrap.hidden = true;
+        return;
+      }
+      bindHomeCtaPosterStatusBtn();
+      const state = mode === "available" || mode === "loading" ? mode : "unavailable";
+      wrap.setAttribute("data-state", state);
+      wrap.hidden = false;
+      if (btn) btn.disabled = state !== "available";
+      if (text) {
+        if (state === "available") {
+          text.textContent = "Load this week's wallpaper";
+        } else if (state === "loading") {
+          text.textContent = "Loading wallpaper…";
+        } else {
+          text.textContent = "Wallpaper not yet available for this week's Mass";
+        }
+      }
+    }
+
+    function bindHomeCtaPosterStatusBtn() {
+      if (homeCtaPosterStatusBound) return;
+      const btn = $("home-mass-poster-status-btn");
+      if (!btn) return;
+      homeCtaPosterStatusBound = true;
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrap = $("home-mass-poster-status");
+        if (!wrap || wrap.getAttribute("data-state") !== "available") return;
+        syncHomeCtaPosterStatus("loading");
+        void refreshHomeMassCtaPosterBg({ forceReload: true, fromStatusBtn: true });
+      });
+    }
+
+    async function checkHomeCtaWallpaperAvailability() {
+      const card = $("home-mass-card");
+      if (!card) return false;
+      if (card.classList.contains("has-poster-bg")) {
+        stopHomeCtaPosterBgPoll();
+        syncHomeCtaPosterStatus("hidden");
+        return true;
+      }
+      if (isHomeCtaBgCheckDeferred()) return false;
+      if (homeCtaPosterBgCheckInflight) return homeCtaPosterBgCheckInflight;
+      const sunday = homeCtaPosterSundayKey(
+        (typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "") || ""
+      );
+      if (!sunday) return false;
+      homeCtaPosterBgLastCheckAt = Date.now();
+      homeCtaPosterBgCheckInflight = (async () => {
+        try {
+          if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
+            await window.VerbumAuth.waitUntilReady(4000);
+          }
+          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+            ? await window.VerbumAuth.getAuthHeaders()
+            : {};
+          const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
+            headers: headers,
+            credentials: "same-origin",
+          });
+          if (!res.ok) return false;
+          const data = await res.json().catch(() => ({}));
+          if (!data || !data.ok) return false;
+          if (card.classList.contains("has-poster-bg")) {
+            stopHomeCtaPosterBgPoll();
+            syncHomeCtaPosterStatus("hidden");
+            return true;
+          }
+          const apiReady = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
+          homeCtaPosterAvailableCount = apiReady.length;
+          if (apiReady.length > 0) {
+            stopHomeCtaPosterBgPoll();
+            if (card.classList.contains("has-fallback-bg")) {
+              syncHomeCtaPosterStatus("available");
+            }
+            return true;
+          }
+          if (card.classList.contains("has-fallback-bg")) {
+            syncHomeCtaPosterStatus("unavailable");
+          }
+          return false;
+        } catch (_e) {
+          return false;
+        } finally {
+          homeCtaPosterBgCheckInflight = null;
+        }
+      })();
+      return homeCtaPosterBgCheckInflight;
+    }
+
+    function startHomeCtaPosterBgPoll() {
+      const card = $("home-mass-card");
+      if (!card || card.classList.contains("has-poster-bg") || homeCtaPosterAvailableCount > 0) {
+        stopHomeCtaPosterBgPoll();
+        return;
+      }
+      if (homeCtaPosterBgPollTimer) return;
+      if (homeCtaPosterBgPollAttempt >= HOME_CTA_POSTER_BG_POLL_DELAYS.length) return;
+      const delay = HOME_CTA_POSTER_BG_POLL_DELAYS[homeCtaPosterBgPollAttempt];
+      homeCtaPosterBgPollTimer = setTimeout(() => {
+        homeCtaPosterBgPollTimer = null;
+        const c = $("home-mass-card");
+        if (!c || c.classList.contains("has-poster-bg") || homeCtaPosterAvailableCount > 0) {
+          stopHomeCtaPosterBgPoll();
+          return;
+        }
+        // Defer without burning an attempt while user is busy or away from Home.
+        if (isHomeCtaBgCheckDeferred()) {
+          startHomeCtaPosterBgPoll();
+          return;
+        }
+        homeCtaPosterBgPollAttempt += 1;
+        runWhenMainThreadIdle(() => {
+          void checkHomeCtaWallpaperAvailability().then((found) => {
+            if (!found) startHomeCtaPosterBgPoll();
+          });
+        });
+      }, delay);
+    }
+
+    function applyHomeCtaFallbackBg() {
+      stopHomeCtaPosterFallbackTimer();
+      stopHomeCtaPosterAutoplay();
+      const card = $("home-mass-card");
+      if (!card || card.classList.contains("has-poster-bg")) return;
+      const layers = homeCtaPosterLayers();
+      const nav = $("home-mass-poster-nav");
+      card.classList.remove("has-poster-bg");
+      card.classList.remove("is-poster-loading");
+      card.classList.add("has-fallback-bg");
+      card.removeAttribute("data-home-poster-style");
+      layers.forEach((bg, i) => {
+        bg.style.backgroundImage = "";
+        bg.removeAttribute("data-poster-url");
+        clearHomeCtaPosterMotionClasses(bg);
+        bg.classList.toggle("is-visible", i === 0);
+      });
+      if (nav) nav.hidden = true;
+      const loading = $("home-mass-poster-loading");
+      if (loading) {
+        loading.hidden = true;
+        loading.setAttribute("aria-busy", "false");
+      }
+      const veil = $("home-mass-poster-loading-veil");
+      if (veil) veil.hidden = true;
+      syncHomeCtaPosterStatus(homeCtaPosterAvailableCount > 0 ? "available" : "unavailable");
+      startHomeCtaPosterBgPoll();
+    }
+
+    function armHomeCtaPosterFallbackTimer() {
+      const card = $("home-mass-card");
+      if (!card) return;
+      if (card.classList.contains("has-poster-bg") || card.classList.contains("has-fallback-bg")) return;
+      if (homeCtaPosterFallbackTimer) return;
+      homeCtaPosterFallbackTimer = setTimeout(() => {
+        homeCtaPosterFallbackTimer = null;
+        applyHomeCtaFallbackBg();
+      }, HOME_CTA_POSTER_FALLBACK_MS);
+    }
+
     function keepHomeCtaPosterAwaiting(styleLabel) {
       const card = $("home-mass-card");
       if (!card) return;
-      if (!card.classList.contains("has-poster-bg")) {
+      if (!card.classList.contains("has-poster-bg") && !card.classList.contains("has-fallback-bg")) {
         setHomeCtaPosterLoading(true, styleLabel || "");
       }
       stopHomeCtaPosterAwaitRetry();
-      // Keep retrying while unpainted — Extras must not be required to finish the CTA.
+      if (homeCtaPosterAwaitRetries >= HOME_CTA_POSTER_AWAIT_MAX) {
+        if (!card.classList.contains("has-poster-bg")) applyHomeCtaFallbackBg();
+        return;
+      }
       homeCtaPosterAwaitRetries += 1;
-      const delay = homeCtaPosterAwaitRetries <= HOME_CTA_POSTER_AWAIT_MAX
-        ? HOME_CTA_POSTER_AWAIT_MS
-        : Math.min(30000, HOME_CTA_POSTER_AWAIT_MS + (homeCtaPosterAwaitRetries - HOME_CTA_POSTER_AWAIT_MAX) * 2000);
       homeCtaPosterAwaitRetryTimer = setTimeout(() => {
         homeCtaPosterAwaitRetryTimer = null;
         void refreshHomeMassCtaPosterBg({ forceReload: true });
-      }, delay);
+      }, HOME_CTA_POSTER_AWAIT_MS);
     }
 
     function activeExtrasPosterStyleId() {
@@ -28184,9 +28421,16 @@
     function setHomeCtaPosterLoading(on, styleLabel) {
       const card = $("home-mass-card");
       if (!card) return;
-      // Never drop loading chrome unless a poster is actually painted.
-      const painted = card.classList.contains("has-poster-bg");
-      const show = !!on || !painted;
+      // Never drop loading chrome unless a poster or fallback wallpaper is painted.
+      const settled = card.classList.contains("has-poster-bg")
+        || card.classList.contains("has-fallback-bg");
+      const show = !!on || !settled;
+      if (show) {
+        armHomeCtaPosterFallbackTimer();
+        syncHomeCtaPosterStatus("hidden");
+      } else {
+        stopHomeCtaPosterFallbackTimer();
+      }
       card.classList.toggle("is-poster-loading", show);
       const el = $("home-mass-poster-loading");
       if (el) {
@@ -28397,6 +28641,7 @@
         homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
       }
 
+      card.classList.remove("has-fallback-bg");
       card.classList.add("has-poster-bg");
       card.setAttribute("data-home-poster-style", String(item.id || ""));
       homeCtaPosterState.index = index;
@@ -28409,8 +28654,12 @@
         try { setWeeklyPosterStyle(item.id); } finally { homeCtaPosterSyncingFromHome = false; }
       }
 
+      stopHomeCtaPosterFallbackTimer();
+      stopHomeCtaPosterBgPoll();
+      homeCtaPosterBgPollAttempt = 0;
       stopHomeCtaPosterAwaitRetry();
       homeCtaPosterAwaitRetries = 0;
+      syncHomeCtaPosterStatus("hidden");
       setHomeCtaPosterLoading(false);
       // Final guard: visible layer must have paint (CSS !important + settle).
       if (!String(targetLayer.style.backgroundImage || "").trim()) {
@@ -28515,7 +28764,9 @@
       // forceReload must not join a stale/failed in-flight attempt (that was why
       // the CTA only painted after visiting Extras triggered a fresh refresh).
       if (homeCtaPosterBgInflight && !forceReload) return homeCtaPosterBgInflight;
-      if (!card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(true);
+      if (!card.classList.contains("has-poster-bg") && !card.classList.contains("has-fallback-bg")) {
+        setHomeCtaPosterLoading(true);
+      }
       const loadGen = ++homeCtaPosterBgLoadGen;
       homeCtaPosterBgInflight = (async () => {
         let data = null;
@@ -28568,9 +28819,13 @@
             return;
           }
           if (!ready.length) {
-            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
+            // Confirmed no weekly posters generated for this Sunday yet — show default wallpaper.
+            homeCtaPosterAvailableCount = 0;
+            stopHomeCtaPosterAwaitRetry();
+            if (!card.classList.contains("has-poster-bg")) applyHomeCtaFallbackBg();
             return;
           }
+          homeCtaPosterAvailableCount = ready.length;
 
           // Bust resolved URL cache when version flips so the new active set paints.
           ready = ready.map((it) => Object.assign({}, it, { _resolvedUrl: "", _rawUrl: "" }));
@@ -28606,7 +28861,13 @@
             }
           }
           if (!shown) {
-            if (!card.classList.contains("has-poster-bg")) keepHomeCtaPosterAwaiting();
+            if (!card.classList.contains("has-poster-bg")) {
+              if (opts && opts.fromStatusBtn) {
+                applyHomeCtaFallbackBg();
+              } else {
+                keepHomeCtaPosterAwaiting();
+              }
+            }
             return;
           }
           if (loadGen !== homeCtaPosterBgLoadGen) return;
@@ -28622,8 +28883,8 @@
         } finally {
           if (loadGen === homeCtaPosterBgLoadGen) {
             homeCtaPosterBgInflight = null;
-            // Only drop the veil once a poster is actually painted.
-            if (painted || card.classList.contains("has-poster-bg")) {
+            // Only drop the veil once a poster or fallback wallpaper is painted.
+            if (painted || card.classList.contains("has-poster-bg") || card.classList.contains("has-fallback-bg")) {
               setHomeCtaPosterLoading(false);
             } else if (!card.classList.contains("is-poster-loading")) {
               setHomeCtaPosterLoading(true);
@@ -28637,6 +28898,15 @@
     window.refreshHomeMassCtaPosterBg = refreshHomeMassCtaPosterBg;
     if (!window.__homeCtaPosterAuthHook) {
       window.__homeCtaPosterAuthHook = true;
+      armHomeCtaPosterFallbackTimer();
+      bindHomeCtaPosterStatusBtn();
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        const c = $("home-mass-card");
+        if (c && c.classList.contains("has-fallback-bg") && !c.classList.contains("has-poster-bg")) {
+          scheduleHomeCtaWallpaperCheckOnEvent();
+        }
+      });
       window.addEventListener("verbum:auth-ready", () => {
         homeCtaPosterAwaitRetries = 0;
         void refreshHomeMassCtaPosterBg({ forceReload: true });
