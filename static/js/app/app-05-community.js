@@ -1608,7 +1608,15 @@
 
     function getCommunityName() {
       const b = $("settings-church-name");
-      return (b && b.value.trim()) || "";
+      const fromInput = (b && b.value.trim()) || "";
+      if (fromInput) return fromInput;
+      try {
+        if (window.VerbumAuth && typeof window.VerbumAuth.getChurchProfile === "function") {
+          const profile = window.VerbumAuth.getChurchProfile();
+          if (profile && profile.community_name) return String(profile.community_name).trim();
+        }
+      } catch (_e) { /* optional */ }
+      return "";
     }
 
     function syncChurchFieldsToSettings() {

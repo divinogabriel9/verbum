@@ -1625,6 +1625,11 @@ class GenerateBody(BaseModel):
             "When true, skip PowerPoint/poster generation and only build the half-fold A4 leaflet PDF."
         ),
     )
+    leaflet_song_title_color: str = Field(
+        "black",
+        max_length=16,
+        description="Song title color on the offline leaflet PDF: 'black' or 'red'.",
+    )
     export_pdf: bool = Field(
         False,
         description="Deprecated — PDF export was removed from /api/generate. Ignored if set.",
@@ -5828,6 +5833,31 @@ def api_generate(
     try:
         print("[generate] building media…", flush=True)
         parish_id = _session_parish_id(session) or "local"
+        church_ctx_gen = get_church_profile_context()
+        ctx_community = str((church_ctx_gen or {}).get("community_name") or "").strip()
+        if not ctx_community and parish_id and parish_id != "local":
+            try:
+                from services.parish_store import get_parish_by_id
+
+                parish_row = (
+                    get_parish_by_id(
+                        parish_id,
+                        access_token=session.token if session else None,
+                    )
+                    or {}
+                )
+                ctx_community = str(
+                    parish_row.get("community_name") or parish_row.get("name") or ""
+                ).strip()
+            except Exception:
+                ctx_community = ""
+        body_community = (body.community_name or "").strip()
+        if ctx_community and parish_name_is_locked(church_ctx_gen):
+            resolved_community_name = ctx_community
+        elif body_community:
+            resolved_community_name = body_community
+        else:
+            resolved_community_name = ctx_community
         parish_dna = None
         try:
             from services.parish_deck_dna import materialize_dna_for_generate
@@ -5848,6 +5878,11 @@ def api_generate(
                     include_social_exports=body.include_social_exports,
                     include_leaflet=bool(body.include_leaflet) or bool(body.leaflet_only),
                     leaflet_only=bool(body.leaflet_only),
+                    leaflet_song_title_color=(
+                        "red"
+                        if (body.leaflet_song_title_color or "").strip().lower() == "red"
+                        else "black"
+                    ),
                     include_gospel_art=False,
                     include_ai_mass_poster=False
                     if body.leaflet_only
@@ -5860,7 +5895,7 @@ def api_generate(
                     ai_poster_style=resolved_ai_style,
                     ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
                     reuse_existing_poster=reuse_poster,
-                    community_name=body.community_name.strip() if body.community_name else None,
+                    community_name=resolved_community_name or None,
                     song_selections=song_map,
                     custom_theme=body.custom_theme,
                     divider_poster_path=divider_path,
@@ -6292,6 +6327,7 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
                 include_ai_mass_poster=include_ai,
                 ai_poster_style=ai_style,
                 reuse_existing_poster=True,
+                community_name="LiturgyFlow",
                 song_selections=song_map,
                 custom_theme=theme,
                 include_church_logo=False,

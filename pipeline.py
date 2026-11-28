@@ -523,6 +523,7 @@ def generate_mass_media(
     include_social_exports: bool = False,
     include_leaflet: bool = False,
     leaflet_only: bool = False,
+    leaflet_song_title_color: str = "black",
     include_gospel_art: bool = False,  # deprecated — gospel_moment PNG removed
     include_ai_mass_poster: bool = False,
     ai_poster_backend: str = "openai",
@@ -576,8 +577,17 @@ def generate_mass_media(
     slide_kinds: Optional[list[str]] = None,
     parish_deck_dna: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
-    if community_name and str(community_name).strip():
-        update_community(community_name=str(community_name).strip())
+    from services.user_church_context import get_church_profile_context
+
+    explicit_community = (community_name or "").strip()
+    is_demo_brand = (footer_brand or "").strip().lower() == "liturgyflow.com"
+    if (
+        explicit_community
+        and not is_demo_brand
+        and explicit_community.lower() != "liturgyflow"
+        and get_church_profile_context() is None
+    ):
+        update_community(community_name=explicit_community)
 
     # Posters keep the combined "Celebrant · Co-celebrant" line; the deck divider
     # renders them in separate placeholders (see generate_mass_ppt).
@@ -632,7 +642,10 @@ def generate_mass_media(
 
     picks = _merge_default_and_user_songs(season_key, song_selections)
 
-    community_display = get_community_name()
+    if is_demo_brand:
+        community_display = explicit_community or "LiturgyFlow"
+    else:
+        community_display = explicit_community or get_community_name()
     stem = mass_export_stem(community_display, date, title, season)
     display_title = title.replace(" Celebration", "").strip() or title
     _ = poster_template  # ignored — non-AI liturgical/classic posters removed
@@ -798,6 +811,7 @@ def generate_mass_media(
                 creed_choice=creed_choice,
                 gloria_choice=gloria_choice,
                 our_father_choice=our_father_choice,
+                song_title_color=leaflet_song_title_color,
             )
 
         if leaflet_only:

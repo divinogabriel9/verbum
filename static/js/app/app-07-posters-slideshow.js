@@ -6146,6 +6146,26 @@
           )).join("")
         : receiptViewLine("Songs", "None selected", false);
       const foot = receiptFootnote(model);
+      const isLeaflet = !!(massGenReceiptOptionsCache && (massGenReceiptOptionsCache.leaflet_only || massGenReceiptOptionsCache.include_leaflet));
+      let savedSongColor = "black";
+      try {
+        if (localStorage.getItem("lf:leafletSongColor") === "red") savedSongColor = "red";
+      } catch (_e) { /* optional */ }
+      const leafletColorBlock = isLeaflet
+        ? "<div class=\"mass-gen-receipt__block\">" +
+            "<p class=\"mass-gen-receipt__block-label\">Leaflet song titles</p>" +
+            "<div style=\"display:flex;gap:14px;align-items:center;padding:4px 0;\">" +
+              "<label style=\"display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;\">" +
+                "<input type=\"radio\" name=\"receipt-leaflet-song-color\" value=\"black\"" + (savedSongColor !== "red" ? " checked" : "") + " />" +
+                "<span>Black</span>" +
+              "</label>" +
+              "<label style=\"display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;\">" +
+                "<input type=\"radio\" name=\"receipt-leaflet-song-color\" value=\"red\"" + (savedSongColor === "red" ? " checked" : "") + " />" +
+                "<span style=\"color:#9E1B1B;font-weight:600;\">Red</span>" +
+              "</label>" +
+            "</div>" +
+          "</div>"
+        : "";
       return (
         alertHtml +
         "<div class=\"mass-gen-receipt__hero\">" +
@@ -6162,6 +6182,7 @@
           "<p class=\"mass-gen-receipt__block-label\">Music · " + model.selectedSongCount + "</p>" +
         songLines +
         "</div>" +
+        leafletColorBlock +
         (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "")
       );
     }
@@ -6536,10 +6557,15 @@
         massGenReceiptResolve = resolve;
         massGenReceiptEditMode = false;
         massGenReceiptOptionsCache = options || {};
+        const isLeafletOnly = !!(options && options.leaflet_only);
         const desc = $("mass-gen-receipt-desc");
         if (desc) {
-          desc.textContent = "Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.";
+          desc.textContent = isLeafletOnly
+            ? "Review before generating your printable A4 Mass leaflet PDF."
+            : "Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.";
         }
+        const slideBtn = $("mass-gen-receipt-slideshow");
+        if (slideBtn) slideBtn.hidden = isLeafletOnly;
         renderMassGenerateReceipt(model);
         setUiOverlayOpen($("mass-gen-receipt-modal"), true);
       });

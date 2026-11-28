@@ -1281,7 +1281,12 @@
       $("mass-gen-receipt-edit") && $("mass-gen-receipt-edit").addEventListener("click", () => toggleMassGenerateReceiptEditMode());
       const confirmReceipt = (openSlideshow) => {
         if (massGenReceiptEditMode) applyMassGenerateReceiptEdits();
-        closeMassGenerateReceiptModal({ confirmed: true, openSlideshow: !!openSlideshow });
+        const colorEl = document.querySelector("input[name=\"receipt-leaflet-song-color\"]:checked");
+        const leafletSongColor = colorEl && colorEl.value === "red" ? "red" : "black";
+        if (colorEl) {
+          try { localStorage.setItem("lf:leafletSongColor", leafletSongColor); } catch (_e) { /* optional */ }
+        }
+        closeMassGenerateReceiptModal({ confirmed: true, openSlideshow: !!openSlideshow, leafletSongColor });
       };
       $("mass-gen-receipt-slideshow") && $("mass-gen-receipt-slideshow").addEventListener("click", () => confirmReceipt(true));
       $("mass-gen-receipt-confirm") && $("mass-gen-receipt-confirm").addEventListener("click", () => confirmReceipt(false));

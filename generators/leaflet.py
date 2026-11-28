@@ -56,6 +56,8 @@ _CREAM = HexColor("#F7F3EA")
 _INK = HexColor("#1C1916")
 _MUTED = HexColor("#5C564E")
 _DEFAULT_ACCENT = HexColor("#6B2D3C")
+_SONG_RED = HexColor("#9E1B1B")
+_PRIEST_CROSS = "†"
 
 _WS = re.compile(r"\s+")
 _FLOW_MARK = re.compile(r"<<([A-Z]+)>>")
@@ -63,8 +65,8 @@ _MULTI_NL = re.compile(r"\n{3,}")
 _BLANK_LINES = re.compile(r"\n\s*\n+")
 _LYRIC_SECTION = re.compile(
     r"^(?P<label>"
-    r"Chorus|Refrain|Bridge|Pre-?Chorus|Outro|Ending|Coda|"
-    r"Verse\s*\d*|V\.?\s*\d+"
+    r"Chorus|Refrain|Koro|Bridge|Pre-?Chorus|Outro|Ending|Coda|Intro|Interlude|Tag|"
+    r"(?:Verse|Stanza)\s*\d*|V\.?\s*\d+"
     r")\s*:?\s*$",
     re.IGNORECASE,
 )
@@ -118,7 +120,7 @@ def _section_kind(label: str) -> str:
     low = (label or "").strip().casefold()
     if low.startswith("refrain"):
         return "refrain"
-    if "chorus" in low:
+    if "chorus" in low or low == "koro":
         return "chorus"
     return "other"
 
@@ -179,10 +181,17 @@ def _compact_repeating_lyrics(text: str) -> str:
     unlabeled_seen: dict[str, int] = {}
     out: list[str] = []
 
+    def _label_html(text_label: str) -> str:
+        return f'<font name="{_ACTIVE_ITALIC}"><i>{_esc(text_label)}</i></font>'
+
     def _emit_section(lab: str, body_lines: list[str]) -> None:
-        chunk = ([lab] if lab else []) + body_lines
-        if any((ln or "").strip() for ln in chunk):
-            out.append(_esc("\n".join(chunk)).replace("\n", "<br/>"))
+        parts: list[str] = []
+        if lab:
+            parts.append(_label_html(lab))
+        if any((ln or "").strip() for ln in body_lines):
+            parts.append(_esc("\n".join(body_lines)).replace("\n", "<br/>"))
+        if parts:
+            out.append("<br/>".join(parts))
 
     for seg in segments:
         lines_s: list[str] = seg["lines"]
@@ -192,7 +201,7 @@ def _compact_repeating_lyrics(text: str) -> str:
 
         if sk == "chorus":
             if chorus_done:
-                out.append("<i>(chorus)</i>")
+                out.append(_label_html("(chorus)"))
                 continue
             if norm:
                 seen_chorus = norm
@@ -202,7 +211,7 @@ def _compact_repeating_lyrics(text: str) -> str:
 
         if sk == "refrain":
             if refrain_done:
-                out.append("<i>(refrain)</i>")
+                out.append(_label_html("(refrain)"))
                 continue
             if norm:
                 seen_refrain = norm
@@ -212,17 +221,17 @@ def _compact_repeating_lyrics(text: str) -> str:
 
         # Unlabeled (or verse) block that repeats a known chorus/refrain body
         if norm and seen_chorus and norm == seen_chorus:
-            out.append("<i>(chorus)</i>")
+            out.append(_label_html("(chorus)"))
             continue
         if norm and seen_refrain and norm == seen_refrain:
-            out.append("<i>(refrain)</i>")
+            out.append(_label_html("(refrain)"))
             continue
 
         # Unlabeled stanza that repeats later in the song (no headers)
         if not lab and norm and len(norm) >= 40:
             count = unlabeled_seen.get(norm, 0)
             if count >= 1:
-                out.append("<i>(chorus)</i>")
+                out.append(_label_html("(chorus)"))
                 unlabeled_seen[norm] = count + 1
                 continue
             unlabeled_seen[norm] = 1
@@ -279,7 +288,7 @@ def _chunk_to_html(role: str, body: str, *, bare: bool = False) -> str:
     if bare or role == "plain":
         return body_html
     if role == "priest":
-        return f'<font name="{_ACTIVE_BOLD}"><b>P-</b></font> {body_html}'
+        return f'<font name="{_ACTIVE_BOLD}"><b>{_PRIEST_CROSS} P-</b></font> {body_html}'
     if role == "all":
         return f'<font name="{_ACTIVE_BOLD}"><b>All- {body_html}</b></font>'
     return body_html
@@ -309,7 +318,7 @@ def _kyrie_html(text: str) -> str:
 
 def _dialogue_line(priest: str, assembly: str) -> str:
     return (
-        f'<font name="{_ACTIVE_BOLD}"><b>P-</b></font> {_esc(priest)}'
+        f'<font name="{_ACTIVE_BOLD}"><b>{_PRIEST_CROSS} P-</b></font> {_esc(priest)}'
         f'<br/><font name="{_ACTIVE_BOLD}"><b>All- {_esc(assembly)}</b></font>'
     )
 
@@ -378,9 +387,9 @@ def _fit_cover_title_style(
     tag: str,
 ) -> ParagraphStyle:
     """Shrink the Mass title so ``Title (A)`` stays on one line in the column."""
-    s = max(0.68, min(1.0, scale))
-    target = 16.0 * s
-    floor = 8.5 * s
+    s = max(0.62, min(1.0, scale))
+    target = 17.6 * s
+    floor = 9.0 * s
     size = target
     while size > floor and pdfmetrics.stringWidth(text, bold_font, size) > max_width:
         size -= 0.2
@@ -392,7 +401,7 @@ def _fit_cover_title_style(
         leading=round(size * 1.2, 2),
         textColor=_INK,
         alignment=TA_CENTER,
-        spaceAfter=round(5 * s, 2),
+        spaceAfter=round(5.5 * s, 2),
     )
 
 
@@ -402,10 +411,12 @@ def _styles(
     italic_font: str = "Times-Italic",
     *,
     scale: float = 1.0,
+    song_title_color: str = "black",
 ) -> dict[str, ParagraphStyle]:
     """Build styles; ``scale`` < 1 shrinks type to fit one sheet."""
-    s = max(0.68, min(1.0, scale))
-    tag = f"{int(round(s * 100)):03d}"
+    s = max(0.62, min(1.0, scale))
+    use_red_songs = (song_title_color or "black").strip().lower() == "red"
+    tag = f"{int(round(s * 100)):03d}_{'r' if use_red_songs else 'k'}"
 
     def sz(n: float) -> float:
         return round(n * s, 2)
@@ -414,96 +425,106 @@ def _styles(
         "title": ParagraphStyle(
             f"lf_title_{tag}",
             fontName=bold_font,
-            fontSize=sz(13),
-            leading=sz(15.5),
+            fontSize=sz(14.3),
+            leading=sz(17.0),
             textColor=_INK,
-            spaceAfter=sz(3.5),
+            spaceAfter=sz(3.8),
             alignment=TA_JUSTIFY,
         ),
         "h": ParagraphStyle(
             f"lf_h_{tag}",
             fontName=bold_font,
-            fontSize=sz(10.5),
-            leading=sz(12.8),
+            fontSize=sz(11.6),
+            leading=sz(14.0),
             textColor=_INK,
-            spaceBefore=sz(3.5),
-            spaceAfter=sz(1.8),
+            spaceBefore=sz(3.8),
+            spaceAfter=sz(2.0),
+            alignment=TA_JUSTIFY,
+        ),
+        "song_h": ParagraphStyle(
+            f"lf_song_h_{tag}",
+            fontName=bold_font,
+            fontSize=sz(11.6),
+            leading=sz(14.0),
+            textColor=_SONG_RED if use_red_songs else _INK,
+            spaceBefore=sz(3.8),
+            spaceAfter=sz(2.0),
             alignment=TA_JUSTIFY,
         ),
         "body": ParagraphStyle(
             f"lf_body_{tag}",
             fontName=body_font,
-            fontSize=sz(10),
-            leading=sz(12.4),
+            fontSize=sz(11.0),
+            leading=sz(13.6),
             textColor=_INK,
-            spaceAfter=sz(2),
+            spaceAfter=sz(2.2),
             alignment=TA_JUSTIFY,
         ),
         "lyric": ParagraphStyle(
             f"lf_lyric_{tag}",
-            fontName=body_font,
-            fontSize=sz(9.6),
-            leading=sz(12),
+            fontName=bold_font,
+            fontSize=sz(10.6),
+            leading=sz(13.2),
             textColor=_INK,
-            spaceAfter=sz(1.8),
+            spaceAfter=sz(2.0),
             leftIndent=0,
             alignment=TA_JUSTIFY,
         ),
         "small": ParagraphStyle(
             f"lf_small_{tag}",
             fontName=body_font,
-            fontSize=sz(8.2),
-            leading=sz(10.2),
+            fontSize=sz(9.0),
+            leading=sz(11.2),
             textColor=_MUTED,
-            spaceAfter=sz(1.5),
+            spaceAfter=sz(1.6),
             alignment=TA_JUSTIFY,
         ),
         "response": ParagraphStyle(
             f"lf_response_{tag}",
             fontName=body_font,
-            fontSize=sz(9.6),
-            leading=sz(12),
+            fontSize=sz(10.6),
+            leading=sz(13.2),
             textColor=_INK,
-            spaceAfter=sz(1.8),
+            spaceAfter=sz(2.0),
             alignment=TA_JUSTIFY,
         ),
         "quote": ParagraphStyle(
             f"lf_quote_{tag}",
             fontName=italic_font,
-            fontSize=sz(11.5),
-            leading=sz(14.5),
+            fontSize=sz(12.6),
+            leading=sz(15.8),
             textColor=_INK,
-            spaceBefore=sz(6),
-            spaceAfter=sz(3),
+            spaceBefore=sz(6.5),
+            spaceAfter=sz(3.3),
             alignment=TA_CENTER,
         ),
         # Cover block — larger, centered
         "center_kicker": ParagraphStyle(
             f"lf_ck_{tag}",
             fontName=bold_font,
-            fontSize=sz(12),
-            leading=sz(14.5),
+            fontSize=sz(13.2),
+            leading=sz(16.0),
             textColor=_MUTED,
             alignment=TA_CENTER,
-            spaceAfter=sz(4),
+            spaceAfter=sz(4.4),
         ),
         "center_title": ParagraphStyle(
             f"lf_ct_{tag}",
             fontName=bold_font,
-            fontSize=sz(16),
-            leading=sz(19),
+            fontSize=sz(17.6),
+            leading=sz(21.0),
             textColor=_INK,
             alignment=TA_CENTER,
-            spaceAfter=sz(5),
+            spaceAfter=sz(5.5),
         ),
         "center_body": ParagraphStyle(
             f"lf_cb_{tag}",
             fontName=body_font,
-            fontSize=sz(11),
-            leading=sz(14),
+            fontSize=sz(12.1),
+            leading=sz(15.4),
             textColor=_MUTED,
             alignment=TA_CENTER,
-            spaceAfter=sz(3),
+            spaceAfter=sz(3.3),
         ),
     }
 
@@ -660,7 +681,7 @@ def _add_song(
     lyrics = str(song.get("lyrics") or "").strip()
     label = _clean_space(str(song.get("label") or fallback_label))
     head = f"{label} — {title}" if title else label
-    _heading(story, styles, head)
+    _add(story, _P(_esc(head), styles.get("song_h", styles["h"])))
     if titles_only:
         return
     if not lyrics:
@@ -789,7 +810,7 @@ def _build_mass_flow(
     title_style = _fit_cover_title_style(
         display,
         styles["center_title"].fontName,
-        scale=styles["center_title"].fontSize / 16.0,
+        scale=styles["center_title"].fontSize / 17.6,
         max_width=inner_w * 0.98,
         tag=styles["center_title"].name,
     )
@@ -827,7 +848,7 @@ def _build_mass_flow(
     story.append(Spacer(1, 5))
 
     # --- Entrance ---
-    _add(story, _P("Introductory Rites", styles["title"]))
+    _add(story, _P("<u>Introductory Rites</u>", styles["title"]))
     _add_song(
         story, styles, by.get("entrance"), "Entrance",
         lyric_chars=lyric_chars, titles_only=titles_only,
@@ -842,7 +863,7 @@ def _build_mass_flow(
         _block(story, styles, "Gloria", prayer("gloria"))
 
     # --- Liturgy of the Word ---
-    _add(story, _P("Liturgy of the Word", styles["title"]))
+    _add(story, _P("<u>Liturgy of the Word</u>", styles["title"]))
     fr = _maybe_clip(first_reading_text, int(cfg.get("reading") or 0))
     if first_reading_ref or fr:
         head = "First Reading"
@@ -909,7 +930,7 @@ def _build_mass_flow(
         _block(story, styles, "Profession of Faith (Creed)", prayer("creed"), as_all=True)
 
     # --- Liturgy of the Eucharist ---
-    _add(story, _P("Liturgy of the Eucharist", styles["title"]))
+    _add(story, _P("<u>Liturgy of the Eucharist</u>", styles["title"]))
     _add_song(
         story, styles, by.get("offertory"), "Offertory",
         lyric_chars=lyric_chars, titles_only=titles_only,
@@ -942,7 +963,7 @@ def _build_mass_flow(
         )
 
     # --- Closing ---
-    _add(story, _P("Concluding Rites", styles["title"]))
+    _add(story, _P("<u>Concluding Rites</u>", styles["title"]))
     _add_song(
         story, styles, by.get("recessional"), "Recessional",
         lyric_chars=lyric_chars, titles_only=titles_only,
@@ -1050,14 +1071,15 @@ def _fit_flowables(
     body_font: str,
     bold_font: str,
     italic_font: str,
+    song_title_color: str = "black",
     build_kwargs: dict[str, Any],
 ) -> tuple[list[list[Any]], float, int]:
     """
     Auto-adjuster: try decreasing font scale, then tighter content tiers,
     until everything paginates into ≤ 8 cells (one A4 duplex).
     """
-    # Font scales from full size down to ~68% (prefer readable type)
-    scales = [1.0, 0.96, 0.92, 0.88, 0.84, 0.80, 0.76, 0.72, 0.68]
+    # Font scales from full (+10% larger) down to ~62% so 1 sheet (2 pages) is guaranteed
+    scales = [1.0, 0.96, 0.92, 0.88, 0.84, 0.80, 0.76, 0.72, 0.68, 0.64, 0.62]
     best_cells: list[list[Any]] = []
     best_scale = 1.0
     best_tier = 0
@@ -1065,7 +1087,13 @@ def _fit_flowables(
 
     for tier_i, compact in enumerate(_COMPACT_TIERS):
         for scale in scales:
-            styles = _styles(body_font, bold_font, italic_font, scale=scale)
+            styles = _styles(
+                body_font,
+                bold_font,
+                italic_font,
+                scale=scale,
+                song_title_color=song_title_color,
+            )
             flowables = _build_mass_flow(styles, compact=compact, **build_kwargs)
             cells = _paginate(flowables, CONTENT_W, CONTENT_H)
             n = len(cells)
@@ -1175,6 +1203,7 @@ def generate_mass_leaflet(
     creed_choice: str = "nicene",
     gloria_choice: str = "english",
     our_father_choice: str = "english",
+    song_title_color: str = "black",
 ) -> Path:
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1235,6 +1264,7 @@ def generate_mass_leaflet(
         body_font=body_font,
         bold_font=bold_font,
         italic_font=italic_font,
+        song_title_color=song_title_color,
         build_kwargs=build_kwargs,
     )
     sheets = _sheet_cell_map(len(cells))

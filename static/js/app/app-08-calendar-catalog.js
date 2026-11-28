@@ -394,6 +394,9 @@
         if (!receiptResult || !receiptResult.confirmed) {
           return null;
         }
+        if (receiptResult.leafletSongColor) {
+          o.leaflet_song_title_color = receiptResult.leafletSongColor;
+        }
         o.openSlideshow = !!receiptResult.openSlideshow;
         if (o.openSlideshow) {
           o.autoDownloadPptx = false;
@@ -579,6 +582,7 @@
         // Offline leaflet export (wizard "Offline leaflet" / Need offline leaflet?)
         if (o.include_leaflet || o.leaflet_only) {
           body.include_leaflet = true;
+          body.leaflet_song_title_color = o.leaflet_song_title_color === "red" ? "red" : "black";
         }
         if (o.leaflet_only) {
           body.leaflet_only = true;
@@ -635,6 +639,7 @@
           include_social_exports: body.include_social_exports,
           include_leaflet: !!body.include_leaflet,
           leaflet_only: !!body.leaflet_only,
+          leaflet_song_title_color: body.leaflet_song_title_color || "black",
           custom_theme: body.custom_theme,
           include_church_logo: body.include_church_logo,
           include_church_name: body.include_church_name,

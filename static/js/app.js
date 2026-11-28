@@ -18484,7 +18484,15 @@
 
     function getCommunityName() {
       const b = $("settings-church-name");
-      return (b && b.value.trim()) || "";
+      const fromInput = (b && b.value.trim()) || "";
+      if (fromInput) return fromInput;
+      try {
+        if (window.VerbumAuth && typeof window.VerbumAuth.getChurchProfile === "function") {
+          const profile = window.VerbumAuth.getChurchProfile();
+          if (profile && profile.community_name) return String(profile.community_name).trim();
+        }
+      } catch (_e) { /* optional */ }
+      return "";
     }
 
     function syncChurchFieldsToSettings() {
@@ -32926,6 +32934,26 @@
           )).join("")
         : receiptViewLine("Songs", "None selected", false);
       const foot = receiptFootnote(model);
+      const isLeaflet = !!(massGenReceiptOptionsCache && (massGenReceiptOptionsCache.leaflet_only || massGenReceiptOptionsCache.include_leaflet));
+      let savedSongColor = "black";
+      try {
+        if (localStorage.getItem("lf:leafletSongColor") === "red") savedSongColor = "red";
+      } catch (_e) { /* optional */ }
+      const leafletColorBlock = isLeaflet
+        ? "<div class=\"mass-gen-receipt__block\">" +
+            "<p class=\"mass-gen-receipt__block-label\">Leaflet song titles</p>" +
+            "<div style=\"display:flex;gap:14px;align-items:center;padding:4px 0;\">" +
+              "<label style=\"display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;\">" +
+                "<input type=\"radio\" name=\"receipt-leaflet-song-color\" value=\"black\"" + (savedSongColor !== "red" ? " checked" : "") + " />" +
+                "<span>Black</span>" +
+              "</label>" +
+              "<label style=\"display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;\">" +
+                "<input type=\"radio\" name=\"receipt-leaflet-song-color\" value=\"red\"" + (savedSongColor === "red" ? " checked" : "") + " />" +
+                "<span style=\"color:#9E1B1B;font-weight:600;\">Red</span>" +
+              "</label>" +
+            "</div>" +
+          "</div>"
+        : "";
       return (
         alertHtml +
         "<div class=\"mass-gen-receipt__hero\">" +
@@ -32942,6 +32970,7 @@
           "<p class=\"mass-gen-receipt__block-label\">Music · " + model.selectedSongCount + "</p>" +
         songLines +
         "</div>" +
+        leafletColorBlock +
         (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "")
       );
     }
@@ -33316,10 +33345,15 @@
         massGenReceiptResolve = resolve;
         massGenReceiptEditMode = false;
         massGenReceiptOptionsCache = options || {};
+        const isLeafletOnly = !!(options && options.leaflet_only);
         const desc = $("mass-gen-receipt-desc");
         if (desc) {
-          desc.textContent = "Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.";
+          desc.textContent = isLeafletOnly
+            ? "Review before generating your printable A4 Mass leaflet PDF."
+            : "Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.";
         }
+        const slideBtn = $("mass-gen-receipt-slideshow");
+        if (slideBtn) slideBtn.hidden = isLeafletOnly;
         renderMassGenerateReceipt(model);
         setUiOverlayOpen($("mass-gen-receipt-modal"), true);
       });
@@ -34588,6 +34622,9 @@
         if (!receiptResult || !receiptResult.confirmed) {
           return null;
         }
+        if (receiptResult.leafletSongColor) {
+          o.leaflet_song_title_color = receiptResult.leafletSongColor;
+        }
         o.openSlideshow = !!receiptResult.openSlideshow;
         if (o.openSlideshow) {
           o.autoDownloadPptx = false;
@@ -34773,6 +34810,7 @@
         // Offline leaflet export (wizard "Offline leaflet" / Need offline leaflet?)
         if (o.include_leaflet || o.leaflet_only) {
           body.include_leaflet = true;
+          body.leaflet_song_title_color = o.leaflet_song_title_color === "red" ? "red" : "black";
         }
         if (o.leaflet_only) {
           body.leaflet_only = true;
@@ -34829,6 +34867,7 @@
           include_social_exports: body.include_social_exports,
           include_leaflet: !!body.include_leaflet,
           leaflet_only: !!body.leaflet_only,
+          leaflet_song_title_color: body.leaflet_song_title_color || "black",
           custom_theme: body.custom_theme,
           include_church_logo: body.include_church_logo,
           include_church_name: body.include_church_name,
@@ -39284,7 +39323,12 @@
       $("mass-gen-receipt-edit") && $("mass-gen-receipt-edit").addEventListener("click", () => toggleMassGenerateReceiptEditMode());
       const confirmReceipt = (openSlideshow) => {
         if (massGenReceiptEditMode) applyMassGenerateReceiptEdits();
-        closeMassGenerateReceiptModal({ confirmed: true, openSlideshow: !!openSlideshow });
+        const colorEl = document.querySelector("input[name=\"receipt-leaflet-song-color\"]:checked");
+        const leafletSongColor = colorEl && colorEl.value === "red" ? "red" : "black";
+        if (colorEl) {
+          try { localStorage.setItem("lf:leafletSongColor", leafletSongColor); } catch (_e) { /* optional */ }
+        }
+        closeMassGenerateReceiptModal({ confirmed: true, openSlideshow: !!openSlideshow, leafletSongColor });
       };
       $("mass-gen-receipt-slideshow") && $("mass-gen-receipt-slideshow").addEventListener("click", () => confirmReceipt(true));
       $("mass-gen-receipt-confirm") && $("mass-gen-receipt-confirm").addEventListener("click", () => confirmReceipt(false));
