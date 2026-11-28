@@ -724,11 +724,39 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
     except (TypeError, ValueError):
         av = 0
     bust = f"&av={av}" if av > 0 else ""
+    # Batch-check shared storage once per Sunday when any style is missing on local disk
+    # (Render's filesystem is ephemeral; avoids 5 sequential Supabase list calls).
+    shared_names: Optional[set[str]] = None
+    style_ids = weekly_style_ids()
+    missing_local = [
+        sid for sid in style_ids
+        if not local_hero_path(output_dir, sunday=sunday, style=sid).is_file()
+    ]
+    if missing_local:
+        try:
+            from services.ai_hero_cache import _SHARED_PREFIX, shared_cache_ready
+            from services.storage_assets import list_shared_folder_names
+
+            if shared_cache_ready():
+                shared_names = list_shared_folder_names(
+                    folder=_SHARED_PREFIX, search=sunday
+                )
+        except Exception:
+            logger.debug("weekly shared folder list failed for %s", sunday, exc_info=True)
+            shared_names = None
+
     items: list[dict[str, Any]] = []
-    for sid in weekly_style_ids():
+    for sid in style_ids:
         # Local disk is ephemeral on Render — also treat shared-cache hits as ready
         # so Home CTA / Extras keep working after deploys without regenerating.
-        ready = style_ready(sunday=sunday, style=sid, output_dir=output_dir)
+        if local_hero_path(output_dir, sunday=sunday, style=sid).is_file():
+            ready = True
+        elif shared_names is not None:
+            from services.ai_hero_cache import hero_basename
+
+            ready = hero_basename(sunday, sid) in shared_names
+        else:
+            ready = style_ready(sunday=sunday, style=sid, output_dir=output_dir)
         proxy = (
             f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
             f"&variant=thumb{bust}"

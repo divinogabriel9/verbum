@@ -133,13 +133,34 @@ def shared_asset_exists(*, relative_path: str) -> bool:
     folder, _, name = path.rpartition("/")
     if not name:
         return False
-    rows = client.storage.from_(_BUCKET).list(folder or "")
+    # Pass ``search`` so folders with >100 objects (e.g. shared/ai-heroes) don't
+    # silently miss newer dates beyond Supabase Storage's default 100-row page.
+    rows = client.storage.from_(_BUCKET).list(
+        folder or "",
+        {"search": name, "limit": 100},
+    )
     if not isinstance(rows, list):
         return False
     for row in rows:
         if str((row or {}).get("name") or "").strip() == name:
             return True
     return False
+
+
+def list_shared_folder_names(*, folder: str, search: str = "") -> set[str]:
+    """Return object names inside a shared storage folder (optionally filtered by search)."""
+    client = get_service_client()
+    opts: dict[str, Any] = {"limit": 100}
+    if search:
+        opts["search"] = search
+    rows = client.storage.from_(_BUCKET).list(folder.strip().strip("/"), opts)
+    if not isinstance(rows, list):
+        return set()
+    return {
+        str((row or {}).get("name") or "").strip()
+        for row in rows
+        if str((row or {}).get("name") or "").strip()
+    }
 
 
 def signed_asset_url(*, access_token: str, path: str, expires_in: int = 3600) -> str:
